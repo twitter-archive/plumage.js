@@ -1,0 +1,14 @@
+{{#if label}}
+<div class="control-group">
+  <label class="control-label" for="{{valueAttr}}">{{label}}</label>
+  <div class="controls">
+{{/if}}
+    <div class="field-value {{#unless hasValue}}no-value{{/unless}}">
+      <i class="icon-pencil"></i>
+      <span>{{#if hasValue}}{{value}}{{else}}{{placeholder}}{{/if}}</span>
+	  </div>
+    {{> field}}
+{{#if label}}
+  </div>
+</div>
+{{/if}}

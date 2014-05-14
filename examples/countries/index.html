@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>PlumageJS Countries Example</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<link rel="stylesheet" href="/dist/plumage.css">
+<link rel="stylesheet" href="/assets/examples/styles/countries.css">
+
+<script type="text/javascript" src="/assets/scripts/vendor/require.js"></script>
+<script type="text/javascript" src="/assets/scripts/config.js"></script>
+<script type="text/javascript">
+require.config({
+  baseUrl: '/assets/scripts',
+  paths: {
+    data: '/assets/examples/data',
+    example: '/assets/examples/example_models/scripts/example',
+    countries: '/assets/examples/countries/scripts',
+    test: '/test'
+  }
+});
+</script>
+<script type="text/javascript">
+require(['countries/application']);
+</script>
+
+</head>
+
+<body>
+<div id="nav">
+  <div id="nav-top">
+  <a class="brand" href="/">
+    <span class="nav-title">PlumageJS</span>
+    <span class="nav-subtitle">Countries Example</span>
+  </a>
+</div>
+
+
+</div>
+<div id="page">
+</div>
+
+</body>
+</html>

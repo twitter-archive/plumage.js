@@ -1,0 +1,13 @@
+
+<a class="dropdown-toggle {{#buttonStyle}}btn{{/buttonStyle}}" data-toggle="dropdown" href="#">
+	{{#iconCls}}<i class="{{.}}"></i>{{/iconCls}}
+	{{label}}
+  {{#showCaret}}<b class="caret"/>{{/showCaret}}
+</a>
+<ul class="dropdown-menu {{dropdownCls}}" role="menu">
+  {{#menuItems}}
+  <li>
+    <a data-value="{{value}}">{{#icon}}<i class="icon-{{.}}"></i>{{/icon}}{{label}}</a>
+  </li>
+  {{/menuItems}}
+</ul>

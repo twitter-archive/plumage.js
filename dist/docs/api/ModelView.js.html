@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Source: view/ModelView.js</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+    <link type="text/css" rel="stylesheet" href="../styles/docs.css">
+</head>
+
+<body>
+
+<div class="navbar navbar-fixed-top">
+  <div class="navbar-inner">
+    <div class="container">
+      <button type="button" class="btn btn-navbar" data-toggle="collapse" data-target=".nav-collapse">
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+      </button>
+      <a class="brand" href="../index.html">PlumageJS</a>
+      <div class="nav-collapse collapse">
+        <ul class="nav">
+          <li>
+            <a href="../index.html">Home</a>
+          </li>
+          <li class="active">
+            <a href="index.html">API</a>
+          </li>
+          <li>
+            <a href="../examples.html">Examples</a>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="container">
+  <div class="row">
+<div id="main" class="span8">
+    <h1 class="page-title">Source: view/ModelView.js</h1>
+    
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source"><code>define([
+  'jquery',
+  'underscore',
+  'backbone',
+  'handlebars',
+  'PlumageRoot',
+  'view/ContainerView',
+  'util/ModelUtil',
+  'text!view/templates/LoadError.html'
+], function($, _, Backbone, Handlebars, Plumage, ContainerView, ModelUtil, errorTemplate) {
+
+
+
+  return Plumage.view.ModelView = ContainerView.extend(
+  /** @lends Plumage.view.ModelView.prototype */
+  {
+
+    /**
+     * Class of model to bind to. Ignores all other models passed into setModel.
+     *
+     * Useful for preventing a subView from getting bound to a superview's model.
+     */
+    modelCls: undefined,
+
+    /**
+     * The relationship path in the root model to get the model for this view.
+     *
+     * Doesn't support dot notation but should at some point.
+     */
+    relationship: undefined,
+
+    /**
+     * Should [render]{@link Plumage.view.View#render} by called on model change?
+     *
+     * If left unset, update will be called on change only if this view has no subViews.
+     */
+    renderOnChange: undefined,
+
+
+    /**
+     * Should [render]{@link Plumage.view.View#render} by called on model load?
+     *
+     * If left unset, update will be called on load only if this view has no subViews.
+     */
+    renderOnLoad: undefined,
+
+    /**
+     * View that supports binding of Models to it.
+     *
+     * Bind a [Model]{@link Plumage.model.Model} to ModelView using [setModel]{@link Plumage.view.ModelView#setModel}.
+     * This will connect the various model events, with some default handling, eg render on load.
+     *
+     * setModel is a [ContainerView]{@link Plumage.view.ContainerView} composite method.
+     * i.e. calling setModel on the root ModelView will recursively call setModel with the same model object
+     * on all child ModelViews.
+     *
+     *  - A child ModelView can specify which part of the model to bind to using the [relationship]{@link Plumage.view.ModelView#relationship}
+     *    param (leave it blank to have it bind to the root model).
+     *  - If a child ModelView should only be bound to a certain Model class, specifiy
+     *    [modelCls]{@link Plumage.view.ModelView#modelCls} with the Model class to restrict it to.
+     *
+     *    eg. a child view might be located under a parent ModelView in the DOM, but not be related in the data
+     *    structure. In this case set modelCls on the child so it doesn't get the parent's Model set on it.
+     *
+     *
+     *
+     * @constructs
+     * @extends Plumage.view.ContainerView
+     */
+    initialize:function (options) {
+      ContainerView.prototype.initialize.apply(this, arguments);
+
+      //Backbone.View constructor will already set model if it's passed in.
+      if (this.model) {
+        throw 'Do not pass model into constructor. call setModel';
+      }
+    },
+
+    /**
+     * Gets model to bind to from the root model.
+     * @param {Plumage.model.Model} model The root model.
+     * @param {string} relationship The relationship path in the root model to get the model for this view.
+     */
+    getModelFromRoot: function(model, relationship) {
+      if (!model) {
+        return;
+      }
+      if (!relationship) {
+        return model;
+      }
+      return model.getRelated(relationship);
+    },
+
+    //
+    // Life Cycle
+    //
+
+    /**
+     * Bind a model if applicable. Call setModel on your top level view in your Controller.
+     * @params {Plumage.model.Model} rootModel The root model
+     */
+    setModel: function(rootModel) {
+      if (this.rootModelCls && rootModel) {
+        var rootModelCls = requirejs(this.rootModelCls);
+        if (!(rootModel instanceof rootModelCls)) {
+          return;
+        }
+      }
+      this.rootModel = rootModel;
+
+      var model = this.getModelFromRoot(rootModel, this.relationship),
+        changed = true;
+      if (this.modelCls && model) {
+        if (!(model instanceof ModelUtil.loadClass(this.modelCls))) {
+          return;
+        }
+      }
+
+      if (model && this.model &&
+          model.id !== undefined && this.model.id !== undefined && model.id === this.model.id) {
+        changed = false;
+      }
+      if (this.model) {
+        this.model.off(null,null,this);
+      }
+      this.model = model;
+      if (this.model) {
+        this.model.on('beginLoad', this.onModelBeginLoad, this);
+        this.model.on('change', this.onModelChange, this);
+        this.model.on('load', this.onModelLoad, this);
+        this.model.on('destroy', this.onModelDestroy, this);
+        this.model.on('error', this.onModelError, this);
+      }
+
+      if (changed) {
+        this.onModelLoad();
+      }
+
+      if (this.shown) {
+        this.ensureData();
+      }
+
+      //recurse
+      this.eachSubView(function(subView) {
+        subView.callOrRecurse('setModel', [rootModel]);
+      });
+    },
+
+    /** triggers loading of deferLoad Models. */
+    ensureData: function() {
+      if (this.model && this.model.deferLoad && !this.model.fetched) {
+        this.model.fetchIfAvailable();
+      }
+    },
+
+    /**
+     * Provides template data to render with.
+     *
+     * ModelView's implemenation returns the result of this.model.toViewJSON
+     * @override
+     */
+    getTemplateData: function() {
+      var data = {};
+      if (this.model) {
+        data = this.model.toViewJSON();
+        if (this.model.hasUrl() && !data.model_url) {
+          data.model_url = this.model.urlWithParams();
+        }
+      }
+      return data;
+    },
+
+    /**
+     * Update given model with any changes eg from forms
+     * @param {Plumage.model.Model} model Model to update.
+     */
+    updateModel: function(model) {
+      this.eachSubView(function(subView) {
+        subView.callOrRecurse('updateModel', [model]);
+      });
+    },
+
+    /** Hook to modify view state on model load */
+    updateViewState: function(model) {
+
+    },
+
+    hideLoadingAnimation: function() {
+      ContainerView.prototype.hideLoadingAnimation.apply(this, arguments);
+    },
+
+    shouldRender: function(isLoad) {
+      var hasSubViews = this.subViews.length > 0;
+      var shouldRenderFlag = isLoad ? this.renderOnLoad : this.renderOnChange;
+      return shouldRenderFlag !== undefined && shouldRenderFlag ||
+        shouldRenderFlag === undefined && !hasSubViews;
+    },
+
+    update: function(isLoad) {
+      if (this.isRendered && this.shouldRender(isLoad)) {
+        this.render();
+      }
+    },
+
+    //
+    // Event Handlers
+    //
+
+    onModelBeginLoad: function() {
+      this.loading = true;
+    },
+
+    onModelChange: function(event, model) {
+      this.update(false);
+    },
+
+    onModelLoad: function(model, options) {
+      this.loading = false;
+      this.updateViewState(model);
+      this.update(true);
+      this.hideLoadingAnimation();
+    },
+
+    onModelDestroy: function(event, model) {
+    },
+
+    onModelError: function(model, response, options) {
+      $(this.el).html(Handlebars.compile(errorTemplate)(options.data));
+
+      //needs rerendering after rendering error template
+      this.isRendered = false;
+    },
+
+    remove: function() {
+      ContainerView.prototype.remove.apply(this, arguments);
+      if (this.model) {
+        this.model.off(null, null, this);
+      }
+      return this;
+    },
+
+    onShow: function() {
+      ContainerView.prototype.onShow.apply(this, arguments);
+      this.ensureData();
+    },
+
+    onHide: function() {
+      ContainerView.prototype.onHide.apply(this, arguments);
+    },
+
+    delegateEvents: function(events) {
+      Backbone.View.prototype.delegateEvents.apply(this, arguments);
+    },
+
+    undelegateEvents: function(events) {
+      Backbone.View.prototype.undelegateEvents.apply(this, arguments);
+    }
+  });
+});</code></pre>
+        </article>
+    </section>
+
+
+
+
+</div>
+
+<nav class="span4">
+    <h2><a href="index.html">Index</a></h2><h3>Classes</h3><ul><li><a href="Plumage.App.html">App</a></li><li><a href="Plumage.collection.BufferedGridData.html">BufferedGridData</a></li><li><a href="Plumage.collection.Collection.html">Collection</a></li><li><a href="Plumage.collection.GridData.html">GridData</a></li><li><a href="Plumage.controller.BaseController.html">BaseController</a></li><li><a href="Plumage.controller.ModelController.html">ModelController</a></li><li><a href="Plumage.ControllerManager.html">ControllerManager</a></li><li><a href="Plumage.History.html">History</a></li><li><a href="Plumage.model.Filter.html">Filter</a></li><li><a href="Plumage.model.Model.html">Model</a></li><li><a href="Plumage.RequestManager.html">RequestManager</a></li><li><a href="Plumage.Router.html">Router</a></li><li><a href="Plumage.util.Logger.html">Logger</a></li><li><a href="Plumage.view.CollectionView.html">CollectionView</a></li><li><a href="Plumage.view.ContainerView.html">ContainerView</a></li><li><a href="Plumage.view.ModelView.html">ModelView</a></li><li><a href="Plumage.view.View.html">View</a></li></ul><h3>Namespaces</h3><ul><li><a href="Plumage.html">Plumage</a></li><li><a href="Plumage.collection.html">collection</a></li><li><a href="Plumage.controller.html">controller</a></li><li><a href="Plumage.model.html">model</a></li><li><a href="Plumage.util.html">util</a></li><li><a href="Plumage.vendor.html">vendor</a></li><li><a href="Plumage.view.html">view</a></li><li><a href="Plumage.view.comment.html">comment</a></li><li><a href="Plumage.view.controller.html">controller</a></li><li><a href="Plumage.view.form.html">form</a></li><li><a href="Plumage.view.form.fields.html">fields</a></li><li><a href="Plumage.view.grid.html">grid</a></li><li><a href="Plumage.view.menu.html">menu</a></li></ul>
+</nav>
+</div>
+</div>
+
+<br clear="both">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.2.2</a> on Thu Feb 27 2014 14:14:59 GMT-0800 (PST)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>

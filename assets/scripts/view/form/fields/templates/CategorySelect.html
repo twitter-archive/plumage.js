@@ -1,0 +1,14 @@
+<input type="hidden" {{#fieldName}}name="{{fieldName}}"{{/fieldName}} value="{{value}}">
+<ul class="nav nav-pills">
+{{#if noSelectionText}}
+<li data-category="" {{^hasSelection}}class="active"{{/hasSelection}}>
+  <a href="{{noSelectionValue}}">
+    {{noSelectionText}}
+  </a>
+</li>
+{{/if}}
+
+{{#listValues}}
+  <li data-value="{{value}}" class="{{value}}{{#selected}} active{{/selected}}"><a href="#">{{label}}</a></li>
+{{/listValues}}
+</ul>

@@ -1,0 +1,14 @@
+<h5 class="item-author-header">
+  <img class="avatar" src="{{ user.image_thumb }}" />
+  <span class="name">{{user.first_name}} {{user.last_name}}</span>
+  <span class="screenname muted"> @{{user.screenname}}</span>
+  <span class="timestamp">&mdash; {{created_at}}</span>
+</h5>
+<div class="comment-text">
+  {{#can_delete}}
+    <a class='btn btn-mini btn-danger pull-right delete'>Delete</a>
+  {{/can_delete}}
+  <p class="comment-body">
+  {{{body}}}
+  </p>
+</div>

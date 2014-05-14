@@ -1,0 +1,18 @@
+{% capture lvl %}{{ page.url | append:'index.html' | split:'/' | size }}{% endcapture %}
+{% capture relative %}{% for i in (3..lvl) %}../{% endfor %}{% endcapture %}
+
+<meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<link rel="stylesheet" href="http://use.typekit.net/c/f69126/proxima-nova:i3:i4:i7:n3:n4:n7,source-code-pro:n4:n7.Vmy:N:2,W0W:N:2,W0Z:N:2,Vmx:N:2,W0V:N:2,W0Y:N:2,Y1M:N:2,Y1P:N:2/d?3bb2a6e53c9684ffdc9a98f0135b2a623f07be5005d40b9e3019614796e71d520c20e0a422c9c34f24e58a76aaa28f2b6989f80d1b0559d33a883ef244fcb2591bbbea0cb10c2b654d82675bab41f1ad6c851ff9353d19542b773f4f63f4177d246d2bd8c221e4052548c46e8528e0713b8cd11485e08539c6f218db42eb0133a88b2e5f7864cbc5c0f8825ce313e5a3873d1ac07a892b8b7f3746ac9c76f1872c92c55fc3f503dda49a74bcc3b0ec1240f001d4352123ed22d783d709bb675f29d911eac240db6975dda19a90831810819a6ae53b9b2878ee701495c22692a4521f7c37ab6d74706d0c3e68b1fc1acb7518909234a58dd1700c9a3529c10a1e60579657e3558a721bcfe26ecd">
+
+<title>
+  {% if page.title == "PlumageJS" %}
+    {{ page.title }}
+  {% else %}
+    {{ page.title }} &middot; PlumageJS
+  {% endif %}
+</title>
+
+<link rel="stylesheet" href="{{ relative }}styles/docs.css">

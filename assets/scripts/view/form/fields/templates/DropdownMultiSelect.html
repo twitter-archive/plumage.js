@@ -1,0 +1,34 @@
+<div class="dropdown-multiselect dropdown">
+<select {{#if fieldName}}name="{{fieldName}}"{{/if}} style="display: none">
+{{#if noSelectionText}}
+<option value="{{noSelectionValue}}" {{^hasSelection}}selected="true"{{/hasSelection}}>{{noSelectionText}}</option>
+{{/if}}
+{{#listValues}}
+<option value="{{value}}" {{#selected}}selected{{/selected}}>{{label}}</option>
+{{/listValues}}
+</select>
+
+<a class="btn dropdown-toggle {{buttonCls}}" data-toggle="dropdown" href="#">
+  {{#iconCls}}
+    <i class="{{.}} icon-white"></i>
+  {{/iconCls}}
+  {{#if hasSelection}}
+    {{valueLabel}}
+  {{else}}
+    {{noSelectionText}}
+  {{/if}}
+  <span class="caret"></span>
+</a>
+<ul class="dropdown-menu">
+  {{#if showSelectAll}}
+  <li class="select-all {{#allSelected}}active{{/allSelected}}">
+      <a><input type="checkbox" {{#allSelected}} checked{{/allSelected}}/>Select All</a>
+  </li>
+  {{/if}}
+  {{#listValues}}
+  <li data-value="{{value}}" class="{{value}}{{#selected}} active{{/selected}}">
+      <a><input type="checkbox" {{#selected}} checked{{/selected}}/>{{label}}</a>
+  </li>
+  {{/listValues}}
+</ul>
+</div>

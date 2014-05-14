@@ -1,0 +1,8 @@
+{
+  "plugins": [
+    "plugins/markdown"
+  ],
+  "opts": {
+    "template": "./jsdoc/template"
+  }
+}

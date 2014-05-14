@@ -1,0 +1,11 @@
+baseurl: /docs
+permalink: /blog/:year/:month/:day/:title.html
+exclude:
+- Gemfile
+- Gemfile.lock
+- README.md
+- Rakefile
+- styles
+pygments: true
+name: PlumageJS
+relative_permalinks: true

@@ -1,0 +1,7 @@
+mesos:
+  role: analytics
+  ram_mb: 1024
+
+ruby:
+  version: 1.9
+

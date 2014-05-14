@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Source: view/CollectionView.js</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+    <link type="text/css" rel="stylesheet" href="../styles/docs.css">
+</head>
+
+<body>
+
+<div class="navbar navbar-fixed-top">
+  <div class="navbar-inner">
+    <div class="container">
+      <button type="button" class="btn btn-navbar" data-toggle="collapse" data-target=".nav-collapse">
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+      </button>
+      <a class="brand" href="../index.html">PlumageJS</a>
+      <div class="nav-collapse collapse">
+        <ul class="nav">
+          <li>
+            <a href="../index.html">Home</a>
+          </li>
+          <li class="active">
+            <a href="index.html">API</a>
+          </li>
+          <li>
+            <a href="../examples.html">Examples</a>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="container">
+  <div class="row">
+<div id="main" class="span8">
+    <h1 class="page-title">Source: view/CollectionView.js</h1>
+    
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source"><code>define([
+  'jquery',
+  'underscore',
+  'backbone',
+  'handlebars',
+  'PlumageRoot',
+  'view/ModelView'
+], function($, _, Backbone, Handlebars, Plumage, ModelView) {
+
+
+  return Plumage.view.CollectionView = ModelView.extend(
+  /** @lends Plumage.view.CollectionView.prototype */
+  {
+
+    className: 'collection-view',
+
+    /** Class of ModelView to render for each Model in the Collection. */
+    itemViewCls: undefined,
+
+    /** Map of options to pass into constructor of sub ModelViews. */
+    itemOptions: {},
+
+    template: '&lt;ul class="items">&lt;/ul>{{#moreUrl}}&lt;a class="more-link" href="{{.}}">more&lt;/a>{{/moreUrl}}',
+
+    /** Template to render when there are no items. */
+    emptyTemplate: 'No items',
+
+    /**
+     * url string or function(model) that returns url to go to for more pages of this view
+     */
+    moreUrl: undefined,
+
+    renderOnChange: false,
+
+    /**
+     * A ModelView that renders a sub ModelView for each item in its bound [Collection]{@link Plumage.collection.Collection}
+     *
+     * CAUTION: Item ModelViews must have a different [modelCls]{@link Plumage.view.ModelView#modelCls} than the CollectionView
+     * so they don't get the Collection bound to it.
+     *
+     * Item Views are kept in itemViews instead of subViews to prevent them from getting hit with containerView composite methods
+     * (not sure if this is really necessary).
+     *
+     * @constructs
+     * @extends Plumage.view.ModelView
+     */
+    initialize:function (options) {
+      ModelView.prototype.initialize.apply(this, arguments);
+      options = options || {};
+
+      if (typeof(this.emptyTemplate) === 'string') {
+        this.emptyTemplate = Handlebars.compile(this.emptyTemplate);
+      }
+      if (typeof(this.itemViewCls) === 'string') {
+        this.itemViewCls = requirejs(this.itemViewCls);
+      }
+      this.itemViews = [];
+    },
+
+    //
+    // overrides
+    //
+
+    setModel: function() {
+      ModelView.prototype.setModel.apply(this, arguments);
+      if (this.model) {
+        this.model.on('add', this.onModelAdd, this);
+        this.model.on('remove', this.onModelRemove, this);
+      }
+    },
+
+    getTemplateData: function() {
+      var moreUrl;
+      if (this.moreUrl && this.model && this.model.hasMore()) {
+        moreUrl = $.isFunction(this.moreUrl) ? this.moreUrl(this.model) : this.moreUrl;
+      }
+      var data = {
+        size: this.model && this.model.fetched ? this.model.size() : '',
+        moreUrl: moreUrl
+      };
+      return data;
+    },
+
+    /** Get the el to render subViews into. */
+    getItemsEl: function() {
+      return this.template ? this.$('.items') : this.$el;
+    },
+
+    onRender:function () {
+      if (this.template) {
+        this.$el.html(this.template(this.getTemplateData()));
+      }
+      var itemsEl = this.getItemsEl();
+      itemsEl.empty();
+
+      //keep for reuse
+      var oldItemViews = this.itemViews || [];
+      this.itemViews = [];
+
+      if (this.model && this.model.size()) {
+        this.model.forEach(function(model, i) {
+          var itemView = oldItemViews.pop() || this.renderItem();
+          itemView.setModel(model);
+          itemView.index = i;
+          //TODO could be optimized to not render if reusing view
+          itemView.render();
+
+          itemsEl.append(itemView.el);
+          if (this.shown) {
+            itemView.onShow();
+          }
+          this.itemViews.push(itemView);
+        }, this);
+      }
+
+      this.updateEmpty();
+
+      //remove extra views
+      _.each(oldItemViews, function(itemView){
+        itemView.remove();
+      }, this);
+      this.hideLoadingAnimation();
+    },
+
+    update: function() {
+      ModelView.prototype.update.apply(this, arguments);
+    },
+
+    //
+    // Helpers
+    //
+
+    /**
+     * Render a subView
+     * @private
+     */
+    renderItem: function() {
+      var view = new this.itemViewCls(this.itemOptions);
+      view.on('afterRender', this.onItemRender.bind(this));
+      return view;
+    },
+
+    /**
+     * Show/hide [emptyTemplate]{@link Plumage.view.CollectionView#emptyTemplate} if necessary.
+     * @private
+     */
+    updateEmpty: function() {
+      if ((!this.model || (this.model.fetched && this.model.size() === 0)) &&
+          this.emptyTemplate !== undefined) {
+
+        this.getItemsEl().html(this.emptyTemplate());
+      }
+    },
+
+    //
+    // Methods
+    //
+
+    /**
+     * Get the subView with bound model with the given id.
+     * @param {Object} itemId Id of bound model.
+     */
+    getItemView: function(itemId) {
+      for (var i=0;i&lt;this.itemViews.length;i++) {
+        var itemView = this.itemViews[i];
+        if (itemView.model.id === itemId) {
+          return itemView;
+        }
+      }
+    },
+
+    /**
+     * Event Handlers
+     */
+
+    onModelAdd: function(model) {
+      if (this.isRendered) {
+        //TODO only render view for added model
+        this.update();
+      }
+    },
+
+    onModelRemove: function(model) {
+      if (this.isRendered) {
+        //TODO only remove view for removed model
+        this.update();
+      }
+    },
+
+    onModelLoad: function() {
+      ModelView.prototype.onModelLoad.apply(this, arguments);
+    },
+
+    onModelDestroy: function(model) {
+      for (var i=0;i&lt;this.itemViews.length;i++) {
+        var itemView = this.itemViews[i];
+        if (itemView.model.id === model.id) {
+          itemView.remove();
+          break;
+        }
+      }
+      this.updateEmpty();
+    },
+
+    onShow: function() {
+      ModelView.prototype.onShow.apply(this, arguments);
+      this.eachItemView(function(itemView){
+        itemView.onShow();
+      });
+    },
+
+    onHide: function() {
+      ModelView.prototype.onHide.apply(this, arguments);
+      this.eachItemView(function(itemView){
+        itemView.onHide();
+      });
+    },
+
+    /**
+     * Helper method for calling a callback with ecah itemView
+     */
+    eachItemView: function(callback, scope) {
+      if (this.itemViews) {
+        _.each(this.itemViews, function(itemView) {
+          if (scope) {
+            callback.call(scope, itemView);
+          } else {
+            callback(itemView);
+          }
+        }, this);
+      }
+    },
+
+    onDoneLoad: function(){
+      this.hideLoadingAnimation();
+    },
+
+    onModelBeginLoad: function () {
+      this.showLoadingAnimation();
+    },
+
+    onItemRender: function(itemView) {
+      this.trigger('itemRender', this, itemView);
+    }
+  });
+});</code></pre>
+        </article>
+    </section>
+
+
+
+
+</div>
+
+<nav class="span4">
+    <h2><a href="index.html">Index</a></h2><h3>Classes</h3><ul><li><a href="Plumage.App.html">App</a></li><li><a href="Plumage.collection.BufferedGridData.html">BufferedGridData</a></li><li><a href="Plumage.collection.Collection.html">Collection</a></li><li><a href="Plumage.collection.GridData.html">GridData</a></li><li><a href="Plumage.controller.BaseController.html">BaseController</a></li><li><a href="Plumage.controller.ModelController.html">ModelController</a></li><li><a href="Plumage.ControllerManager.html">ControllerManager</a></li><li><a href="Plumage.History.html">History</a></li><li><a href="Plumage.model.Filter.html">Filter</a></li><li><a href="Plumage.model.Model.html">Model</a></li><li><a href="Plumage.RequestManager.html">RequestManager</a></li><li><a href="Plumage.Router.html">Router</a></li><li><a href="Plumage.util.Logger.html">Logger</a></li><li><a href="Plumage.view.CollectionView.html">CollectionView</a></li><li><a href="Plumage.view.ContainerView.html">ContainerView</a></li><li><a href="Plumage.view.ModelView.html">ModelView</a></li><li><a href="Plumage.view.View.html">View</a></li></ul><h3>Namespaces</h3><ul><li><a href="Plumage.html">Plumage</a></li><li><a href="Plumage.collection.html">collection</a></li><li><a href="Plumage.controller.html">controller</a></li><li><a href="Plumage.model.html">model</a></li><li><a href="Plumage.util.html">util</a></li><li><a href="Plumage.vendor.html">vendor</a></li><li><a href="Plumage.view.html">view</a></li><li><a href="Plumage.view.comment.html">comment</a></li><li><a href="Plumage.view.controller.html">controller</a></li><li><a href="Plumage.view.form.html">form</a></li><li><a href="Plumage.view.form.fields.html">fields</a></li><li><a href="Plumage.view.grid.html">grid</a></li><li><a href="Plumage.view.menu.html">menu</a></li></ul>
+</nav>
+</div>
+</div>
+
+<br clear="both">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.2.2</a> on Thu Feb 27 2014 14:14:59 GMT-0800 (PST)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>

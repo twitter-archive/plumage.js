@@ -1,0 +1,233 @@
+---
+layout: home
+title: PlumageJS
+sectionid: home
+---
+
+
+<header class="subhead">
+  <div class="container">
+    <div class="row">
+      <div class="span1 feather-wrap">
+        <div class="feather feather1"></div>
+        <div class="feather feather2"></div>
+        <div class="feather feather3"></div>
+        <div class="feather feather4"></div>
+      </div>
+      <div class="span8">
+        <h1>Plumage.JS</h1>
+        <h3>Batteries Included App Framework for Data Intensive UIs</h3>
+      </div>
+    </div>
+     <div class="row">
+       <div class="span1"></div>
+       <div class="span8 home-buttons">
+
+         <a href="{{relative}} api/index.html" class="btn btn-large">API</a>
+         <a href="{{relative}} examples.html" class="btn btn-large">Examples</a>
+       </div>
+     </div>
+  </div>
+</header>
+
+<div class="container home-content">
+  <div class="row">
+    <div class="span1"></div>
+    <div class="span3">
+      <h3>Batteries Included</h3>
+      <p>
+        Everyone needs a grid with searching, sorting, filtering and infinite scroll.
+        Same for graphs and forms. Don't reinvent the wheel.
+      </p>
+    </div>
+    <div class="span3">
+      <h3>View Hierarchy</h3>
+      <p>
+        Make small, composable views, then declaratively construct your view hierarchy.
+        No huge template files. No reams of code assembling views.
+      </p>
+    </div>
+    <div class="span3">
+      <h3>Model Binding</h3>
+      <p>
+        Data intensive apps tend to end up with huge numbers of views populated from complex model hierarchies.
+        Consistent, declarative model binding keeps things under control.
+      </p>
+    </div>
+  </div>
+  <div class="row"><hr class="offset4 span3"/></div>
+
+  <div class="row">
+    <div class="span1"></div>
+    <div class="span9">
+
+<h3>What is Plumage.js?</h3>
+
+<p>
+  <strong>Plumage is a UI framework for building data intensive, private web apps, including
+    internal tools and authenticated public services.</strong>
+</p>
+<p>It's built on <a href="http://backbonejs.org">Backbone</a> and <a href="http://getbootstrap.com/">Bootstrap</a>,
+and incorparates other 3rd party components, notably <a href="https://github.com/mleibman/SlickGrid">SlickGrid</a>.</p>
+
+<h3>How Does Plumage relate to X?</h3>
+
+<p>
+  Plumage is not an MVC framework. It's an app building toolkit for building a specific type of app.
+  From the foundation of MVC, it adds a collection of common, standardized building blocks, and ways to rapidly, and systematically put them together.
+</p>
+
+<p>It's built on <a href="http://backbonejs.org">Backbone.js</a> for MVC, chosen for its simplicity, however the same patterns could be implemented on other MVC frameworks like Angular or Ember.</p>
+
+<p>And its great looks are thanks to <a href="http://getbootstrap.com">Bootstrap's</a> CSS.</p>
+
+<p>Plumage Views are based on Backbone Views, but I would like to try implementing them with Facebook React at some point.</p>
+
+<h3>Why Plumage.js?</h3>
+
+<p>
+  Web development is naturally focused on public sites, and with public sites, page load is king. The longer the page load,
+  the longer the visitor contemplates hitting the back button. This is why most JS frameworks try to be minimal &mdash;
+  More JS &rarrow; higher bounce rate.
+</p>
+
+<p>
+  However, in private web apps, the user is not going to bounce if initial load takes 3 seconds (see gmail loading bar).
+  Also, since users stick around, its actually subsequent load times that are perceived as performance. So, in private apps
+  more JS is not a big deal. What benefits can we get with more JS? We can get a unified and coherent framework
+  for constructing complex UI, and we can stop reinventing the wheel, using the standard components that come with it.
+</p>
+
+<p>
+  Private apps also tend to be more complex, with large numbers of Views for displaying and modifying different
+  related models from a complicated model hierarchy. Simplifying the model can only go so far,
+  restricted by the inherent complexity of the app's domain. Plumage provides a systematic way for constructing and
+  manipulating complex model and view hierarchies.
+</p>
+
+<p>
+  So Plumage's values are:
+  <ol>
+    <li>
+      <strong>Developer Productivity</strong> - Systematic approach - one way of doing things. Batteries included - don't reinvent the wheel.
+    </li>
+    <li>
+      <strong>Complexity Management</strong> - Modularization, separation of concerns, declarative config.
+    </li>
+    <li>
+      <strong>Subsequent Load Time</strong> - One page load, async everything, efficient rendering.
+    </li>
+  </ol>
+</p>
+
+<h3>The View Hierarchy</h3>
+
+<p>
+When your data is complex, the view hierarchy for a dashboard app can get complicated fast.
+
+<img class="screen-shot" src="images/component-hierarchy.png"></img>
+
+<p class="caption">
+One such <a href="/examples/kitchen_sink/view">View</a> hierarchy.
+</p>
+
+<p>
+No monolithic views. Every aspect of the DataSource gets its own View class. Each
+related model also gets its own Views and subviews. All these views are nested together into a hierarchy.
+</p>
+<p>
+Modular views improve reuse, understandability, and separation of concerns.
+</p>
+
+<p>
+Modular views also simplify your design, because views don't know about each other.
+Leaf Views (views with no subviews) can't affect other Views because they don't know about them, and Container Views
+(views with subviews) are mostly glue, so behavior remains predictable.
+No huge template files, no monolithic views filled with spaghetti, and no global event bus.
+</p>
+
+<h3>Model Binding</h3>
+
+<p>
+Modular views are great, but now we have this large hierarchy of nested views that need to be
+populated with the correct models from the model graph, which can also get complex.
+</p>
+
+<img class="screen-shot" src="images/model-hierarchy.png"></img>
+<p class="caption">
+Model Relationships from the above pictured app.
+</p>
+<p>
+How do you bind each View in the View hierarchy to the correct <a href="/examples/kitchen_sink/model">Model</a>
+in the Model Hierarchy? Don't do it manually with code. Do it declaratively.
+</p>
+<p>
+Each view is configured with a path into the model graph. The model graph visits each View
+with the Model, and the View uses the path to walk the Model hierarchy and get the correct Model.
+</p>
+
+<p>
+  This separates concerns in a few ways:
+  <ol>
+    <li><p>
+      <strong>Each View binds directly to the Model it displays.</strong>
+      No getting models from a global store, or from parent views.
+    </p></li>
+    <li><p>
+      <strong>Container views don't need to know anything about their subviews.</strong>
+    </p></li>
+  </ol>
+</p>
+
+<h3>Event Handling</h3>
+
+<p>
+When you have a complex view hierarchy, another factor that needs deciding is where to handle UI events.
+</p>
+<p>Here it's necessary to take a more nuanced approach than with model binding:</p>
+
+<ol>
+  <li><p>
+If a UI event doesn't affect anything outside
+the view it's triggered on, including that view's model, it can be safely handled in that view. This is great
+of reuse. The triggered behavior will exist in all instances of that view.
+</p></li>
+<li><p>
+If a UI event handler is specific to your App, with no chance for reuse, handle it in
+the Controller. The big advantage of this is that it's consistent! Follow this policy you'll know exactly where to find
+your event handlers.
+</p></li>
+<li><p>
+If the situation is in between, you'll have to decide where in the view hierarchy to handle it.
+One restriction is that it needs to be in a View high enough in the hierarchy that it contains all the views that the event
+will affect.
+</p></li>
+</ol>
+
+<h3>Batteries Included</h3>
+
+<p>
+  Pretty much every data intensive app needs a grid that supports sorting, searching, filtering and infinite scroll.
+  The same goes for a lot of other components like advanced <a href="/examples/kitchen_sink/form">form fields</a>, comments and more.
+</p>
+<p>
+  Plumage incorporates many 3rd party components, including notably SlickGrid for <a href="/examples/kitchen_sink/grid">grids</a>, and wraps them in the consistent
+  interface of a Plumage View, allowing you to make use of them without learning their own ideosyncrasies.
+  Just configure the view, and bind the model.
+</p>
+
+<h3>In Conclusion...</h3>
+<p>
+  Most talk about javascript UI understandably focus on the early stages of an apps life, with
+  little afforded to dealing with issues of complexity that show up later on.
+
+  The patterns in plumage are a way to handle this complexity in a standard way without going crazy.
+</p>
+
+<p class="author">By <a href="mailto:mlin@twitter.com" class="outlink">Mike Lin</a> (<a href="https://twitter.com/mlin" class="outlink" target="_">@mlin</a>), Analytics Infra Team</p>
+    </div>
+  </div>
+</div>
+<footer>
+&nbsp;
+</footer>

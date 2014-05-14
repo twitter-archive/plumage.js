@@ -1,0 +1,130 @@
+@import 'bootstrap';
+@import 'bootstrap-responsive';
+
+html {
+  overflow-y: scroll;
+}
+
+#page {
+  padding-top: 40px;
+}
+
+.docs header {
+  @include gradient-directional(#ABC9B3, #D3E3D7, 45deg);
+  color: #fff;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.4), 0 0 30px rgba(0, 0, 0, 0.075);
+  h1 {
+    font-size: 75px;
+    margin: 60px 0 60px 0;
+  }
+
+  h3 {
+    font-weight: normal;
+    margin-bottom: 20px;
+  }
+
+  .container {
+    position: relative;
+  }
+}
+
+.home header h1 {
+  margin: 60px 0 20px 0;
+}
+
+.author {
+  font-weight: bold;
+}
+
+.feather-wrap {
+  position: relative;
+  margin-top: 75px;
+
+  .feather {
+    position: absolute;
+    width: 85px;
+    height: 35px;
+    background: #7C84E6; /* purple */
+    opacity: 0.8;
+
+    @include border-radius(50%);
+    border-bottom-right-radius: 25%;
+    transform-origin: 105% 70%;
+    -webkit-transform-origin: 105% 70%;
+  }
+
+  .feather2 {
+    background: #E3D934; /* yellow */
+    @include rotate(20deg);
+  }
+
+  .feather3 {
+    background: #ED2F33; /* red */
+    @include rotate(40deg);
+  }
+
+  .feather4 {
+    background: #66C23B; /* green */
+    @include rotate(60deg);
+  }
+}
+
+.home-buttons {
+  a {
+    margin: 0 20px 30px 0;
+    width: 80px;
+  }
+}
+
+.home-content {
+  margin-top: 40px;
+
+  h3 {
+    color: #555;
+  }
+}
+
+.caption {
+  font-weight: bold;
+  font-size: 12px;
+}
+
+.screen-shot {
+  margin: 20px;
+  @include box-shadow(0px 8px 20px #B0B0B0);
+}
+
+footer {
+  height: 40px;
+  color: #ddd;
+}
+
+.example-item {
+  margin-top: 20px;
+  padding-left: 180px;
+  img {
+    float: left;
+    margin-left: -180px;
+    width: 240px;
+    height: 180px;
+    margin-right: 20px;
+    border: 2px solid #0088cc;
+  }
+
+  &:after {
+    content: "";
+    display:block;
+    clear: both;
+  }
+}
+
+.example-body {
+  float: left;
+  h2 {
+    margin-top: 0;
+  }
+}
+
+hr {
+  border-top: 1px solid #ccc;
+}

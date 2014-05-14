@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Source: collection/GridData.js</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+    <link type="text/css" rel="stylesheet" href="../styles/docs.css">
+</head>
+
+<body>
+
+<div class="navbar navbar-fixed-top">
+  <div class="navbar-inner">
+    <div class="container">
+      <button type="button" class="btn btn-navbar" data-toggle="collapse" data-target=".nav-collapse">
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+      </button>
+      <a class="brand" href="../index.html">PlumageJS</a>
+      <div class="nav-collapse collapse">
+        <ul class="nav">
+          <li>
+            <a href="../index.html">Home</a>
+          </li>
+          <li class="active">
+            <a href="index.html">API</a>
+          </li>
+          <li>
+            <a href="../examples.html">Examples</a>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="container">
+  <div class="row">
+<div id="main" class="span8">
+    <h1 class="page-title">Source: collection/GridData.js</h1>
+    
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source"><code>define([
+  'jquery',
+  'underscore',
+  'backbone',
+  'PlumageRoot'
+],
+
+function($, _, Backbone, Plumage) {
+
+
+  /**
+   * Adapts a backbone Collection to the  dataview interface.
+   * @constructs Plumage.collection.GridData
+   */
+  var GridData = function() {
+    this.initialize.apply(this, arguments);
+  };
+
+  _.extend(GridData.prototype, Backbone.Events,
+  /** @lends Plumage.collection.GridData.prototype */
+  {
+
+    /** List of events to forward from the Collection */
+    relayEventNames: ['reset'],
+
+    /** The wrapped collection */
+    collection: undefined,
+
+    /** Initializtion logic */
+    initialize: function(collection, options) {
+      _.extend(this, options);
+      this.collection = collection;
+      this.collection.on('all', this.relayEvent, this);
+    },
+
+    /** calls setSort on Collection */
+    setSort: function(sortField, sortDir){
+      this.collection.setSort(sortField, sortDir, true);
+    },
+
+    /** gets size of collection  */
+    getLength: function() {
+      return this.collection.size();
+    },
+
+    /** get the model at the given index. */
+    getItem: function(index) {
+      return this.collection.at(index);
+    },
+
+    /** Can be overridden to provide row specific options for slickgrid */
+    getItemMetadata: function(index) {
+      return null;
+    },
+
+    /** Get the indes of the model with the given id. */
+    getIndexForId: function (id) {
+      var model = this.collection.getById(id);
+      return this.collection.indexOf(model);
+    },
+
+    /**
+     * Forwards events from Collection as if they were triggered on GridData
+     * @private
+     */
+    relayEvent: function(eventName) {
+      if (_.contains(this.relayEventNames, eventName)) {
+        this.trigger.apply(this, arguments);
+      }
+    }
+  });
+
+  GridData.extend = Backbone.Model.extend;
+
+  return Plumage.collection.GridData = GridData;
+});</code></pre>
+        </article>
+    </section>
+
+
+
+
+</div>
+
+<nav class="span4">
+    <h2><a href="index.html">Index</a></h2><h3>Classes</h3><ul><li><a href="Plumage.App.html">App</a></li><li><a href="Plumage.collection.BufferedGridData.html">BufferedGridData</a></li><li><a href="Plumage.collection.Collection.html">Collection</a></li><li><a href="Plumage.collection.GridData.html">GridData</a></li><li><a href="Plumage.controller.BaseController.html">BaseController</a></li><li><a href="Plumage.controller.ModelController.html">ModelController</a></li><li><a href="Plumage.ControllerManager.html">ControllerManager</a></li><li><a href="Plumage.History.html">History</a></li><li><a href="Plumage.model.Filter.html">Filter</a></li><li><a href="Plumage.model.Model.html">Model</a></li><li><a href="Plumage.RequestManager.html">RequestManager</a></li><li><a href="Plumage.Router.html">Router</a></li><li><a href="Plumage.util.Logger.html">Logger</a></li><li><a href="Plumage.view.CollectionView.html">CollectionView</a></li><li><a href="Plumage.view.ContainerView.html">ContainerView</a></li><li><a href="Plumage.view.ModelView.html">ModelView</a></li><li><a href="Plumage.view.View.html">View</a></li></ul><h3>Namespaces</h3><ul><li><a href="Plumage.html">Plumage</a></li><li><a href="Plumage.collection.html">collection</a></li><li><a href="Plumage.controller.html">controller</a></li><li><a href="Plumage.model.html">model</a></li><li><a href="Plumage.util.html">util</a></li><li><a href="Plumage.vendor.html">vendor</a></li><li><a href="Plumage.view.html">view</a></li><li><a href="Plumage.view.comment.html">comment</a></li><li><a href="Plumage.view.controller.html">controller</a></li><li><a href="Plumage.view.form.html">form</a></li><li><a href="Plumage.view.form.fields.html">fields</a></li><li><a href="Plumage.view.grid.html">grid</a></li><li><a href="Plumage.view.menu.html">menu</a></li></ul>
+</nav>
+</div>
+</div>
+
+<br clear="both">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.2.2</a> on Thu Feb 27 2014 14:14:59 GMT-0800 (PST)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>

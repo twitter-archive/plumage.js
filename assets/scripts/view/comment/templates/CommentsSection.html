@@ -1,0 +1,17 @@
+{{#expandable}}
+<a href="#" class="comments-toggle">{{label}}</a>
+{{/expandable}}
+{{^expandable}}
+{{#title}}
+<h4>{{.}}</h4>
+{{/title}}
+{{/expandable}}
+
+<div class="comments-wrap{{^expanded}} hidden{{/expanded}}">
+  <div class="comments">
+  </div>
+
+  <div class="comment-form">
+  </div>
+  <div class="clear"></div>
+</div>

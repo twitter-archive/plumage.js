@@ -1,0 +1,84 @@
+<div class="intro">
+  <p>Collections are models that contain a list of other models.</p>
+</div>
+
+<div class="example">
+  <h4>Remote Sorting, Filtering and Paging</h4>
+  <p>
+    Big Collections can be too to large to load efficiently in one request. Use paging to load only the models that
+    are currently being displaying. Also with big collections sorting and filtering helps users find what they're looking for.
+    Because you only have part of the data, these also have to be done server side.
+  </p>
+
+  <h5>Example</h5>
+  <div class="example-code">
+  <pre><code>var MyCollection = Plumage.collection.Collection.extend({
+  model: Plumage.model.Model,
+  urlRoot: '/my_collection'
+});
+var c = new MyCollection();
+c.set({sortDir: 1, sortField: 'name'});
+c.load();
+log('request params: ' + JSON.stringify(testEnv.ajaxSettings.data));
+
+c.setFilter('name', 'foo');
+c.set('page', 1);
+c.load();
+log('request params: ' + JSON.stringify(testEnv.ajaxSettings.data));
+</code></pre>
+  </div>
+  <p>It's up to the server to accept these params and return the correct results.</p>
+  <p>Only attributes listed in the collection's <code>viewState</code> option get included in the request params.</p>
+</div>
+
+<div class="example">
+  <h4>Local Sorting and Filtering</h4>
+  <p>
+    If a collection is small, you can have it sort and filter client side by setting the <code>processInMemory</code> option.
+  </p>
+
+  <h5>Example</h5>
+  <div class="example-code">
+  <pre><code>var MyCollection = Plumage.collection.Collection.extend({
+  model: Plumage.model.Model
+});
+var c = new MyCollection([{id: 'id1'}, {id: 'id2'}, {id: 'id3'}], {processInMemory: true});
+c.onLoad(); // set loaded flag without a remote request. You can also call load() and get data from the server.
+
+log('collection: ' + JSON.stringify(c.models));
+
+c.set({sortDir: -1, sortField: 'id'});
+c.load();
+log('collection: ' + JSON.stringify(c.models));
+c.setFilter('id', 'id2');
+c.load();
+log('collection: ' + JSON.stringify(c.models));</code></pre>
+  </div>
+
+  <p><strong>Note: Models in a collection must each have a unique id attribute.</strong></p>
+  <p>Set <code>idAttribute</code> on your Model class to define which attribute to use as the id.</strong></p>
+</div>
+
+<div class="example">
+  <h4>Attributes</h4>
+  <p>
+    Because a Collection is also a Model, it has attributes, and these attributes are evented and can be bound to
+    fields etc just like a Model's. We've already seen some of these: sortField, sortDir, page and pageSize.
+  </p>
+  <p>
+    Collection attributes are useful for storing any information about the collection that's not part of its models.
+    If you want an attribute included in a Collection's query params, add it to the <code>viewState</code> option.
+  </p>
+
+  <h5>Example</h5>
+  <div class="example-code">
+  <pre><code>var c = new Plumage.collection.Collection([], {meta: {'name': 'my_col'}});
+c.on('all', function(event) { log('event: ' + event); });
+
+log('c.name: ' + c.get('name'));
+c.set('name', 'my_col2');
+log('c.name: ' + c.get('name'));</code></pre>
+  </div>
+</div>
+
+

@@ -1,0 +1,10 @@
+
+<div class="load-error {{#message}}with-message{{/message}}">
+  <div class="error-icon">&times;</div>
+  <div class="error-text">
+    <div>Error loading resource</div>
+    {{#message}}
+      <div class="message">{{.}}</div>
+    {{/message}}
+  </div>
+</div>

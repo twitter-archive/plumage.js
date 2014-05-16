@@ -1,0 +1,285 @@
+define([
+  'jquery',
+  'underscore',
+  'backbone',
+  'handlebars',
+  'PlumageRoot',
+  'view/ContainerView',
+  'util/ModelUtil',
+  'ViewBuilder',
+  'text!view/templates/LoadError.html'
+], function($, _, Backbone, Handlebars, Plumage, ContainerView, ModelUtil, ViewBuilder, errorTemplate) {
+
+
+
+  return Plumage.view.ModelView = ContainerView.extend(
+  /** @lends Plumage.view.ModelView.prototype */
+  {
+
+    /**
+     * Class of model to bind to. Ignores all other models passed into setModel.
+     *
+     * Useful for preventing a subView from getting bound to a superview's model.
+     */
+    modelCls: undefined,
+
+    /**
+     * The relationship path in the root model to get the model for this view.
+     *
+     * Doesn't support dot notation but should at some point.
+     */
+    relationship: undefined,
+
+    /**
+     * Should [render]{@link Plumage.view.View#render} by called on model change?
+     *
+     * If left unset, update will be called on change only if this view has no subViews.
+     */
+    renderOnChange: undefined,
+
+
+    /**
+     * Should [render]{@link Plumage.view.View#render} by called on model load?
+     *
+     * If left unset, update will be called on load only if this view has no subViews.
+     */
+    renderOnLoad: undefined,
+
+    /**
+     * Instead of a View, ModelView can take config object as a subView, and instantiate
+     * a View from it. If no viewCls is specified, defaultSubViewCls is used.
+     */
+    defaultSubViewCls: undefined,
+
+    defaultSubViewOptions: undefined,
+
+    /**
+     * Adding to the functionality of ConainerView, ModelView supports binding of Models to it.
+     *
+     * This is the default View to use. Most of the time you should be
+     * binding models to your views.
+     *
+     * Bind a [Model]{@link Plumage.model.Model} to ModelView using [setModel]{@link Plumage.view.ModelView#setModel}.
+     * This will connect the various model events, with some default handling, eg render on load.
+     *
+     * setModel is a [ContainerView]{@link Plumage.view.ContainerView} composite method.
+     * i.e. calling setModel on the root ModelView will recursively call setModel with the same model object
+     * on all child ModelViews.
+     *
+     *  - A child ModelView can specify which part of the model to bind to using the [relationship]{@link Plumage.view.ModelView#relationship}
+     *    param (leave it blank to have it bind to the root model).
+     *  - If a child ModelView should only be bound to a certain Model class, specifiy
+     *    [modelCls]{@link Plumage.view.ModelView#modelCls} with the Model class to restrict it to.
+     *
+     *    eg. a child view might be located under a parent ModelView in the DOM, but not be related in the data
+     *    structure. In this case set modelCls on the child so it doesn't get the parent's Model set on it.
+     *
+     * ModelView also uses ViewBuilder automatically, for intantiating subviews. If passed a config
+     * object instead of a View in subViews, it will be instantiated by ViewBuilder.
+     *
+     * @constructs
+     * @extends Plumage.view.ContainerView
+     */
+    initialize:function (options) {
+      ContainerView.prototype.initialize.apply(this, arguments);
+
+      var viewBuilder = new ViewBuilder({
+        defaultViewCls: this.defaultSubViewCls,
+        defaultViewOptions: this.defaultSubViewOptions
+      });
+
+      this.subViews = $.isArray(this.subViews) ? this.subViews : [this.subViews];
+      this.subViews = _.map(this.subViews, function(subView) {
+        return viewBuilder.buildView(subView);
+      });
+
+      //Backbone.View constructor will already set model if it's passed in.
+      if (this.model) {
+        throw 'Do not pass model into constructor. call setModel';
+      }
+    },
+
+    /**
+     * Gets model to bind to from the root model.
+     * @param {Plumage.model.Model} model The root model.
+     * @param {string} relationship The relationship path in the root model to get the model for this view.
+     */
+    getModelFromRoot: function(model, relationship) {
+      if (!model) {
+        return;
+      }
+      if (!relationship) {
+        return model;
+      }
+      return model.getRelated(relationship);
+    },
+
+    //
+    // Life Cycle
+    //
+
+    /**
+     * Bind a model if applicable. Call setModel on your top level view in your Controller.
+     * @params {Plumage.model.Model} rootModel The root model
+     */
+    setModel: function(rootModel) {
+      if (this.rootModelCls && rootModel) {
+        var rootModelCls = requirejs(this.rootModelCls);
+        if (!(rootModel instanceof rootModelCls)) {
+          return;
+        }
+      }
+      this.rootModel = rootModel;
+
+      var model = this.getModelFromRoot(rootModel, this.relationship),
+        changed = true;
+      if (this.modelCls !== undefined) {
+        if (this.modelCls === false) {
+          return;
+        }
+        if (model && !(model instanceof ModelUtil.loadClass(this.modelCls))) {
+          return;
+        }
+      }
+
+      if (model && this.model &&
+          model.id !== undefined && this.model.id !== undefined && model.id === this.model.id) {
+        changed = false;
+      }
+      if (this.model) {
+        this.model.off(null,null,this);
+      }
+      this.model = model;
+      if (this.model) {
+        this.model.on('beginLoad', this.onModelBeginLoad, this);
+        this.model.on('change', this.onModelChange, this);
+        this.model.on('load', this.onModelLoad, this);
+        this.model.on('destroy', this.onModelDestroy, this);
+        this.model.on('error', this.onModelError, this);
+      }
+
+      if (changed) {
+        this.onModelLoad();
+      }
+
+      if (this.shown) {
+        this.ensureData();
+      }
+
+      //recurse
+      this.eachSubView(function(subView) {
+        subView.callOrRecurse('setModel', [rootModel]);
+      });
+    },
+
+    /** triggers loading of deferLoad Models. */
+    ensureData: function() {
+      if (this.model && this.model.deferLoad && !this.model.fetched) {
+        this.model.fetchIfAvailable();
+      }
+    },
+
+    /**
+     * Provides template data to render with.
+     *
+     * ModelView's implemenation returns the result of this.model.toViewJSON
+     * @override
+     */
+    getTemplateData: function() {
+      var data = {};
+      if (this.model) {
+        data = this.model.toViewJSON();
+        if (this.model.hasUrl() && !data.model_url) {
+          data.model_url = this.model.urlWithParams();
+        }
+      }
+      return data;
+    },
+
+    /**
+     * Update given model with any changes eg from forms
+     * @param {Plumage.model.Model} model Model to update.
+     */
+    updateModel: function(model) {
+      this.eachSubView(function(subView) {
+        subView.callOrRecurse('updateModel', [model]);
+      });
+    },
+
+    /** Hook to modify view state on model load */
+    updateViewState: function(model) {
+
+    },
+
+    hideLoadingAnimation: function() {
+      ContainerView.prototype.hideLoadingAnimation.apply(this, arguments);
+    },
+
+    shouldRender: function(isLoad) {
+      var hasSubViews = this.subViews.length > 0;
+      var shouldRenderFlag = isLoad ? this.renderOnLoad : this.renderOnChange;
+      return shouldRenderFlag !== undefined && shouldRenderFlag ||
+        shouldRenderFlag === undefined && !hasSubViews;
+    },
+
+    update: function(isLoad) {
+      if (this.isRendered && this.shouldRender(isLoad)) {
+        this.render();
+      }
+    },
+
+    //
+    // Event Handlers
+    //
+
+    onModelBeginLoad: function() {
+      this.loading = true;
+    },
+
+    onModelChange: function(event, model) {
+      this.update(false);
+    },
+
+    onModelLoad: function(model, options) {
+      this.loading = false;
+      this.updateViewState(model);
+      this.update(true);
+      this.hideLoadingAnimation();
+    },
+
+    onModelDestroy: function(event, model) {
+    },
+
+    onModelError: function(model, response, options) {
+      $(this.el).html(Handlebars.compile(errorTemplate)(options.data));
+
+      //needs rerendering after rendering error template
+      this.isRendered = false;
+    },
+
+    remove: function() {
+      ContainerView.prototype.remove.apply(this, arguments);
+      if (this.model) {
+        this.model.off(null, null, this);
+      }
+      return this;
+    },
+
+    onShow: function() {
+      ContainerView.prototype.onShow.apply(this, arguments);
+      this.ensureData();
+    },
+
+    onHide: function() {
+      ContainerView.prototype.onHide.apply(this, arguments);
+    },
+
+    delegateEvents: function(events) {
+      Backbone.View.prototype.delegateEvents.apply(this, arguments);
+    },
+
+    undelegateEvents: function(events) {
+      Backbone.View.prototype.undelegateEvents.apply(this, arguments);
+    }
+  });
+});

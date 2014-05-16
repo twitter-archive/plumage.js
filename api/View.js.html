@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Source: view/View.js</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+    <link type="text/css" rel="stylesheet" href="../styles/docs.css">
+</head>
+
+<body>
+
+<div class="navbar navbar-fixed-top">
+  <div class="navbar-inner">
+    <div class="container">
+      <button type="button" class="btn btn-navbar" data-toggle="collapse" data-target=".nav-collapse">
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+      </button>
+      <a class="brand" href="../index.html">PlumageJS</a>
+      <div class="nav-collapse collapse">
+        <ul class="nav">
+          <li>
+            <a href="../index.html">Home</a>
+          </li>
+          <li class="active">
+            <a href="index.html">API</a>
+          </li>
+          <li>
+            <a href="../examples.html">Examples</a>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="container">
+  <div class="row">
+<div id="main" class="span8">
+    <h1 class="page-title">Source: view/View.js</h1>
+    
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source"><code>define([
+  'jquery',
+  'underscore',
+  'backbone',
+  'handlebars',
+  'spinjs',
+  'PlumageRoot'
+], function($, _, Backbone, Handlebars, Spinner, Plumage) {
+
+  return Plumage.view.View = Backbone.View.extend(
+  /** @lends Plumage.view.View.prototype */
+  {
+
+    /** Has this view been rendered? */
+    isRendered: false,
+
+    /** Is this view loading (showing loading animation)? */
+    isLoading: false,
+
+    /** Is this view currently shown? */
+    shown: false,
+
+    /** handlebars template string or template function to render. */
+    template: undefined,
+
+    /** If specified, and this view is a top level view,
+     * bodyCls is added to the DOM body when this view is shown by a Controller (and removed when hidden).
+     * See [BaseController.showView]{@link Plumage.controller.BaseController#showView}))
+     */
+    bodyCls: undefined,
+
+    /**
+     * If set, don't render until [onShow]{@link Plumage.view.View#onShow} is called.
+     * Normally a view will be rendered when its parent is rendered.
+     */
+    deferRender: false,
+
+    pathRegex: /^(\S*\/)\S+?\.[^.]*$/,
+
+    //
+    // Life Cycle
+    ///////////////
+
+
+    /**
+     * View class that renders to a DOM element.
+     * Very basic. Most of the time you'll want to use/extend [ContainerView]{@link Plumage.view.ContainerView} or [ModelView]{@link Plumage.view.ModelView}.
+     *
+     * CAUTION: Do not override [render]{@link Plumage.view.View#render} like you would with a Backbone.View. Override the template method [onRender]{@link Plumage.view.View#onRender} instead.
+     *
+     * In addition to what Backbone.View does, Plumage.view.View adds:
+     *
+     *  - default [onRender]{@link Plumage.view.View#onRender} that renders a handlerbars template with data from [getTemplateData]{@link Plumage.view.View#getTemplateData}.
+     *  - beforeRender and afterRender events and hooks.
+     *  - [deferRender]{@link Plumage.view.View#deferRender} flag which defers rendering until [onShow]{@link Plumage.view.View#onShow} is called. Good for tabs etc which aren't visible initially.
+     *  - [onShow]{@link Plumage.view.View#onShow} and [onHide]{@link Plumage.view.View#onHide} hooks. These are called automatically by [BaseController]{@link Plumage.controller.BaseController}.
+     *
+     * @constructs
+     * @extends Backbone.View
+     */
+    initialize:function (options) {
+      options = options || {};
+      _.extend(this, options);
+      this.template = this.initTemplate(this.template);
+    },
+
+    initTemplate: function(template) {
+      if (typeof(template) === 'string') {
+        if (template.slice(0, 'text!'.length) === 'text!') {
+          throw 'Don\'t include text! in template path';
+        }
+        if (template.match(this.pathRegex)) {
+          template = require('text!' + template);
+        }
+        template = Handlebars.compile(template);
+      }
+      return template;
+    },
+
+    /** Hook called before render. Does nothing. */
+    beforeRender: function() {
+    },
+
+    /**
+     * Instead of rendering in this method, render triggers render hooks and events, then calls
+     * the template method onRender to do the actual rendering.
+     * @returns this;
+     */
+    render: function() {
+      if (this.deferRender && !this.shown) {
+        return;
+      }
+
+      this.beforeRender();
+      this.trigger('beforeRender', this);
+
+      this.onRender();
+      this.hideLoadingAnimation();
+
+      this.isRendered = true;
+      this.trigger('afterRender', this);
+      return this;
+    },
+
+    /**
+     * Template method that returns data to pass into the handlebars template.
+     *
+     * Override to provide custom data.
+     *
+     * @returns {Object} Map of template data.
+     */
+    getTemplateData: function() {
+      return {};
+    },
+
+    /**
+     * Perform actually rendering here.
+     *
+     * Default implementation renders [template]{@link Plumage.view.View#template}
+     * with data from [getTemplateData]{@link Plumage.view.View#getTemplateData}.
+     */
+    onRender:function () {
+      if (this.template) {
+        var data = this.getTemplateData();
+        $(this.el).html(this.template(data));
+      }
+    },
+
+    /**
+     * Update when already rendered.
+     * Default to just render again, but can be made more efficient by only updating what's changed.
+     *
+     * @param {Boolean} isLoad Context of update. True if loading, false if changing.
+     */
+    update: function(isLoad) {
+      this.render();
+    },
+
+    remove: function() {
+      Backbone.View.prototype.remove.apply(this, arguments);
+      this.hideLoadingAnimation();
+      return this;
+    },
+
+    /**
+     * Hook called when this view is shown.
+     *
+     * Sets the shown flag, triggers deferred rendering and delegates events.
+     *
+     * If overriding, make sure to call super.
+     */
+    onShow: function() {
+      this.shown = true;
+      if (this.deferRender && !this.isRendered) {
+        this.render();
+      }
+      this.delegateEvents();
+    },
+
+
+    /**
+     * Hook called when this view is hidden.
+     *
+     * Unsets the shown flag, hides loading animation and undelegates events.
+     *
+     * If overriding, make sure to call super.
+     */
+    onHide: function() {
+      if (this.shown) {
+        this.undelegateEvents();
+        this.shown = false;
+      }
+      this.hideLoadingAnimation();
+    },
+
+    /**
+     * Handle link clicks by triggering navigate on the Router instead of reloading the page.
+     * Not used by default. Add to events if necessary.
+     */
+    onLinkClick: function(e) {
+      var a = $(e.target).closest('a');
+      if (!a.hasClass('outlink')) {
+        e.preventDefault();
+        e.stopPropagation();
+        var url = a.prop('pathname') + a.prop('search');
+        window.router.navigateWithQueryParams(url, {trigger:true});
+      }
+    },
+
+    /**
+     * Handle anchor clicks by scrolling to the anchor in the page element.
+     * Necessary because body has height: 100%
+     */
+    onAnchorClick: function(e) {
+      e.preventDefault();
+      var a = $(e.target).closest('a');
+      var href = a.attr('href'); //should already have #
+      $('#page').animate({scrollTop: $(href).offset().top - 50}, 400);
+    },
+
+    callOrRecurse: function(methodName, params) {
+      if (this[methodName]) {
+        this[methodName].apply(this, params);
+      }
+    },
+
+    /** Show the loading animation. Uses spin.js */
+    showLoadingAnimation: function() {
+      var opts = {
+          lines: 13, // The number of lines to draw
+          length: 7, // The length of each line
+          width: 4, // The line thickness
+          radius: 10, // The radius of the inner circle
+          corners: 1, // Corner roundness (0..1)
+          rotate: 0, // The rotation offset
+          color: '#000', // #rgb or #rrggbb
+          speed: 1, // Rounds per second
+          trail: 60, // Afterglow percentage
+          shadow: false, // Whether to render a shadow
+          hwaccel: false, // Whether to use hardware acceleration
+          className: 'spinner', // The CSS class to assign to the spinner
+          zIndex: 2e9, // The z-index (defaults to 2000000000)
+          top: 'auto', // Top position relative to parent in px
+          left: 'auto' // Left position relative to parent in px
+        };
+
+      var offset = $(this.el).offset();
+      if(!this.loader){
+        this.loader = $('&lt;div class="loader"> &lt;div class="spinner-box">&lt;/div> &lt;/div>');
+        $('body').append(this.loader);
+        this.spinner = new Spinner(opts);
+      }
+      this.spinner.spin($('.spinner-box', this.loader)[0]);
+      this.loader.css({
+        left: offset.left,
+        top: offset.top,
+        width: $(this.el).width(),
+        height: $(this.el).height()
+      });
+      this.loader.show();
+      this.spinner.spin($('.spinner-box', this.loader)[0]);
+      this.isLoading = true;
+    },
+
+    /** Hide the loading animation. */
+    hideLoadingAnimation: function() {
+      if(this.loader){
+        this.loader.fadeOut('fast', function() {
+          this.spinner.stop();
+        }.bind(this));
+      }
+      this.isLoading = false;
+    }
+  });
+});</code></pre>
+        </article>
+    </section>
+
+
+
+
+</div>
+
+<nav class="span4">
+    <h2><a href="index.html">Index</a></h2><h3>Classes</h3><ul><li><a href="Plumage.App.html">App</a></li><li><a href="Plumage.collection.BufferedGridData.html">BufferedGridData</a></li><li><a href="Plumage.collection.Collection.html">Collection</a></li><li><a href="Plumage.collection.GridData.html">GridData</a></li><li><a href="Plumage.controller.BaseController.html">BaseController</a></li><li><a href="Plumage.controller.ModelController.html">ModelController</a></li><li><a href="Plumage.ControllerManager.html">ControllerManager</a></li><li><a href="Plumage.History.html">History</a></li><li><a href="Plumage.model.Filter.html">Filter</a></li><li><a href="Plumage.model.Model.html">Model</a></li><li><a href="Plumage.RequestManager.html">RequestManager</a></li><li><a href="Plumage.Router.html">Router</a></li><li><a href="Plumage.util.Logger.html">Logger</a></li><li><a href="Plumage.view.calendar.Calendar.html">Calendar</a></li><li><a href="Plumage.view.CollectionView.html">CollectionView</a></li><li><a href="Plumage.view.ContainerView.html">ContainerView</a></li><li><a href="Plumage.view.form.fields.DatePicker.html">DatePicker</a></li><li><a href="Plumage.view.form.fields.DateRangePicker.html">DateRangePicker</a></li><li><a href="Plumage.view.form.fields.Field.html">Field</a></li><li><a href="Plumage.view.ModelView.html">ModelView</a></li><li><a href="Plumage.view.View.html">View</a></li></ul><h3>Namespaces</h3><ul><li><a href="Plumage.html">Plumage</a></li><li><a href="Plumage.collection.html">collection</a></li><li><a href="Plumage.controller.html">controller</a></li><li><a href="Plumage.model.html">model</a></li><li><a href="Plumage.util.html">util</a></li><li><a href="Plumage.vendor.html">vendor</a></li><li><a href="Plumage.view.html">view</a></li><li><a href="Plumage.view.calendar.html">calendar</a></li><li><a href="Plumage.view.comment.html">comment</a></li><li><a href="Plumage.view.controller.html">controller</a></li><li><a href="Plumage.view.form.html">form</a></li><li><a href="Plumage.view.form.fields.html">fields</a></li><li><a href="Plumage.view.grid.html">grid</a></li><li><a href="Plumage.view.menu.html">menu</a></li></ul>
+</nav>
+</div>
+</div>
+
+<br clear="both">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.2.2</a>
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>

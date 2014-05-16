@@ -1,0 +1,19 @@
+<html>
+    <head>
+        <style>
+            div { white-space: pre; }
+        </style>
+    </head>
+    <body>
+        <h1>XSS Test</h1>
+        <div>
+            <span>www.regularlink.com</span>
+            <span>&lt;script&gt;alert('Hi');&lt;/script&gt;</span>
+        </div>
+    </body>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.0.0/jquery.min.js"></script>
+    <script src="jquery.linkify.js"></script>
+    <script>
+        $("body div").linkify();
+    </script>
+</html>

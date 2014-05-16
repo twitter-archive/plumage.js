@@ -1,0 +1,347 @@
+
+define([
+  'jquery',
+  'underscore',
+  'backbone',
+  'handlebars',
+  'PlumageRoot',
+  'view/ModelView',
+  'text!view/form/fields/templates/Field.html'
+], function($, _, Backbone, Handlebars, Plumage, ModelView, template) {
+
+
+
+  return Plumage.view.form.fields.Field = ModelView.extend(
+  /** @lends Plumage.view.form.fields.Field.prototype */
+  {
+
+    template: template,
+
+    /**
+     * Template for html input element.
+     * This template is separate so that it can be reused by subclasses.
+     */
+    fieldTemplate: '<input type="text" name="{{valueAttr}}" {{#placeholder}}placeholder="{{.}}"{{/placeholder}} value="{{value}}"/>',
+
+    /**
+     * optional. model attribute to display as label
+     */
+    labelAttr: undefined,
+
+    /**
+     * Value to display as label if no labelAttr
+     */
+    label: undefined,
+
+    /**
+     * model attribute to display and edit
+     */
+    valueAttr: undefined,
+
+    /**
+     * input's name attribute
+     */
+    fieldName: undefined,
+
+    /**
+     * If updateModelOnChange is set, the model is updated on every change
+     */
+    updateModelOnChange: false,
+
+    /**
+     * The view value. It's seperate from the model value, and used for rerendering.
+     *
+     * Because it comes from the dom, value is always a string.
+     */
+    value: '',
+
+    /** Text to show when blank */
+    placeholder: undefined,
+
+
+    /**
+     * An editable view for displaying and editing a single value of a model.
+     *
+     * The value displayed (the view value) is allowed to differ from the model's value
+     * until updateModel is called.
+     *
+     * To automatically update the model on change set updateModelOnChange = true.
+     *
+     * Notes:
+     *  - In order to be used in a Form, Field subclasses must render an input element.
+     *  - The rendered dom also has state. The view value *must* be kept in sync with the
+     *    DOM value in case the field needs to be rerendered. By default this is done by setting
+     *    the view value to the result of getValueFromDom when the DOM value changes.
+     *     - Make sure to override getValueFromDom if your rendered DOM is not an input tag.
+     *  - When triggering a change event, make sure both DOM and backbone events are triggered.
+     *    Since a DOM event triggers a backbone event, do this by triggering a DOM event.
+     *
+     * @constructs
+     * @extends Plumage.view.ModelView
+     */
+    initialize: function() {
+      ModelView.prototype.initialize.apply(this, arguments);
+      this.className = this.className ? this.className + ' field' : 'field';
+    },
+
+    onRender: function() {
+      var inputEl = this.getInputEl();
+      var hasFocus = inputEl ? inputEl.is(':focus') : false;
+      Handlebars.registerPartial('field', this.fieldTemplate);
+      ModelView.prototype.onRender.apply(this, arguments);
+
+      inputEl = this.getInputEl();
+      if (inputEl && hasFocus) {
+        inputEl.focus();
+      }
+    },
+
+    update: function(isLoad) {
+      if (this.isRendered) {
+        this.getInputEl().val(this.getValueString());
+      } else {
+        this.render();
+      }
+    },
+
+    //
+    // Init Events
+    //
+
+    delegateEvents: function(events) {
+      events = events || _.result(this, 'events');
+      var selector = this.getInputSelector();
+      if (selector) {
+        events = _.clone(events || {});
+        events['blur ' +selector] = 'onBlur';
+        events['focus ' +selector] = 'onFocus';
+        events['submit ' +selector] = 'onSubmit';
+        events['change ' +selector] = 'onChange';
+        events['input ' +selector] = 'onInput'; //for text fields
+        events['keydown ' +selector] = 'onKeyDown'; //detect enter/escape etc
+        events['mouseup ' +selector] = 'onChange'; //for select/checkbox etc
+      }
+      Backbone.View.prototype.delegateEvents.apply(this, [events]);
+    },
+
+    undelegateEvents: function() {
+      Backbone.View.prototype.undelegateEvents.apply(this, arguments);
+      var inputEl = this.getInputEl();
+      if (inputEl) {
+        inputEl.off('.field');
+      }
+    },
+
+    getInputSelector: function() {
+      return this.$el.is(':input') ? '' : ':input:first';
+    },
+
+    getInputEl: function() {
+      var selector = this.getInputSelector();
+      return selector ? this.$(selector).first() : this.$el;
+    },
+
+    //
+    // Modifiers
+    //
+
+    focus: function() {
+      this.getInputEl().focus();
+    },
+
+    //
+    // Overrides
+    //
+
+    getTemplateData: function() {
+      var data = {
+        label: this.getLabel(),
+        valueAttr: this.valueAttr,
+        value: this.getValueString(),
+        hasValue: Boolean(this.getValue()),
+        placeholder: this.placeholder
+      };
+      return data;
+    },
+
+    setModel: function() {
+      ModelView.prototype.setModel.apply(this, arguments);
+      this.updateValueFromModel();
+    },
+
+    //
+    // Attributes
+    //
+
+    getValue: function() {
+      return this.value;
+    },
+
+    getValueString: function() {
+      return this.getValue();
+    },
+
+    setValue: function(newValue, options) {
+      options = options || {};
+      if (this.getValue() === newValue) {
+        return;
+      }
+      this.value = newValue;
+
+      if (this.updateModelOnChange && this.model) {
+        this.updateModel(this.rootModel);
+      } else {
+        this.update();
+      }
+
+      this.valueChanged();
+
+      if (!options.silent) {
+        this.changing = true;
+        this.triggerChange();
+        this.changing = false;
+      }
+    },
+
+    getLabel: function() {
+      if (this.labelAttr) {
+        return this.model ? this.model.get(this.labelAttr) : null;
+      }
+      return this.label;
+    },
+
+    blur: function() {
+      this.$el.blur();
+    },
+
+    ////
+    //
+    // Helpers
+    //
+    ////
+
+
+    //
+    // View value <--> Model
+    //
+
+    updateModel: function(rootModel) {
+      var model = this.getModelFromRoot(rootModel, this.relationship),
+        value = this.getValue();
+      model.set(this.valueAttr, value);
+    },
+
+    updateValueFromModel: function() {
+      if (this.model) {
+        this.value = this.getValueFromModel();
+        this.valueChanged();
+
+        if (this.isRendered) {
+          this.update();
+        }
+      }
+    },
+
+    getValueFromModel: function() {
+      if (this.model) {
+        var result = this.model.get(this.valueAttr);
+        return result === undefined ? '' : result;
+      }
+    },
+
+    //
+    // View value <--> DOM value
+    //
+
+    getValueFromDom: function() {
+      var inputEl = this.getInputEl();
+      if (inputEl && inputEl.val) {
+        return inputEl.val();
+      }
+    },
+
+    processDomValue: function(value) {
+      return value;
+    },
+
+    //
+    // Gets current value from model
+    //
+
+    triggerChange: function(query) {
+      //trigger change by blurring to prevent 2nd change event on blur
+      var el = this.getInputEl();
+      if (el.is(':focus')) {
+        el.blur();
+        el.focus();
+      } else {
+        el.change();
+      }
+    },
+
+    isDomValueValid: function() {
+      return true;
+    },
+
+    updateValueFromDom: function() {
+      var newValue = this.getValueFromDom();
+
+      if (this.isDomValueValid(newValue)) {
+        newValue = this.processDomValue(newValue);
+        if (!this.changing) {
+          this.setValue(newValue, {silent: true});
+        }
+        this.trigger('change', this, this.getValue());
+      } else {
+        this.update();
+      }
+    },
+
+
+    /** Hook called when value changes. Useful for keeping view state in sync */
+    valueChanged: function() {
+      return;
+    },
+
+    //
+    // Event handlers
+    //
+
+    onChange: function(e) {
+      this.updateValueFromDom();
+    },
+
+    onInput: function(e) {
+      this.updateValueFromDom();
+    },
+
+    onKeyDown: function(e) {
+      //do nothing
+    },
+
+    onBlur: function(e) {
+      this.trigger('blur', this);
+    },
+
+    onFocus: function(e){
+      //do nothing
+    },
+
+    onSubmit: function(e) {
+      this.trigger('submit', this);
+    },
+
+    onModelChange: function (e) {
+      if (e.changed[this.valueAttr] !== undefined) {
+        this.updateValueFromModel();
+      }
+    },
+
+    onModelLoad: function () {
+      this.updateValueFromModel();
+    },
+
+    onModelError: function() {
+    }
+  });
+});

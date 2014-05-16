@@ -1,0 +1,35 @@
+<div class="intro">
+  <p>
+    CollectionView renders a Model view for each model in a Collection.
+  </p>
+</div>
+
+<div class="example">
+  <h4>Basic Usage</h4>
+
+  <h5>Plumage.view.CollectionView</h5>
+  <div class="collection-view well"></div>
+  <a class="btn" id="add-post-btn">Add Post</a>
+</div>
+
+<div class="example">
+  <h4>Advanced Usage</h4>
+
+  <p>ModelViews and CollectionViews can be combined to display complex model hierarchies</p>
+
+  <div class="advanced-collection-view well"></div>
+
+  <p>
+    In this example a bunch of adhoc view classes are defined to create the view hierarchy. It's a bit messy, but
+    in a real project your views wouldn't be this simple (with more complex rendering, event handlers etc),
+    so you'd define each view class in its own file.
+  </p>
+
+  <p>
+    I intend for the definition of the view hierarchy to become more declarative at some point. Rather than creating subViews
+    in initialize, you'll pass some json to a builder to construct the hierarchy.
+  </p>
+</div>
+
+
+

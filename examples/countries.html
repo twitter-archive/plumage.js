@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>PlumageJS Countries Example</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<script type="text/javascript">
+window.isStatic = true;
+
+var rootUrl = '', i;
+
+var css = ["/dist/plumage.css", "/examples/assets/styles/countries.css"];
+var js = ["/assets/scripts/vendor/require.js", "/assets/scripts/config.js"];
+
+for (i=0; i<css.length; i++) {
+  document.write('<link rel="stylesheet" href="'+ rootUrl + css[i] + '">');
+}
+for (i=0; i<js.length; i++) {
+  document.write('<script type="text/javascript" src="'+ rootUrl + js[i] +'"></scr'+'ipt>');
+}
+</script>
+
+<script type="text/javascript">
+require.config({
+  baseUrl: rootUrl + '/assets/scripts',
+  paths: {
+    plumage: rootUrl + '/../dist/plumage.min', // remove this to use uncompiled source
+    data: rootUrl + '/../examples/assets/data',
+    example: rootUrl + '/../examples/assets/example',
+    countries: rootUrl + '/../examples/assets/countries',
+    test: rootUrl + '/../test/test'
+  }
+});
+</script>
+<script type="text/javascript">
+require(['countries/application']);
+</script>
+
+</head>
+
+<body>
+<div id="nav">
+  <div id="nav-top">
+  <a class="brand" href="/">
+    <span class="nav-title">PlumageJS</span>
+    <span class="nav-subtitle">Countries Example</span>
+  </a>
+</div>
+
+
+</div>
+<div id="page">
+</div>
+
+</body>
+</html>

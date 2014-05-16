@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Source: util/Logger.js</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+    <link type="text/css" rel="stylesheet" href="../styles/docs.css">
+</head>
+
+<body>
+
+<div class="navbar navbar-fixed-top">
+  <div class="navbar-inner">
+    <div class="container">
+      <button type="button" class="btn btn-navbar" data-toggle="collapse" data-target=".nav-collapse">
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+      </button>
+      <a class="brand" href="../index.html">PlumageJS</a>
+      <div class="nav-collapse collapse">
+        <ul class="nav">
+          <li>
+            <a href="../index.html">Home</a>
+          </li>
+          <li class="active">
+            <a href="index.html">API</a>
+          </li>
+          <li>
+            <a href="../examples.html">Examples</a>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="container">
+  <div class="row">
+<div id="main" class="span8">
+    <h1 class="page-title">Source: util/Logger.js</h1>
+    
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source"><code>define([
+  'jquery',
+  'underscore',
+  'backbone',
+  'PlumageRoot'
+],
+
+function($, _, Backbone, Plumage) {
+
+  /**
+   * Logger that posts log calls to the server.
+   *
+   * Stores logs in local storage on POST so they can be retried if the request fails.
+   *
+   * @constructs Plumage.util.Logger
+   */
+  var Logger = function(options) {
+    this.initialize.apply(this, arguments);
+  };
+
+  _.extend(Logger.prototype,
+  /** @lends Plumage.util.Logger.prototype */
+  {
+
+    /** Server url to post to. */
+    url: undefined,
+
+    /** Local storage key to store unsent logs in. */
+    localStorageKey: 'Plumage.util.Logger.failedLogs',
+
+    /** initialization logic. */
+    initialize: function(options) {
+      _.extend(this, options);
+      this.retryLogs();
+    },
+
+    /** Logs an error. Should add other log levels at some point. */
+    error: function(type, message) {
+      this.sendLog({level: 'error', type: type, message: message});
+    },
+
+    /** Send a log to the server. */
+    sendLog: function(data) {
+      if(data.time === undefined) { data.time = new Date().getTime(); }
+      this.storeLog(data);
+
+      Backbone.ajax({
+        type: 'POST',
+        url: this.url,
+        data: data,
+        success: this.getSuccessHandler(data).bind(this)
+      });
+    },
+
+    /**
+     * Gets logs from local storage.
+     * @returns {Array} List of unsent log Objects
+     */
+    getStoredLogs: function() {
+      var storedLogs = localStorage.getItem(this.localStorageKey);
+      if (storedLogs) {
+        try {
+          return JSON.parse(storedLogs);
+        } catch(e) {}
+      }
+      return [];
+    },
+
+    /** Try resending unsent logs. */
+    retryLogs: function() {
+      var storedLogs = this.getStoredLogs();
+      for (var i = 0; i &lt; storedLogs.length; i++) {
+        this.sendLog(storedLogs[i]);
+      }
+    },
+
+    /** Store a log in local storage. */
+    storeLog: function(data) {
+      var storedLogs = this.getStoredLogs();
+      for ( var i = 0; i &lt; storedLogs.length; i++) {
+        if (storedLogs[i].time === data.time && storedLogs[i].type === data.type) {
+          return;
+        }
+      }
+      storedLogs.push(data);
+      localStorage.setItem(this.localStorageKey, JSON.stringify(storedLogs));
+    },
+
+    /** Remove a log from local storage. */
+    removeLog: function(data) {
+      var logs = this.getStoredLogs();
+      if (logs) {
+        localStorage.setItem(this.localStorageKey, JSON.stringify(_.filter(logs, function(log){
+          return log.time !== data.time && log.type !== data.type;
+        })));
+      }
+    },
+
+    /** Delete all stored logs. */
+    clearLogs: function() {
+      localStorage.removeItem(this.localStorageKey);
+    },
+
+    //
+    // Event Handlers
+    //
+
+    /**
+     * Creates event handler that removes a stored log on success.
+     * @param {Object} data The log being sent. Stored in closure.
+     * @returns {function} The event handler
+     * @private
+     *
+     */
+    getSuccessHandler: function(data) {
+      return function(response, status, xhr) {
+        this.removeLog(data);
+      };
+    }
+  });
+
+  return Plumage.util.Logger = Logger;
+});</code></pre>
+        </article>
+    </section>
+
+
+
+
+</div>
+
+<nav class="span4">
+    <h2><a href="index.html">Index</a></h2><h3>Classes</h3><ul><li><a href="Plumage.App.html">App</a></li><li><a href="Plumage.collection.BufferedGridData.html">BufferedGridData</a></li><li><a href="Plumage.collection.Collection.html">Collection</a></li><li><a href="Plumage.collection.GridData.html">GridData</a></li><li><a href="Plumage.controller.BaseController.html">BaseController</a></li><li><a href="Plumage.controller.ModelController.html">ModelController</a></li><li><a href="Plumage.ControllerManager.html">ControllerManager</a></li><li><a href="Plumage.History.html">History</a></li><li><a href="Plumage.model.Filter.html">Filter</a></li><li><a href="Plumage.model.Model.html">Model</a></li><li><a href="Plumage.RequestManager.html">RequestManager</a></li><li><a href="Plumage.Router.html">Router</a></li><li><a href="Plumage.util.Logger.html">Logger</a></li><li><a href="Plumage.view.calendar.Calendar.html">Calendar</a></li><li><a href="Plumage.view.CollectionView.html">CollectionView</a></li><li><a href="Plumage.view.ContainerView.html">ContainerView</a></li><li><a href="Plumage.view.form.fields.DatePicker.html">DatePicker</a></li><li><a href="Plumage.view.form.fields.DateRangePicker.html">DateRangePicker</a></li><li><a href="Plumage.view.form.fields.Field.html">Field</a></li><li><a href="Plumage.view.ModelView.html">ModelView</a></li><li><a href="Plumage.view.View.html">View</a></li></ul><h3>Namespaces</h3><ul><li><a href="Plumage.html">Plumage</a></li><li><a href="Plumage.collection.html">collection</a></li><li><a href="Plumage.controller.html">controller</a></li><li><a href="Plumage.model.html">model</a></li><li><a href="Plumage.util.html">util</a></li><li><a href="Plumage.vendor.html">vendor</a></li><li><a href="Plumage.view.html">view</a></li><li><a href="Plumage.view.calendar.html">calendar</a></li><li><a href="Plumage.view.comment.html">comment</a></li><li><a href="Plumage.view.controller.html">controller</a></li><li><a href="Plumage.view.form.html">form</a></li><li><a href="Plumage.view.form.fields.html">fields</a></li><li><a href="Plumage.view.grid.html">grid</a></li><li><a href="Plumage.view.menu.html">menu</a></li></ul>
+</nav>
+</div>
+</div>
+
+<br clear="both">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.2.2</a>
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>

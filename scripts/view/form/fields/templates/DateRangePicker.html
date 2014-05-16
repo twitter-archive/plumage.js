@@ -1,0 +1,35 @@
+<div class="dropdown">
+	<div class="input-prepend">
+	  <button class="btn" data-toggle="dropdown" data-target="#"><i class="icon-calendar"></i></button>
+	  {{> field}}
+	</div>
+
+	<div class="dropdown-menu form-inline opens{{opens}}">
+	  <div class="calendar-wrap">
+      <div class="date-field">
+        <label class="control-label" for="daterangepicker_from">From</label>
+        <input type="text" name="daterangepicker_from" value="{{fromDate}}" readonly="readonly" />
+      </div>
+      <div class="from-calendar"></div>
+    </div>
+
+    <div class="calendar-wrap">
+      <div class="date-field">
+        <label class="control-label" for="daterangepicker_to">To</label>
+        <input type="text" name="daterangepicker_to" value="{{toDate}}" readonly="readonly" />
+      </div>
+      <div class="to-calendar"></div>
+    </div>
+
+    <div class="ranges-wrap">
+      <ul class="ranges">
+        {{#ranges}}
+          <li><a href="#">{{name}}</a></li>
+        {{/ranges}}
+      </ul>
+      <button class="btn btn-small apply">Apply</button>
+      <a href="#" class="cancel">cancel</a>
+    </div>
+	</div>
+</div>
+<div class="clear"></div>

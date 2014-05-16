@@ -1,0 +1,11 @@
+
+{{#if loading}}
+<li class="loading"></li>
+{{else}}
+{{#listValues}}
+  <li data-value="{{value}}" class="{{value}}{{#selected}} active{{/selected}}"><a href="#">{{label}}</a></li>
+{{/listValues}}
+{{^listValues}}
+<li class="no-results"><a>No Results</a></li>
+{{/listValues}}
+{{/if}}

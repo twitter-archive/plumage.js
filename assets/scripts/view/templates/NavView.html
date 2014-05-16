@@ -1,0 +1,37 @@
+
+<div id="nav-top">
+  <a class="brand" href="/">
+    <span class="nav-title">{{title}}</span>
+    {{#subtitle}}<span class="nav-subtitle">{{.}}</span>{{/subtitle}}
+  </a>
+  <div id="extra-links">
+  {{#aboutUrl}}
+    <a class="outlink" href="{{.}}" target="_">about</a>
+  {{/aboutUrl}}
+
+  {{#helpUrl}}
+    <a class="outlink" href="{{.}}" target="_">help</a>
+  {{/helpUrl}}
+  </div>
+
+  <div id="nav-top-right" class="nav pull-right">
+    <div class="nav-search"></div>
+  </div>
+  <div class="clear"></div>
+</div>
+
+{{#if navItems}}
+<div id="main-nav" class="navbar">
+  <div class="navbar-inner">
+    <ul class="nav-menu nav menu">
+      {{#navItems}}
+      <li class="{{className}}"><a href="{{url}}">{{label}}</a></li>
+      {{/navItems}}
+    </ul>
+
+    <ul class="nav right-nav pull-right">
+      <li class="user-menu"></li>
+    </ul>
+  </div>
+</div>
+{{/if}}

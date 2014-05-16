@@ -24,11 +24,11 @@
         <span class="icon-bar"></span>
         <span class="icon-bar"></span>
       </button>
-      <a class="brand" href="../index.html">PlumageJS</a>
+      <a class="brand" href="../">PlumageJS</a>
       <div class="nav-collapse collapse">
         <ul class="nav">
           <li>
-            <a href="../index.html">Home</a>
+            <a href="../">Home</a>
           </li>
           <li class="active">
             <a href="index.html">API</a>
@@ -112,6 +112,7 @@ function($, _, Backbone, Plumage, BaseController, ModelUtil) {
 
     /** handler for showing the index view. Override this to accept more url params */
     showIndex: function(params) {
+      params = params || {};
       if (params && params.filters && typeof(params.filters) === 'string') {
         params.filters = JSON.parse(params.filters);
       }
@@ -137,7 +138,10 @@ function($, _, Backbone, Plumage, BaseController, ModelUtil) {
       this.indexModel.on('change', this.onIndexChange.bind(this));
     },
 
-    /** Logic for binding a model to, and then showing the detail view */
+    /**
+     * Logic for binding a model to, and then showing the detail view
+     * Override to add extra event handlers
+     */
     showDetailModel: function(model) {
 
       if (this.detailModel) {
@@ -179,7 +183,10 @@ function($, _, Backbone, Plumage, BaseController, ModelUtil) {
       return this.createCollection(this.indexModelCls, options, meta);
     },
 
-    /** Create the detail model from specified attributes */
+    /**
+     * Create the detail model from specified attributes.
+     * Override to add default attributes, eg empty relationships.
+     */
     createDetailModel: function(id, attributes, viewState) {
       return this.createModel(this.modelCls, id, attributes, viewState);
     },
@@ -199,9 +206,11 @@ function($, _, Backbone, Plumage, BaseController, ModelUtil) {
     createCollection: function(modelCls, options, meta) {
       options = _.clone(options || {});
       meta = _.clone(meta || {});
-      if (meta.filters) {
-        meta = _.clone(meta);
-        meta.filters = meta.filters ? JSON.parse(meta.filters) : {};
+      var filters = meta.filters;
+      if (filters) {
+        if (filters && typeof(filters) === 'string') {
+          meta.filters = JSON.parse(meta.filters);
+        }
       }
       options = _.extend(_.clone(this.indexModelOptions || {}), options);
       options.meta = meta;
@@ -233,8 +242,7 @@ function($, _, Backbone, Plumage, BaseController, ModelUtil) {
 
     /** Reload the index model on change. eg sort field or filter change */
     onIndexChange: function(collection) {
-      collection.updateUrl();
-      collection.load();
+      this.reloadIndex(collection);
     },
 
     onModelError: function(model, response, options) {
@@ -247,7 +255,7 @@ function($, _, Backbone, Plumage, BaseController, ModelUtil) {
     reloadIndex: _.debounce(function(collection) {
       collection.updateUrl();
       collection.load();
-    }, 300)
+    }, 200)
   });
 });</code></pre>
         </article>
@@ -259,7 +267,7 @@ function($, _, Backbone, Plumage, BaseController, ModelUtil) {
 </div>
 
 <nav class="span4">
-    <h2><a href="index.html">Index</a></h2><h3>Classes</h3><ul><li><a href="Plumage.App.html">App</a></li><li><a href="Plumage.collection.BufferedGridData.html">BufferedGridData</a></li><li><a href="Plumage.collection.Collection.html">Collection</a></li><li><a href="Plumage.collection.GridData.html">GridData</a></li><li><a href="Plumage.controller.BaseController.html">BaseController</a></li><li><a href="Plumage.controller.ModelController.html">ModelController</a></li><li><a href="Plumage.ControllerManager.html">ControllerManager</a></li><li><a href="Plumage.History.html">History</a></li><li><a href="Plumage.model.Filter.html">Filter</a></li><li><a href="Plumage.model.Model.html">Model</a></li><li><a href="Plumage.RequestManager.html">RequestManager</a></li><li><a href="Plumage.Router.html">Router</a></li><li><a href="Plumage.util.Logger.html">Logger</a></li><li><a href="Plumage.view.CollectionView.html">CollectionView</a></li><li><a href="Plumage.view.ContainerView.html">ContainerView</a></li><li><a href="Plumage.view.ModelView.html">ModelView</a></li><li><a href="Plumage.view.View.html">View</a></li></ul><h3>Namespaces</h3><ul><li><a href="Plumage.html">Plumage</a></li><li><a href="Plumage.collection.html">collection</a></li><li><a href="Plumage.controller.html">controller</a></li><li><a href="Plumage.model.html">model</a></li><li><a href="Plumage.util.html">util</a></li><li><a href="Plumage.vendor.html">vendor</a></li><li><a href="Plumage.view.html">view</a></li><li><a href="Plumage.view.comment.html">comment</a></li><li><a href="Plumage.view.controller.html">controller</a></li><li><a href="Plumage.view.form.html">form</a></li><li><a href="Plumage.view.form.fields.html">fields</a></li><li><a href="Plumage.view.grid.html">grid</a></li><li><a href="Plumage.view.menu.html">menu</a></li></ul>
+    <h2><a href="index.html">Index</a></h2><h3>Classes</h3><ul><li><a href="Plumage.App.html">App</a></li><li><a href="Plumage.collection.BufferedGridData.html">BufferedGridData</a></li><li><a href="Plumage.collection.Collection.html">Collection</a></li><li><a href="Plumage.collection.GridData.html">GridData</a></li><li><a href="Plumage.controller.BaseController.html">BaseController</a></li><li><a href="Plumage.controller.ModelController.html">ModelController</a></li><li><a href="Plumage.ControllerManager.html">ControllerManager</a></li><li><a href="Plumage.History.html">History</a></li><li><a href="Plumage.model.Filter.html">Filter</a></li><li><a href="Plumage.model.Model.html">Model</a></li><li><a href="Plumage.RequestManager.html">RequestManager</a></li><li><a href="Plumage.Router.html">Router</a></li><li><a href="Plumage.util.Logger.html">Logger</a></li><li><a href="Plumage.view.calendar.Calendar.html">Calendar</a></li><li><a href="Plumage.view.CollectionView.html">CollectionView</a></li><li><a href="Plumage.view.ContainerView.html">ContainerView</a></li><li><a href="Plumage.view.form.fields.DatePicker.html">DatePicker</a></li><li><a href="Plumage.view.form.fields.DateRangePicker.html">DateRangePicker</a></li><li><a href="Plumage.view.form.fields.Field.html">Field</a></li><li><a href="Plumage.view.ModelView.html">ModelView</a></li><li><a href="Plumage.view.View.html">View</a></li></ul><h3>Namespaces</h3><ul><li><a href="Plumage.html">Plumage</a></li><li><a href="Plumage.collection.html">collection</a></li><li><a href="Plumage.controller.html">controller</a></li><li><a href="Plumage.model.html">model</a></li><li><a href="Plumage.util.html">util</a></li><li><a href="Plumage.vendor.html">vendor</a></li><li><a href="Plumage.view.html">view</a></li><li><a href="Plumage.view.calendar.html">calendar</a></li><li><a href="Plumage.view.comment.html">comment</a></li><li><a href="Plumage.view.controller.html">controller</a></li><li><a href="Plumage.view.form.html">form</a></li><li><a href="Plumage.view.form.fields.html">fields</a></li><li><a href="Plumage.view.grid.html">grid</a></li><li><a href="Plumage.view.menu.html">menu</a></li></ul>
 </nav>
 </div>
 </div>
@@ -267,7 +275,7 @@ function($, _, Backbone, Plumage, BaseController, ModelUtil) {
 <br clear="both">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.2.2</a> on Thu Feb 27 2014 14:14:59 GMT-0800 (PST)
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.2.2</a>
 </footer>
 
 <script> prettyPrint(); </script>

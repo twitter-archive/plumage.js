@@ -71,10 +71,10 @@ module.exports = function (grunt) {
               mountFolder(connect, 'dist/docs'),
               connect().use('/dist', connect.static(path.resolve('dist'))),
               connect().use('/assets', connect.static(path.resolve('assets'))),
-              connect().use('/assets/examples', connect.static(path.resolve('examples'))),
               connect().use('/test', connect.static(path.resolve('test'))),
-              mountApp(connect, '/examples/countries', 'examples/countries/index.html'),
-              mountApp(connect, '/examples/kitchen_sink', 'examples/kitchen_sink/index.html')
+              mountApp(connect, '/examples/countries.html', 'examples/countries.html'),
+              mountApp(connect, '/examples/kitchen_sink.html', 'examples/kitchen_sink.html'),
+              connect().use('/examples', connect.static(path.resolve('examples')))
             ];
           }
         }
@@ -151,13 +151,13 @@ module.exports = function (grunt) {
 
       examples: {
         options: {
-          cssDir: 'examples/styles',
-          sassDir: 'examples/styles',
+          cssDir: 'examples/assets/styles',
+          sassDir: 'examples/assets/styles',
           importPath: [
             'assets/bower_components',
             'assets/bower_components/twitter-bootstrap-sass/vendor/assets/stylesheets'
           ],
-          specify: ['examples/styles/kitchensink.scss', 'examples/styles/countries.scss']
+          specify: ['examples/assets/styles/kitchensink.scss', 'examples/assets/styles/countries.scss']
         }
       },
 

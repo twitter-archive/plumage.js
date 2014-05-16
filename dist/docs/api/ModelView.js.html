@@ -24,11 +24,11 @@
         <span class="icon-bar"></span>
         <span class="icon-bar"></span>
       </button>
-      <a class="brand" href="../index.html">PlumageJS</a>
+      <a class="brand" href="../">PlumageJS</a>
       <div class="nav-collapse collapse">
         <ul class="nav">
           <li>
-            <a href="../index.html">Home</a>
+            <a href="../">Home</a>
           </li>
           <li class="active">
             <a href="index.html">API</a>
@@ -59,8 +59,9 @@
   'PlumageRoot',
   'view/ContainerView',
   'util/ModelUtil',
+  'ViewBuilder',
   'text!view/templates/LoadError.html'
-], function($, _, Backbone, Handlebars, Plumage, ContainerView, ModelUtil, errorTemplate) {
+], function($, _, Backbone, Handlebars, Plumage, ContainerView, ModelUtil, ViewBuilder, errorTemplate) {
 
 
 
@@ -98,7 +99,18 @@
     renderOnLoad: undefined,
 
     /**
-     * View that supports binding of Models to it.
+     * Instead of a View, ModelView can take config object as a subView, and instantiate
+     * a View from it. If no viewCls is specified, defaultSubViewCls is used.
+     */
+    defaultSubViewCls: undefined,
+
+    defaultSubViewOptions: undefined,
+
+    /**
+     * Adding to the functionality of ConainerView, ModelView supports binding of Models to it.
+     *
+     * This is the default View to use. Most of the time you should be
+     * binding models to your views.
      *
      * Bind a [Model]{@link Plumage.model.Model} to ModelView using [setModel]{@link Plumage.view.ModelView#setModel}.
      * This will connect the various model events, with some default handling, eg render on load.
@@ -115,13 +127,24 @@
      *    eg. a child view might be located under a parent ModelView in the DOM, but not be related in the data
      *    structure. In this case set modelCls on the child so it doesn't get the parent's Model set on it.
      *
-     *
+     * ModelView also uses ViewBuilder automatically, for intantiating subviews. If passed a config
+     * object instead of a View in subViews, it will be instantiated by ViewBuilder.
      *
      * @constructs
      * @extends Plumage.view.ContainerView
      */
     initialize:function (options) {
       ContainerView.prototype.initialize.apply(this, arguments);
+
+      var viewBuilder = new ViewBuilder({
+        defaultViewCls: this.defaultSubViewCls,
+        defaultViewOptions: this.defaultSubViewOptions
+      });
+
+      this.subViews = $.isArray(this.subViews) ? this.subViews : [this.subViews];
+      this.subViews = _.map(this.subViews, function(subView) {
+        return viewBuilder.buildView(subView);
+      });
 
       //Backbone.View constructor will already set model if it's passed in.
       if (this.model) {
@@ -163,8 +186,11 @@
 
       var model = this.getModelFromRoot(rootModel, this.relationship),
         changed = true;
-      if (this.modelCls && model) {
-        if (!(model instanceof ModelUtil.loadClass(this.modelCls))) {
+      if (this.modelCls !== undefined) {
+        if (this.modelCls === false) {
+          return;
+        }
+        if (model && !(model instanceof ModelUtil.loadClass(this.modelCls))) {
           return;
         }
       }
@@ -319,7 +345,7 @@
 </div>
 
 <nav class="span4">
-    <h2><a href="index.html">Index</a></h2><h3>Classes</h3><ul><li><a href="Plumage.App.html">App</a></li><li><a href="Plumage.collection.BufferedGridData.html">BufferedGridData</a></li><li><a href="Plumage.collection.Collection.html">Collection</a></li><li><a href="Plumage.collection.GridData.html">GridData</a></li><li><a href="Plumage.controller.BaseController.html">BaseController</a></li><li><a href="Plumage.controller.ModelController.html">ModelController</a></li><li><a href="Plumage.ControllerManager.html">ControllerManager</a></li><li><a href="Plumage.History.html">History</a></li><li><a href="Plumage.model.Filter.html">Filter</a></li><li><a href="Plumage.model.Model.html">Model</a></li><li><a href="Plumage.RequestManager.html">RequestManager</a></li><li><a href="Plumage.Router.html">Router</a></li><li><a href="Plumage.util.Logger.html">Logger</a></li><li><a href="Plumage.view.CollectionView.html">CollectionView</a></li><li><a href="Plumage.view.ContainerView.html">ContainerView</a></li><li><a href="Plumage.view.ModelView.html">ModelView</a></li><li><a href="Plumage.view.View.html">View</a></li></ul><h3>Namespaces</h3><ul><li><a href="Plumage.html">Plumage</a></li><li><a href="Plumage.collection.html">collection</a></li><li><a href="Plumage.controller.html">controller</a></li><li><a href="Plumage.model.html">model</a></li><li><a href="Plumage.util.html">util</a></li><li><a href="Plumage.vendor.html">vendor</a></li><li><a href="Plumage.view.html">view</a></li><li><a href="Plumage.view.comment.html">comment</a></li><li><a href="Plumage.view.controller.html">controller</a></li><li><a href="Plumage.view.form.html">form</a></li><li><a href="Plumage.view.form.fields.html">fields</a></li><li><a href="Plumage.view.grid.html">grid</a></li><li><a href="Plumage.view.menu.html">menu</a></li></ul>
+    <h2><a href="index.html">Index</a></h2><h3>Classes</h3><ul><li><a href="Plumage.App.html">App</a></li><li><a href="Plumage.collection.BufferedGridData.html">BufferedGridData</a></li><li><a href="Plumage.collection.Collection.html">Collection</a></li><li><a href="Plumage.collection.GridData.html">GridData</a></li><li><a href="Plumage.controller.BaseController.html">BaseController</a></li><li><a href="Plumage.controller.ModelController.html">ModelController</a></li><li><a href="Plumage.ControllerManager.html">ControllerManager</a></li><li><a href="Plumage.History.html">History</a></li><li><a href="Plumage.model.Filter.html">Filter</a></li><li><a href="Plumage.model.Model.html">Model</a></li><li><a href="Plumage.RequestManager.html">RequestManager</a></li><li><a href="Plumage.Router.html">Router</a></li><li><a href="Plumage.util.Logger.html">Logger</a></li><li><a href="Plumage.view.calendar.Calendar.html">Calendar</a></li><li><a href="Plumage.view.CollectionView.html">CollectionView</a></li><li><a href="Plumage.view.ContainerView.html">ContainerView</a></li><li><a href="Plumage.view.form.fields.DatePicker.html">DatePicker</a></li><li><a href="Plumage.view.form.fields.DateRangePicker.html">DateRangePicker</a></li><li><a href="Plumage.view.form.fields.Field.html">Field</a></li><li><a href="Plumage.view.ModelView.html">ModelView</a></li><li><a href="Plumage.view.View.html">View</a></li></ul><h3>Namespaces</h3><ul><li><a href="Plumage.html">Plumage</a></li><li><a href="Plumage.collection.html">collection</a></li><li><a href="Plumage.controller.html">controller</a></li><li><a href="Plumage.model.html">model</a></li><li><a href="Plumage.util.html">util</a></li><li><a href="Plumage.vendor.html">vendor</a></li><li><a href="Plumage.view.html">view</a></li><li><a href="Plumage.view.calendar.html">calendar</a></li><li><a href="Plumage.view.comment.html">comment</a></li><li><a href="Plumage.view.controller.html">controller</a></li><li><a href="Plumage.view.form.html">form</a></li><li><a href="Plumage.view.form.fields.html">fields</a></li><li><a href="Plumage.view.grid.html">grid</a></li><li><a href="Plumage.view.menu.html">menu</a></li></ul>
 </nav>
 </div>
 </div>
@@ -327,7 +353,7 @@
 <br clear="both">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.2.2</a> on Thu Feb 27 2014 14:14:59 GMT-0800 (PST)
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.2.2</a>
 </footer>
 
 <script> prettyPrint(); </script>

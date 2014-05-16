@@ -1,0 +1,29 @@
+@import 'bootstrap';
+@import 'bootstrap-responsive';
+
+#page {
+  padding-top: 60px;
+}
+
+.country-section {
+  margin-bottom: 20px;
+  padding: 20px 0 10px 0;
+  border: 1px solid #ddd;
+}
+
+.languages .items > div {
+  padding: 10px;
+  border: 1px solid #ddd;
+  margin-bottom: 10px;
+}
+
+.index-view .container {
+  height: 100%;
+  padding-top: 50px;
+  padding-bottom: 20px;
+  @include box-sizing(border-box);
+
+  .filter-view {
+    margin-top: -50px;
+  }
+}

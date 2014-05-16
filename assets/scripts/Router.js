@@ -15,6 +15,9 @@ function($, _, Backbone, Plumage, History) {
     /** If a route is not recognized, redirect to defaultUrl */
     defaultUrl: '/',
 
+    /** use html5 push state? If false, falls back to using # for deep urls. */
+    pushState: true,
+
     /**
      * Routes requests to Controller handler methods.
      *
@@ -23,16 +26,19 @@ function($, _, Backbone, Plumage, History) {
      */
     initialize: function(options) {
       options = options || {};
-      if (options.app) {
+      if (options.app !== undefined) {
         this.app = options.app;
       }
-      if (options.defaultUrl) {
+      if (options.defaultUrl !== undefined) {
         this.defaultUrl = options.defaultUrl;
       }
-      if (options.rootUrl) {
+      if (options.rootUrl !== undefined) {
         this.rootUrl = options.rootUrl;
       }
-      if (options.history) {
+      if (options.pushState !== undefined) {
+        this.pushState = options.pushState;
+      }
+      if (options.history !== undefined) {
         this.history = options.history;
       } else {
         this.history = new Plumage.History();
@@ -57,7 +63,7 @@ function($, _, Backbone, Plumage, History) {
     },
 
     start: function() {
-      this.history.start({pushState: true, root: this.rootUrl});
+      this.history.start({pushState: this.pushState, root: this.rootUrl});
     },
 
     /** Route handler that forwards to method 'options.method'

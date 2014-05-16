@@ -8,7 +8,7 @@
 <script type="text/javascript">
 window.isStatic = true;
 
-var rootUrl = '', i;
+var rootUrl = '/plumage.js', i;
 
 var css = ["/dist/plumage.css", "/examples/assets/styles/kitchensink.css"];
 var js = ["/assets/scripts/vendor/require.js", "/assets/scripts/config.js"];
@@ -25,10 +25,10 @@ for (i=0; i<js.length; i++) {
 require.config({
   baseUrl: rootUrl + '/assets/scripts',
   paths: {
-    data: rootUrl + '/../examples/assets/data',
-    example: rootUrl + '/../examples/assets/example',
-    kitchen_sink: rootUrl + '/../examples/assets/kitchen_sink',
-    test: rootUrl + '/../test/test'
+    data: rootUrl + '/examples/assets/data',
+    example: rootUrl + '/examples/assets/example',
+    kitchen_sink: rootUrl + '/examples/assets/kitchen_sink',
+    test: rootUrl + '/test/test'
   },
   shim: {
     'kitchen_sink/highlight': {

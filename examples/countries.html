@@ -8,7 +8,7 @@
 <script type="text/javascript">
 window.isStatic = true;
 
-var rootUrl = '', i;
+var rootUrl = '/plumage.js', i;
 
 var css = ["/dist/plumage.css", "/examples/assets/styles/countries.css"];
 var js = ["/assets/scripts/vendor/require.js", "/assets/scripts/config.js"];
@@ -25,11 +25,11 @@ for (i=0; i<js.length; i++) {
 require.config({
   baseUrl: rootUrl + '/assets/scripts',
   paths: {
-    plumage: rootUrl + '/../dist/plumage.min', // remove this to use uncompiled source
-    data: rootUrl + '/../examples/assets/data',
-    example: rootUrl + '/../examples/assets/example',
-    countries: rootUrl + '/../examples/assets/countries',
-    test: rootUrl + '/../test/test'
+    plumage: rootUrl + '/dist/plumage.min', // remove this to use uncompiled source
+    data: rootUrl + '/examples/assets/data',
+    example: rootUrl + '/examples/assets/example',
+    countries: rootUrl + '/examples/assets/countries',
+    test: rootUrl + '/test/test'
   }
 });
 </script>

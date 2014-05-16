@@ -32,6 +32,8 @@ require.config({
     test: rootUrl + '/test/test'
   },
   shim: {
+    plumage: {deps: ['jquery']},
+    bootstrap: {deps: ['jquery']},
     'kitchen_sink/highlight': {
       exports: 'hljs'
     }

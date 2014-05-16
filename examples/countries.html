@@ -30,6 +30,10 @@ require.config({
     example: rootUrl + '/examples/assets/example',
     countries: rootUrl + '/examples/assets/countries',
     test: rootUrl + '/test/test'
+  },
+  shim: {
+    plumage: {deps: ['jquery']},
+    bootstrap: {deps: ['jquery']}
   }
 });
 </script>

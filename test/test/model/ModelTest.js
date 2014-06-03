@@ -30,6 +30,21 @@ define([
     equal(model.get('body'), 'my body');
   });
 
+  test('uses href for url', function(){
+    var model = new Post({href: '/foo'});
+    equal(model.url(), '/foo');
+  });
+
+  test('combines query params from href and view state', function(){
+    var model = new Post({href: '/foo?a=1', bar: 'baz'});
+    model.viewAttrs = ['bar'];
+    equal(model.urlWithParams(), '/foo?a=1&bar=baz');
+  });
+
+  //
+  // Relationships
+  //
+
   test('Can instantiate related', function(){
     this.ajaxResponse = {results: ExampleData.POST_DATA_WITH_RELATED};
 
@@ -63,6 +78,31 @@ define([
       equal(comment1.fetched, true, 'relations should be marked as fetched');
     }
   });
+
+  test('Can instantiate related href', function(){
+    this.ajaxResponse = {results: ExampleData.POST_DATA_WITH_RELATED_HREFS};
+    var model = new Post();
+    model.set(ExampleData.POST_DATA_WITH_RELATED_HREFS);
+    equal(model.getRelated('author').url(), '/author_href/7');
+    equal(model.getRelated('comments').url(), '/comments_href');
+  });
+
+  test('Can instantiate related collection with attributes', function(){
+    var model = new Post();
+    model.set(ExampleData.POST_DATA_WITH_COMMENTS_WITH_ATTRIBTES);
+    equal(model.getRelated('comments').url(), '/comments_href');
+    equal(model.getRelated('comments').size(), 2);
+  });
+
+  test('Can instantiate remote related collection with href', function(){
+    var model = new PostRemote();
+    model.set(ExampleData.POST_DATA_WITH_RELATED_HREFS);
+    equal(model.getRelated('comments').url(), '/comments_href');
+  });
+
+  //
+  // Loading
+  //
 
   test('Related collection fires load', function(){
     var model = new Post({comments: []});

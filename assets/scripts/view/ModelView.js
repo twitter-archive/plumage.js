@@ -104,13 +104,21 @@ define([
      * @param {Plumage.model.Model} model The root model.
      * @param {string} relationship The relationship path in the root model to get the model for this view.
      */
-    getModelFromRoot: function(model, relationship) {
+    getModelFromRoot: function(relationship, model, parentModel) {
       if (!model) {
         return;
       }
       if (!relationship) {
         return model;
       }
+
+      if (relationship.slice(0,1) === '.') {
+        if (parentModel) {
+          return parentModel.getRelated(relationship.slice(1));
+        }
+        return undefined;
+      }
+
       return model.getRelated(relationship);
     },
 
@@ -121,8 +129,9 @@ define([
     /**
      * Bind a model if applicable. Call setModel on your top level view in your Controller.
      * @params {Plumage.model.Model} rootModel The root model
+     * @params {Plumage.model.Model} parentModel The model the parent view bound to. For relative relationships.
      */
-    setModel: function(rootModel) {
+    setModel: function(rootModel, parentModel) {
       if (this.rootModelCls && rootModel) {
         var rootModelCls = requirejs(this.rootModelCls);
         if (!(rootModel instanceof rootModelCls)) {
@@ -131,7 +140,7 @@ define([
       }
       this.rootModel = rootModel;
 
-      var model = this.getModelFromRoot(rootModel, this.relationship),
+      var model = this.getModelFromRoot(this.relationship, rootModel, parentModel),
         changed = true;
       if (this.modelCls !== undefined) {
         if (this.modelCls === false) {
@@ -168,8 +177,8 @@ define([
 
       //recurse
       this.eachSubView(function(subView) {
-        subView.callOrRecurse('setModel', [rootModel]);
-      });
+        subView.callOrRecurse('setModel', [rootModel, this.model]);
+      }.bind(this));
     },
 
     /** triggers loading of deferLoad Models. */
@@ -200,9 +209,9 @@ define([
      * Update given model with any changes eg from forms
      * @param {Plumage.model.Model} model Model to update.
      */
-    updateModel: function(model) {
+    updateModel: function(rootModel, parentModel) {
       this.eachSubView(function(subView) {
-        subView.callOrRecurse('updateModel', [model]);
+        subView.callOrRecurse('updateModel', [rootModel, this.model]);
       });
     },
 

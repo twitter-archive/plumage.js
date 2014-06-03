@@ -80,7 +80,9 @@ function($, _, Backbone, Plumage, BaseController, ModelUtil) {
       view.setModel(this.indexModel);
       this.showView(view);
 
-      this.loadModel(this.indexModel);
+      this.loadModel(this.indexModel).then(function() {
+        view.setModel(model);
+      });
 
       this.indexModel.on('change', this.onIndexChange.bind(this));
     },
@@ -103,7 +105,9 @@ function($, _, Backbone, Plumage, BaseController, ModelUtil) {
       view.setModel(model);
       this.showView(view);
 
-      this.loadModel(model);
+      this.loadModel(model).then(function() {
+        view.setModel(model);
+      });
     },
 
     /** Get and lazy create the index view */

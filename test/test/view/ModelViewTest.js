@@ -97,13 +97,21 @@ define([
   test('Set with relationship', function() {
     var model = new Post(ExampleData.POST_DATA_WITH_RELATED);
     var author = model.getRelated('author');
+    var company = author.getRelated('company');
     var view = new ModelView({
       modelCls: 'example/model/User',
-      relationship: 'author'
+      relationship: 'author',
+      subViews: [
+        {relationship: 'author.company'},
+        {relationship: '.company'}
+      ]
     });
 
     view.setModel(model);
+
     equal(view.model.id, author.id, 'should correctly set related as model');
+    equal(view.subViews[0].model, company, 'should correctly set nested related as model');
+    equal(view.subViews[0].model, company, 'should correctly set relative related as model');
   });
 
   test('Do not render on load until rendered', function() {

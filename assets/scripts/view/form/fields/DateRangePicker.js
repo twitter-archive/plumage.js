@@ -214,8 +214,8 @@ define([
       }
     },
 
-    updateModel: function(rootModel) {
-      var model = this.getModelFromRoot(rootModel, this.relationship),
+    updateModel: function(rootModel, parentModel) {
+      var model = this.getModelFromRoot(this.relationship, rootModel, parentModel),
         value = this.getValue();
 
       var newValues = {};

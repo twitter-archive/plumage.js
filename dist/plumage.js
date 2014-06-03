@@ -330,6 +330,7 @@ function($, _, Backbone, Plumage) {
       if (xhr) {
         this.requests.push({xhr: xhr, url: model.url()});
       }
+      return xhr;
     },
 
     /** cancel all uncompleted requests. */
@@ -337,8 +338,9 @@ function($, _, Backbone, Plumage) {
       for(var i=0;i<this.requests.length;i++) {
         var xhr = this.requests[i].xhr;
         var url = this.requests[i].url;
-
-        xhr.abort();
+        if (xhr.abort){
+          xhr.abort();
+        }
       }
       this.requests = [];
     },
@@ -465,6 +467,7 @@ function($, _, Backbone, Plumage, requestManager, ModelUtil) {
      * @constructs
      */
     constructor : function (attributes, options ) {
+      options = options || {};
       this.related = {};
       Backbone.Model.apply( this, arguments );
     },
@@ -717,16 +720,24 @@ function($, _, Backbone, Plumage, requestManager, ModelUtil) {
      * @param {String} key Relationship key
      */
     getRelated: function(key) {
-      if (this.related && this.related[key]) {
-        return this.related[key];
-      }
-      if (this.collection && this.collection.hasRelationship(key) && this.collection.getRelated(key)) {
-        return this.collection.getRelated(key);
+      var keyParts = key.split('.'),
+        keyPart = keyParts[0],
+        related;
+
+      if (this.related && this.related[keyPart]) {
+        related = this.related[keyPart];
+      } else if (this.collection && this.collection.hasRelationship(keyPart) && this.collection.getRelated(keyPart)) {
+        related = this.collection.getRelated(keyPart);
+      } else {
+        if (!this.hasRelationship(keyPart)) {
+          throw 'unknown relationship';
+        }
       }
 
-      if (!this.hasRelationship(key)) {
-        throw 'unknown relationship';
+      if (related && keyParts.length > 1) {
+        return related.getRelated(keyParts.slice(1).join('.'));
       }
+      return related;
     },
 
     setRelated: function(key, model) {
@@ -801,17 +812,15 @@ function($, _, Backbone, Plumage, requestManager, ModelUtil) {
      * @param {Object} data Data to set on Model.
      */
     updateRelatedModel: function(relationship, model, data) {
-      if (relationship.remote) {
-        if (relationship.deferLoad) {
-          model.deferLoad = true;
-        }
-      } else {
-        if (model instanceof Plumage.collection.Collection) {
-          model.resetInMemory(data);
-        } else {
-          model.set(data);
+      if (relationship.remote && relationship.deferLoad) {
+        model.deferLoad = true;
+      }
+      if (model instanceof Plumage.collection.Collection) {
+        if ($.isArray(data)) {
+          data = {models: data};
         }
       }
+      model.set(data, {silent: true});
     },
 
     /**
@@ -866,15 +875,22 @@ function($, _, Backbone, Plumage, requestManager, ModelUtil) {
      * @returns {boolean}
      */
     hasUrl: function() {
-      return Boolean(_.result(this, 'urlRoot') || _.result(this.collection, 'url'));
+      return Boolean(_.result(this, 'url') || _.result(this, 'urlRoot'));
     },
 
     /**
-     * This Model's url. Return null if url data is not yet available.
+     * This Model's url. Returns an attribute named 'href' if it exists.
+     * Otherwise uses urlRoot from backbone.
+     *
+     * When overriding, return null if url data is not yet available.
      * @returns {string} Url or null
      * @see Plumage.model.Model#fetchIfAvailable
      */
     url: function() {
+      var href = this.get('href');
+      if (href) {
+        return href;
+      }
       return Backbone.Model.prototype.url.apply(this, arguments);
     },
 
@@ -887,14 +903,18 @@ function($, _, Backbone, Plumage, requestManager, ModelUtil) {
     urlWithParams: function (extras) {
       extras = extras || {};
       var url = this.url.apply(this, arguments);
-      if (url === null) {
+      if (url === null || url === undefined) {
         return null;
       }
       var params = this.getQueryParams();
       params = _.extend({}, params, extras);
-      if (params) {
+      if (params && !$.isEmptyObject(params)) {
         params = $.param(params, true);
-        return url + '?' + params;
+        if (url.indexOf('?') >= 0) {
+          return url + '&' + params;
+        } else {
+          return url + '?' + params;
+        }
       }
       return url;
     },
@@ -1146,7 +1166,7 @@ define('collection/Collection',[
   /** @lends Plumage.collection.Collection.prototype */
   {
 
-    rootUrl: undefined,
+    urlRoot: undefined,
 
     viewAttrs: ['query', 'sortDir', 'sortField', 'page', 'pageSize'],
 
@@ -1248,17 +1268,49 @@ define('collection/Collection',[
       return true;
     },
 
+    /**
+     * This Collection's url. Returns an attribute or option named 'href' if it exists.
+     * Otherwise uses urlRoot like backbone.
+     */
     url: function () {
+      var href = this.href || this.get('href');
+      if (href) {
+        return href;
+      }
       return this.urlRoot;
     },
 
-    urlWithParams: function () {
-      var params = $.param(this.getQueryParams(), true);
-      var url = this.url();
-      if (url && params) {
-        url = url + '?' + params;
+
+    /**
+     * Overridden from Model. Takes a special attributes 'models' to use as collection data,
+     * so that attributes and models can be set from the same data.
+     */
+    set: function(key, val, options) {
+      var attr, attrs, unset, changes, silent, changing, prev, current;
+      if (key === null) {
+        return this;
       }
-      return url;
+
+      // Handle both `"key", value` and `{key: value}` -style arguments.
+      if (typeof key === 'object') {
+        attrs = key;
+        options = val;
+      } else {
+        (attrs = {})[key] = val;
+      }
+
+      options = options || {};
+      attrs = _.clone(attrs);
+
+      if (attrs.models) {
+        if (this.processInMemory) {
+          this.resetInMemory(attrs.models);
+        } else {
+          this.reset(attrs.models);
+        }
+        delete attrs.models;
+      }
+      return Model.prototype.set.apply(this, [attrs, options]);
     },
 
     //
@@ -2294,13 +2346,13 @@ function($, _, Backbone, Plumage, GridData) {
   /** @lends Plumage.collection.BufferedGridData.prototype */
   {
     /** Loaded data is stored here, instead of in the Collection */
-    data: [],
+    data: undefined,
 
     /** Map of id to index for everything in .data */
-    idToIndex: {},
+    idToIndex: undefined,
 
     /** Running requests */
-    requests: {},
+    requests: undefined,
 
     /** Total rows on the server. */
     total: undefined,
@@ -2316,6 +2368,10 @@ function($, _, Backbone, Plumage, GridData) {
      */
     initialize: function(collection, options) {
       _.extend(this, options);
+      this.data = [];
+      this.idToIndex = {};
+      this.requests = {};
+
       this.collection = collection;
       this.collection.on('load', this.onLoad, this);
       this.collection.on('beginLoad', function() {
@@ -2613,7 +2669,7 @@ function($, _, Backbone, Plumage, requestManager) {
      * @param {Plumage.model.Model} model Model to load.
      */
     loadModel: function(model, options) {
-      requestManager.loadModel(model, options);
+      return requestManager.loadModel(model, options);
     }
   });
 
@@ -2704,7 +2760,9 @@ function($, _, Backbone, Plumage, BaseController, ModelUtil) {
       view.setModel(this.indexModel);
       this.showView(view);
 
-      this.loadModel(this.indexModel);
+      this.loadModel(this.indexModel).then(function() {
+        view.setModel(model);
+      });
 
       this.indexModel.on('change', this.onIndexChange.bind(this));
     },
@@ -2727,7 +2785,9 @@ function($, _, Backbone, Plumage, BaseController, ModelUtil) {
       view.setModel(model);
       this.showView(view);
 
-      this.loadModel(model);
+      this.loadModel(model).then(function() {
+        view.setModel(model);
+      });
     },
 
     /** Get and lazy create the index view */
@@ -3063,6 +3123,11 @@ function($, _, Backbone, Plumage, History) {
     },
 
     navigate: function(url, options) {
+      //remove host and protocol if it's local
+      if (url.indexOf(window.location.origin) === 0) {
+        url = url.slice(window.location.origin.length);
+      }
+
       //remove url prefix
       if (url.indexOf(this.rootUrl) === 0) {
         url = url.slice(this.rootUrl.length);
@@ -8614,13 +8679,21 @@ define('view/ModelView',[
      * @param {Plumage.model.Model} model The root model.
      * @param {string} relationship The relationship path in the root model to get the model for this view.
      */
-    getModelFromRoot: function(model, relationship) {
+    getModelFromRoot: function(relationship, model, parentModel) {
       if (!model) {
         return;
       }
       if (!relationship) {
         return model;
       }
+
+      if (relationship.slice(0,1) === '.') {
+        if (parentModel) {
+          return parentModel.getRelated(relationship.slice(1));
+        }
+        return undefined;
+      }
+
       return model.getRelated(relationship);
     },
 
@@ -8631,8 +8704,9 @@ define('view/ModelView',[
     /**
      * Bind a model if applicable. Call setModel on your top level view in your Controller.
      * @params {Plumage.model.Model} rootModel The root model
+     * @params {Plumage.model.Model} parentModel The model the parent view bound to. For relative relationships.
      */
-    setModel: function(rootModel) {
+    setModel: function(rootModel, parentModel) {
       if (this.rootModelCls && rootModel) {
         var rootModelCls = requirejs(this.rootModelCls);
         if (!(rootModel instanceof rootModelCls)) {
@@ -8641,7 +8715,7 @@ define('view/ModelView',[
       }
       this.rootModel = rootModel;
 
-      var model = this.getModelFromRoot(rootModel, this.relationship),
+      var model = this.getModelFromRoot(this.relationship, rootModel, parentModel),
         changed = true;
       if (this.modelCls !== undefined) {
         if (this.modelCls === false) {
@@ -8678,8 +8752,8 @@ define('view/ModelView',[
 
       //recurse
       this.eachSubView(function(subView) {
-        subView.callOrRecurse('setModel', [rootModel]);
-      });
+        subView.callOrRecurse('setModel', [rootModel, this.model]);
+      }.bind(this));
     },
 
     /** triggers loading of deferLoad Models. */
@@ -8710,9 +8784,9 @@ define('view/ModelView',[
      * Update given model with any changes eg from forms
      * @param {Plumage.model.Model} model Model to update.
      */
-    updateModel: function(model) {
+    updateModel: function(rootModel, parentModel) {
       this.eachSubView(function(subView) {
-        subView.callOrRecurse('updateModel', [model]);
+        subView.callOrRecurse('updateModel', [rootModel, this.model]);
       });
     },
 
@@ -9341,8 +9415,8 @@ define('view/form/fields/Field',[
     // View value <--> Model
     //
 
-    updateModel: function(rootModel) {
-      var model = this.getModelFromRoot(rootModel, this.relationship),
+    updateModel: function(rootModel, parentModel) {
+      var model = this.getModelFromRoot(this.relationship, rootModel, parentModel),
         value = this.getValue();
       model.set(this.valueAttr, value);
     },
@@ -9686,7 +9760,7 @@ define('view/comment/CommentsSection',[
       }
     },
 
-    setModel: function(rootModel) {
+    setModel: function(rootModel, parentModel) {
       ModelView.prototype.setModel.apply(this, arguments);
       this.resetCommentForm();
     },
@@ -9812,16 +9886,15 @@ define('view/comment/ExpandableComments',[
 define('view/controller/IndexView',[
   'jquery',
   'backbone',
-  'handlebars',
   'PlumageRoot',
   'view/ModelView'
-], function($, Backbone, Handlebars, Plumage, ModelView) {
+], function($, Backbone, Plumage, ModelView) {
 
   return Plumage.view.controller.IndexView = ModelView.extend({
 
     className: 'content container-fluid index-view',
 
-    template: Handlebars.compile('<div class="filter-view"></div><div class="grid-view"></div>'),
+    template: '<div class="filter-view"></div><div class="grid-view"></div>',
 
     gridViewCls: undefined,
 
@@ -9976,7 +10049,7 @@ define('view/form/fields/Select',[
         defaultToFirst: this.defaultToFirst
       });
 
-      if (!data.value) {
+      if (data.value === undefined || data.value === null) {
         if (this.listModel && this.listModel.size() > 0) {
           data.valueLabel = this.noSelectionText;
           data.value = this.noSelectionValue;
@@ -10061,10 +10134,10 @@ define('view/form/fields/Select',[
      * List Model
      **************/
 
-    setModel: function(rootModel) {
+    setModel: function(rootModel, parentModel) {
       Field.prototype.setModel.apply(this, arguments);
       if (this.listRelationship) {
-        var listModel = this.getModelFromRoot(rootModel, this.listRelationship);
+        var listModel = this.getModelFromRoot(this.listRelationship, rootModel, parentModel);
         if (listModel) {
           this.setListModel(listModel);
         }
@@ -10998,8 +11071,8 @@ define('view/form/fields/DateRangePicker',[
       }
     },
 
-    updateModel: function(rootModel) {
-      var model = this.getModelFromRoot(rootModel, this.relationship),
+    updateModel: function(rootModel, parentModel) {
+      var model = this.getModelFromRoot(this.relationship, rootModel, parentModel),
         value = this.getValue();
 
       var newValues = {};
@@ -11225,6 +11298,9 @@ define('view/form/fields/MultiSelect',[
         }.bind(this));
       }
 
+      if (!this.listModel) {
+        return '';
+      }
       if (labels.length === this.listModel.size()) {
         return 'All';
       }
@@ -11738,7 +11814,7 @@ define('view/form/fields/TypeAhead',[
      * For override
      */
 
-    setModel: function(rootModel) {
+    setModel: function(rootModel, parentModel) {
       Select.prototype.setModel.apply(this, arguments);
     },
 
@@ -11814,8 +11890,8 @@ define('view/form/fields/FilterTypeAhead',[
     },
 
     //Currently copy-paste to-from FilterField. Move to mixin?
-    updateModel: function(rootModel) {
-      var model = this.getModelFromRoot(rootModel, this.relationship),
+    updateModel: function(rootModel, parentModel) {
+      var model = this.getModelFromRoot(this.relationship, rootModel, parentModel),
         value = this.getValue(),
         filters = this.model.getFilters(this.filterKey);
 
@@ -12108,8 +12184,8 @@ define('view/form/fields/FilterField',[
       return undefined;
     },
 
-    updateModel: function(rootModel) {
-      var model = this.getModelFromRoot(rootModel, this.relationship),
+    updateModel: function(rootModel, parentModel) {
+      var model = this.getModelFromRoot(this.relationship, rootModel, parentModel),
         value = this.getValue(),
         filters = this.model.getFilters(this.filterKey);
 
@@ -12437,7 +12513,7 @@ define('view/grid/GridView',[
       $(this.el).append(this.gridEl);
     },
 
-    setModel: function(rootModel) {
+    setModel: function(rootModel, parentModel) {
       ModelView.prototype.setModel.apply(this, arguments);
       if (this.model) {
         this.grid.setData(this.createGridData(this.model));

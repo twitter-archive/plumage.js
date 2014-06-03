@@ -12,13 +12,13 @@ function($, _, Backbone, Plumage, GridData) {
   /** @lends Plumage.collection.BufferedGridData.prototype */
   {
     /** Loaded data is stored here, instead of in the Collection */
-    data: [],
+    data: undefined,
 
     /** Map of id to index for everything in .data */
-    idToIndex: {},
+    idToIndex: undefined,
 
     /** Running requests */
-    requests: {},
+    requests: undefined,
 
     /** Total rows on the server. */
     total: undefined,
@@ -34,6 +34,10 @@ function($, _, Backbone, Plumage, GridData) {
      */
     initialize: function(collection, options) {
       _.extend(this, options);
+      this.data = [];
+      this.idToIndex = {};
+      this.requests = {};
+
       this.collection = collection;
       this.collection.on('load', this.onLoad, this);
       this.collection.on('beginLoad', function() {

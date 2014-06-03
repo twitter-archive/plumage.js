@@ -52,6 +52,9 @@ define([
         }.bind(this));
       }
 
+      if (!this.listModel) {
+        return '';
+      }
       if (labels.length === this.listModel.size()) {
         return 'All';
       }

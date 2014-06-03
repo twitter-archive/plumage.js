@@ -225,8 +225,8 @@ define([
     // View value <--> Model
     //
 
-    updateModel: function(rootModel) {
-      var model = this.getModelFromRoot(rootModel, this.relationship),
+    updateModel: function(rootModel, parentModel) {
+      var model = this.getModelFromRoot(this.relationship, rootModel, parentModel),
         value = this.getValue();
       model.set(this.valueAttr, value);
     },

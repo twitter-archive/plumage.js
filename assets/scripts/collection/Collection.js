@@ -12,7 +12,7 @@ define([
   /** @lends Plumage.collection.Collection.prototype */
   {
 
-    rootUrl: undefined,
+    urlRoot: undefined,
 
     viewAttrs: ['query', 'sortDir', 'sortField', 'page', 'pageSize'],
 
@@ -114,17 +114,49 @@ define([
       return true;
     },
 
+    /**
+     * This Collection's url. Returns an attribute or option named 'href' if it exists.
+     * Otherwise uses urlRoot like backbone.
+     */
     url: function () {
+      var href = this.href || this.get('href');
+      if (href) {
+        return href;
+      }
       return this.urlRoot;
     },
 
-    urlWithParams: function () {
-      var params = $.param(this.getQueryParams(), true);
-      var url = this.url();
-      if (url && params) {
-        url = url + '?' + params;
+
+    /**
+     * Overridden from Model. Takes a special attributes 'models' to use as collection data,
+     * so that attributes and models can be set from the same data.
+     */
+    set: function(key, val, options) {
+      var attr, attrs, unset, changes, silent, changing, prev, current;
+      if (key === null) {
+        return this;
       }
-      return url;
+
+      // Handle both `"key", value` and `{key: value}` -style arguments.
+      if (typeof key === 'object') {
+        attrs = key;
+        options = val;
+      } else {
+        (attrs = {})[key] = val;
+      }
+
+      options = options || {};
+      attrs = _.clone(attrs);
+
+      if (attrs.models) {
+        if (this.processInMemory) {
+          this.resetInMemory(attrs.models);
+        } else {
+          this.reset(attrs.models);
+        }
+        delete attrs.models;
+      }
+      return Model.prototype.set.apply(this, [attrs, options]);
     },
 
     //

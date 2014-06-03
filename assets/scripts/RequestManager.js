@@ -42,6 +42,7 @@ function($, _, Backbone, Plumage) {
       if (xhr) {
         this.requests.push({xhr: xhr, url: model.url()});
       }
+      return xhr;
     },
 
     /** cancel all uncompleted requests. */
@@ -49,8 +50,9 @@ function($, _, Backbone, Plumage) {
       for(var i=0;i<this.requests.length;i++) {
         var xhr = this.requests[i].xhr;
         var url = this.requests[i].url;
-
-        xhr.abort();
+        if (xhr.abort){
+          xhr.abort();
+        }
       }
       this.requests = [];
     },

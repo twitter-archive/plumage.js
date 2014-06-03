@@ -87,6 +87,7 @@ function($, _, Backbone, Plumage, requestManager, ModelUtil) {
      * @constructs
      */
     constructor : function (attributes, options ) {
+      options = options || {};
       this.related = {};
       Backbone.Model.apply( this, arguments );
     },
@@ -339,16 +340,24 @@ function($, _, Backbone, Plumage, requestManager, ModelUtil) {
      * @param {String} key Relationship key
      */
     getRelated: function(key) {
-      if (this.related && this.related[key]) {
-        return this.related[key];
-      }
-      if (this.collection && this.collection.hasRelationship(key) && this.collection.getRelated(key)) {
-        return this.collection.getRelated(key);
+      var keyParts = key.split('.'),
+        keyPart = keyParts[0],
+        related;
+
+      if (this.related && this.related[keyPart]) {
+        related = this.related[keyPart];
+      } else if (this.collection && this.collection.hasRelationship(keyPart) && this.collection.getRelated(keyPart)) {
+        related = this.collection.getRelated(keyPart);
+      } else {
+        if (!this.hasRelationship(keyPart)) {
+          throw 'unknown relationship';
+        }
       }
 
-      if (!this.hasRelationship(key)) {
-        throw 'unknown relationship';
+      if (related && keyParts.length > 1) {
+        return related.getRelated(keyParts.slice(1).join('.'));
       }
+      return related;
     },
 
     setRelated: function(key, model) {
@@ -423,17 +432,15 @@ function($, _, Backbone, Plumage, requestManager, ModelUtil) {
      * @param {Object} data Data to set on Model.
      */
     updateRelatedModel: function(relationship, model, data) {
-      if (relationship.remote) {
-        if (relationship.deferLoad) {
-          model.deferLoad = true;
-        }
-      } else {
-        if (model instanceof Plumage.collection.Collection) {
-          model.resetInMemory(data);
-        } else {
-          model.set(data);
+      if (relationship.remote && relationship.deferLoad) {
+        model.deferLoad = true;
+      }
+      if (model instanceof Plumage.collection.Collection) {
+        if ($.isArray(data)) {
+          data = {models: data};
         }
       }
+      model.set(data, {silent: true});
     },
 
     /**
@@ -488,15 +495,22 @@ function($, _, Backbone, Plumage, requestManager, ModelUtil) {
      * @returns {boolean}
      */
     hasUrl: function() {
-      return Boolean(_.result(this, 'urlRoot') || _.result(this.collection, 'url'));
+      return Boolean(_.result(this, 'url') || _.result(this, 'urlRoot'));
     },
 
     /**
-     * This Model's url. Return null if url data is not yet available.
+     * This Model's url. Returns an attribute named 'href' if it exists.
+     * Otherwise uses urlRoot from backbone.
+     *
+     * When overriding, return null if url data is not yet available.
      * @returns {string} Url or null
      * @see Plumage.model.Model#fetchIfAvailable
      */
     url: function() {
+      var href = this.get('href');
+      if (href) {
+        return href;
+      }
       return Backbone.Model.prototype.url.apply(this, arguments);
     },
 
@@ -509,14 +523,18 @@ function($, _, Backbone, Plumage, requestManager, ModelUtil) {
     urlWithParams: function (extras) {
       extras = extras || {};
       var url = this.url.apply(this, arguments);
-      if (url === null) {
+      if (url === null || url === undefined) {
         return null;
       }
       var params = this.getQueryParams();
       params = _.extend({}, params, extras);
-      if (params) {
+      if (params && !$.isEmptyObject(params)) {
         params = $.param(params, true);
-        return url + '?' + params;
+        if (url.indexOf('?') >= 0) {
+          return url + '&' + params;
+        } else {
+          return url + '?' + params;
+        }
       }
       return url;
     },

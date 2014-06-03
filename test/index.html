@@ -9,7 +9,7 @@
   <script src="vendor/qunit-reporter-junit.js"></script>
   <script type="text/javascript" src="scripts/vendor/require.js"></script>
   <script type="text/javascript" src="bower_components/blanket/dist/qunit/blanket.js"
-    data-cover-never="['scripts/vendor','scripts/../vendor','scripts/plumage','text','jquery','./lib/','./test/','./example/']"></script>
+    data-cover-never="['scripts/vendor','scripts/../vendor','text','jquery','./lib/','./test/','./example/']"></script>
 
   <script type="text/javascript" src="scripts/config.js"></script>
   <script type="text/javascript">
@@ -75,11 +75,15 @@
       paths: {
         'test': '../test',
         'sinon': '../vendor/sinon',
-        'vendor': '../vendor'
+        'vendor': '../vendor',
+        'example': '../example'
       },
       shim: {
         'sinon': {
           exports: 'sinon'
+        },
+        'moment': {
+          exports: 'moment'
         }
       }
     });

@@ -80,7 +80,7 @@ define([
       $(this.el).append(this.gridEl);
     },
 
-    setModel: function(rootModel) {
+    setModel: function(rootModel, parentModel) {
       ModelView.prototype.setModel.apply(this, arguments);
       if (this.model) {
         this.grid.setData(this.createGridData(this.model));

@@ -38,6 +38,18 @@ define([
     ok(collection2.get('filter') !== collection.get('filter'), 'should not share filter');
   });
 
+  test('Can set attributes and models', function() {
+    var collection = new PostCollection();
+
+    collection.set({
+      href: '/foo',
+      models: ExampleData.POSTS
+    });
+
+    equal(collection.get('href'), '/foo', 'should set attributes');
+    equal(collection.size(), ExampleData.POSTS.length, 'should set models');
+  });
+
   test('load', function() {
     this.ajaxResponse = {results: ExampleData.POSTS};
 

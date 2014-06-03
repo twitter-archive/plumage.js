@@ -44,8 +44,8 @@ define([
     },
 
     //Currently copy-paste to-from FilterField. Move to mixin?
-    updateModel: function(rootModel) {
-      var model = this.getModelFromRoot(rootModel, this.relationship),
+    updateModel: function(rootModel, parentModel) {
+      var model = this.getModelFromRoot(this.relationship, rootModel, parentModel),
         value = this.getValue(),
         filters = this.model.getFilters(this.filterKey);
 

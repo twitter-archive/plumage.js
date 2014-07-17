@@ -10,7 +10,7 @@ html {
 }
 
 .docs header {
-  @include gradient-directional(#ABC9B3, #D3E3D7, 45deg);
+  background: #3933C9;
   color: #fff;
   text-shadow: 0 1px 3px rgba(0, 0, 0, 0.4), 0 0 30px rgba(0, 0, 0, 0.075);
   h1 {

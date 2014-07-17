@@ -5822,12 +5822,7 @@ html {
   padding-top: 40px; }
 
 .docs header {
-  background-color: #d3e3d7;
-  background-repeat: repeat-x;
-  background-image: -moz-linear-gradient(45deg, #abc9b3, #d3e3d7);
-  background-image: -webkit-linear-gradient(45deg, #abc9b3, #d3e3d7);
-  background-image: -o-linear-gradient(45deg, #abc9b3, #d3e3d7);
-  background-image: linear-gradient(45deg, #abc9b3, #d3e3d7);
+  background: #3933C9;
   color: #fff;
   text-shadow: 0 1px 3px rgba(0, 0, 0, 0.4), 0 0 30px rgba(0, 0, 0, 0.075); }
   .docs header h1 {

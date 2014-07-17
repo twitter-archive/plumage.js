@@ -103,15 +103,15 @@ function($, _, Backbone, Plumage, History) {
     },
 
     navigate: function(url, options) {
+      //remove host and protocol if it's local
+      if (url.indexOf(window.location.origin) === 0) {
+        url = url.slice(window.location.origin.length);
+      }
+
       //remove url prefix
       if (url.indexOf(this.rootUrl) === 0) {
         url = url.slice(this.rootUrl.length);
       }
-
-      if (!this.pushState) {
-        url = url.replace(/^\//,'').replace('\#\!\/','');
-      }
-
       this.history.navigate(url, options);
     },
 

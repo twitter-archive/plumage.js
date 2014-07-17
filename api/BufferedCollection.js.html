@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Source: collection/BufferedCollection.js</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+    <link type="text/css" rel="stylesheet" href="../styles/docs.css">
+</head>
+
+<body>
+
+<div class="navbar navbar-fixed-top">
+  <div class="navbar-inner">
+    <div class="container">
+      <button type="button" class="btn btn-navbar" data-toggle="collapse" data-target=".nav-collapse">
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+      </button>
+      <a class="brand" href="../">PlumageJS</a>
+      <div class="nav-collapse collapse">
+        <ul class="nav">
+          <li>
+            <a href="../">Home</a>
+          </li>
+          <li class="active">
+            <a href="index.html">API</a>
+          </li>
+          <li>
+            <a href="../examples.html">Examples</a>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="container">
+  <div class="row">
+<div id="main" class="span8">
+    <h1 class="page-title">Source: collection/BufferedCollection.js</h1>
+    
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source"><code>define([
+  'jquery',
+  'underscore',
+  'backbone',
+  'PlumageRoot',
+],
+
+function($, _, Backbone, Plumage) {
+
+
+  /**
+   * Wraps a collection to cache pages.
+   *
+   * @constructs Plumage.collection.BufferedCollection
+   */
+  var BufferedCollection = function(collection) {
+    this.initialize.apply(this, arguments);
+  };
+
+  _.extend(BufferedCollection.prototype, Backbone.Events,
+  /** @lends Plumage.collection.BufferedCollection.prototype */
+  {
+
+    /** buffer of pages */
+    buffer: undefined,
+
+    /** Map of id to index for everything in cache */
+    idToIndex: undefined,
+
+    /** Running requests */
+    requests: undefined,
+
+    /** Total rows on the server. */
+    total: undefined,
+
+    initialize: function(collection, options) {
+      this.requests = [];
+      this.clearBuffer();
+
+      this.collection = collection;
+      this.collection.on('load', this.onCollectionLoad, this);
+      this.collection.on('all', this.onCollectionEvent, this);
+
+    },
+
+    // wrapped overrides
+
+    at: function(index) {
+      return this.buffer[index];
+    },
+
+    getById: function(id) {
+      return this.at(this.idToIndex[id]);
+    },
+
+    indexOf: function(model) {
+      return this.idToIndex[model.id];
+    },
+
+    size: function() {
+      return this.total;
+    },
+
+    /**
+     * Loads missing pages
+     */
+    ensureData: function(from, to) {
+      if (!this.collection.fetched) {
+        //regular load first to get meta data
+        this.trigger('beginPageLoad', this, 0);
+
+        this.collection.once('load', function() {
+          this.ensureData(from, to);
+        }.bind(this));
+
+        this.collection.load();
+
+        return;
+      }
+
+      var pageSize = this.collection.get('pageSize');
+      if (from &lt; 0) {
+        from = 0;
+      }
+      if (!to) {
+        to = from + pageSize-1;
+      }
+      var fromPage = Math.floor(from / pageSize);
+      var toPage = Math.floor(to / pageSize);
+
+      while (this.buffer[fromPage * pageSize] !== undefined && fromPage &lt; toPage) {
+        fromPage += 1;
+      }
+
+      while (this.buffer[toPage * pageSize] !== undefined && fromPage &lt; toPage) {
+        toPage -= 1;
+      }
+
+      if (fromPage > toPage || ((fromPage === toPage) && this.buffer[fromPage * pageSize] !== undefined)) {
+        // already have it
+        return;
+      }
+
+      this.trigger('beginLoad', this, from, to);
+
+      for (var i=fromPage;i&lt;=toPage;i++) {
+        this.loadPage(i);
+      }
+    },
+
+    /** Load page number 'page' */
+    loadPage: function(pageIndex) {
+      //already requesting?
+      if (this.requests[pageIndex] !== undefined) {
+        return;
+      }
+
+      var options = {
+        data: _.extend(this.collection.getQueryParams(), {page: pageIndex, noTotal: true}),
+        success: function (resp) {
+          //silent because so we don't trigger this.onLoad
+          this.collection.reset(resp, {parse: true, silent: true});
+          this.onBufferLoad(this.collection, pageIndex);
+        }.bind(this)
+      };
+
+      this.trigger('beginPageLoad', this, pageIndex);
+      //calling sync directly instead of load so we don't trigger load event
+      this.requests[pageIndex] = this.collection.sync('read', this.collection, options);
+    },
+
+    // Handlers
+
+    /** Loads models into the buffer after a page load request. */
+    onBufferLoad: function(collection, pageIndex) {
+      delete this.requests[pageIndex];
+
+      this.addModelsToBuffer(collection.models, pageIndex, this.collection.get('pageSize'));
+    },
+
+    /**
+     * Propagate all events except load. Triggering of load event is special cased in [onCollectionLoad]{@link Plumage.collection.BufferedCollection#onLoad}
+     */
+    onCollectionEvent: function(e, collection, resp) {
+      // load is handled separately in onCollectionLoad (because named handlers are triggered before all handlers)
+      if (e !== 'load') {
+        this.trigger(e);
+      }
+    },
+
+    /**
+     * Handle collection's initial load event
+     * Clears the buffer and adds the collection's models when the Collection emits the load event.
+     * Does not occur when loading subsequent pages.
+     */
+    onCollectionLoad: function(collection, resp) {
+      this.clearBuffer();
+      this.total = collection.get('total') || collection.size();
+      this.addModelsToBuffer(collection.models, collection.get('page'), collection.get('pageSize'));
+    },
+
+    clearBuffer: function() {
+      this.buffer = [];
+      this.idToIndex = {};
+    },
+
+    /**
+     * Helper that adds a list of models to the buffer.
+     * @private
+     */
+    addModelsToBuffer: function(models, pageIndex, pageSize) {
+      for (var i=0; i&lt;models.length;i++) {
+        var model = models[i];
+        var index = pageIndex * pageSize + i;
+        this.buffer[index] = model;
+        this.idToIndex[model.id] = index;
+      }
+      var from = pageIndex * pageSize;
+      var to = from + models.length;
+      this.trigger('pageLoad', this, from, to);
+    }
+
+
+  });
+
+  var passThroughMethods = ['getRelated', 'setSort'];
+  _.each(passThroughMethods, function(method) {
+    BufferedCollection.prototype[method] = function() {this.collection[method].apply(this.collection, arguments);};
+  });
+
+
+  return Plumage.collection.BufferedCollection = BufferedCollection;
+});</code></pre>
+        </article>
+    </section>
+
+
+
+
+</div>
+
+<nav class="span4">
+    <h2><a href="index.html">Index</a></h2><h3>Classes</h3><ul><li><a href="Plumage.App.html">App</a></li><li><a href="Plumage.collection.BufferedCollection.html">BufferedCollection</a></li><li><a href="Plumage.collection.Collection.html">Collection</a></li><li><a href="Plumage.collection.GridData.html">GridData</a></li><li><a href="Plumage.controller.BaseController.html">BaseController</a></li><li><a href="Plumage.controller.ModelController.html">ModelController</a></li><li><a href="Plumage.ControllerManager.html">ControllerManager</a></li><li><a href="Plumage.History.html">History</a></li><li><a href="Plumage.model.Filter.html">Filter</a></li><li><a href="Plumage.model.Model.html">Model</a></li><li><a href="Plumage.RequestManager.html">RequestManager</a></li><li><a href="Plumage.Router.html">Router</a></li><li><a href="Plumage.util.Logger.html">Logger</a></li><li><a href="Plumage.view.CollectionView.html">CollectionView</a></li><li><a href="Plumage.view.ContainerView.html">ContainerView</a></li><li><a href="Plumage.view.form.fields.DatePicker.html">DatePicker</a></li><li><a href="Plumage.view.form.fields.Field.html">Field</a></li><li><a href="Plumage.view.ModelView.html">ModelView</a></li><li><a href="Plumage.view.View.html">View</a></li></ul><h3>Namespaces</h3><ul><li><a href="Plumage.html">Plumage</a></li><li><a href="Plumage.collection.html">collection</a></li><li><a href="Plumage.controller.html">controller</a></li><li><a href="Plumage.model.html">model</a></li><li><a href="Plumage.util.html">util</a></li><li><a href="Plumage.vendor.html">vendor</a></li><li><a href="Plumage.view.html">view</a></li><li><a href="Plumage.view.comment.html">comment</a></li><li><a href="Plumage.view.controller.html">controller</a></li><li><a href="Plumage.view.form.html">form</a></li><li><a href="Plumage.view.form.fields.html">fields</a></li><li><a href="Plumage.view.form.fields.picker.html">picker</a></li><li><a href="Plumage.view.grid.html">grid</a></li><li><a href="Plumage.view.menu.html">menu</a></li></ul>
+</nav>
+</div>
+</div>
+
+<br clear="both">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.2.2</a>
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>

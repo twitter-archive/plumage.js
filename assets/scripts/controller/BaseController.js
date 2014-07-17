@@ -79,7 +79,7 @@ function($, _, Backbone, Plumage, requestManager) {
      * @param {Plumage.model.Model} model Model to load.
      */
     loadModel: function(model, options) {
-      requestManager.loadModel(model, options);
+      return requestManager.loadModel(model, options);
     }
   });
 

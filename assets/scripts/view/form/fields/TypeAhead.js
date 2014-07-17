@@ -308,7 +308,7 @@ define([
      * For override
      */
 
-    setModel: function(rootModel) {
+    setModel: function(rootModel, parentModel) {
       Select.prototype.setModel.apply(this, arguments);
     },
 

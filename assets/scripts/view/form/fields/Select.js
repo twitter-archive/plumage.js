@@ -66,6 +66,9 @@ define([
      */
     initialize: function() {
       Field.prototype.initialize.apply(this, arguments);
+      if (this.listValues && this.defaultToFirst) {
+        this.setValue(this.listValues[0].value);
+      }
     },
 
     /**
@@ -91,7 +94,7 @@ define([
         defaultToFirst: this.defaultToFirst
       });
 
-      if (!data.value) {
+      if (data.value === undefined || data.value === null) {
         if (this.listModel && this.listModel.size() > 0) {
           data.valueLabel = this.noSelectionText;
           data.value = this.noSelectionValue;
@@ -169,17 +172,17 @@ define([
 
     hasSelection: function() {
       var value = this.getValue();
-      return Boolean(value && value !== this.noSelectionValue);
+      return value !== null && value !== undefined && value !== this.noSelectionValue;
     },
 
     /**
      * List Model
      **************/
 
-    setModel: function(rootModel) {
+    setModel: function(rootModel, parentModel) {
       Field.prototype.setModel.apply(this, arguments);
       if (this.listRelationship) {
-        var listModel = this.getModelFromRoot(rootModel, this.listRelationship);
+        var listModel = this.getModelFromRoot(this.listRelationship, rootModel, parentModel);
         if (listModel) {
           this.setListModel(listModel);
         }

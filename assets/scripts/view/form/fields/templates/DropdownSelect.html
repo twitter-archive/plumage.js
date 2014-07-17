@@ -20,7 +20,9 @@
 </a>
 <ul class="dropdown-menu">
 {{#listValues}}
-  <li data-value="{{value}}" class="{{value}}{{#selected}} active{{/selected}}"><a href="#">{{label}}</a></li>
+  <li data-value="{{value}}" class="{{value}}{{#selected}} active{{/selected}} {{#disabled}}disabled{{/disabled}}">
+    <a href="#">{{label}}</a>
+  </li>
 {{/listValues}}
 </ul>
 </span>

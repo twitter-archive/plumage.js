@@ -1,6 +1,6 @@
 define([ 'jquery', 'underscore', 'backbone',
   'PlumageRoot',
-  'model/Selection',
+  'collection/Selection',
   'view/CollectionView','view/ListItemView' ], function($, _, Backbone, Plumage,
       Selection, CollectionView, ListItemView) {
 

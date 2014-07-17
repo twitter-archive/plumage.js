@@ -18,13 +18,12 @@ function($, Backbone, Plumage, CountriesRouter) {
   });
 
   var isStatic = Boolean(window.isStatic);
-  var rootUrl = isStatic ? '/examples/countries.html' : '/examples/countries';
+  var rootUrl = '/examples/countries.html';
 
-
-  var rootUrl = '/examples/countries';
   window.router = new CountriesRouter({
     app: theApp,
     rootUrl: rootUrl,
+    defaultUrl: rootUrl,
     pushState: !Boolean(window.isStatic)
   });
   window.router.start();

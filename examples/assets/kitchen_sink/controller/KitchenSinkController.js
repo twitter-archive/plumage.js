@@ -23,7 +23,7 @@ function($, _, Backbone, Plumage, ExampleSectionView, ExampleSection, examples) 
     },
 
     home: function(section, options) {
-      window.router.navigate('model/Models', {trigger: true});
+      window.router.navigate('model/Models', {trigger: true, replace: true});
     },
 
     showSection: function(section, options) {
@@ -39,6 +39,7 @@ function($, _, Backbone, Plumage, ExampleSectionView, ExampleSection, examples) 
           model.preloadSource(function(){
             this.doShowSection(model, example, options);
           }.bind(this));
+          model.onLoad();
         }
         this.exampleSections[section] = model;
       }

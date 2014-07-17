@@ -8,6 +8,28 @@ define([
 
   return Plumage.util.DateTimeUtil = {
 
+    isSameDay: function(date1, date2, isUtc) {
+      if (!date1 || !date2) {
+        return false;
+      }
+      if ($.isNumeric(date1)) {
+        date1 = isUtc ? moment.utc(date1) : moment(date1);
+      }
+      if ($.isNumeric(date2)) {
+        date2 = isUtc ? moment.utc(date2) : moment(date2);
+      }
+      return date1.format('YYYY-MM-DD') === date2.format('YYYY-MM-DD');
+    },
+
+    isDateInRange: function(date, minDate, maxDate, isUtc) {
+      if ($.isNumeric(date)) {
+        date = isUtc ? moment.utc(date) : moment(date);
+      }
+
+      return !((minDate && ! Plumage.util.DateTimeUtil.isSameDay(date, minDate) && date.isBefore(minDate)) || (
+          maxDate && ! Plumage.util.DateTimeUtil.isSameDay(date, maxDate, isUtc) && date.isAfter(maxDate)));
+    },
+
     formatDate: function(timestamp, dateFormat) {
       dateFormat = dateFormat || Plumage.util.defaultDateFormat;
       return new moment(Number(timestamp)*1000).format(dateFormat);

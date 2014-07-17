@@ -35,6 +35,7 @@ define([
 
       // Capture ajax settings for comparison.
       Backbone.ajax = function(settings) {
+        var deferred = $.Deferred();
         env.ajaxCount += 1;
         env.ajaxSettings = settings;
         if (env.console) {
@@ -44,6 +45,7 @@ define([
 
           setTimeout(function(){
             settings.success(env.ajaxResponse);
+            deferred.resolve();
           });
         } else {
           if (env.ajaxResponseStatus === 'error') {
@@ -55,7 +57,9 @@ define([
               settings.success(env.ajaxResponse);
             }
           }
+          deferred.resolve();
         }
+        return deferred;
       };
 
       // Capture the arguments to Backbone.sync for comparison.
@@ -65,7 +69,7 @@ define([
           model: model,
           options: options
         };
-        env.sync.apply(this, arguments);
+        return env.sync.apply(this, arguments);
       };
     },
 

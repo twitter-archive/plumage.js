@@ -1,16 +1,15 @@
 define([
   'jquery',
   'backbone',
-  'handlebars',
   'PlumageRoot',
   'view/ModelView'
-], function($, Backbone, Handlebars, Plumage, ModelView) {
+], function($, Backbone, Plumage, ModelView) {
 
   return Plumage.view.controller.IndexView = ModelView.extend({
 
     className: 'content container-fluid index-view',
 
-    template: Handlebars.compile('<div class="filter-view"></div><div class="grid-view"></div>'),
+    template: '<div class="filter-view"></div><div class="grid-view"></div>',
 
     gridViewCls: undefined,
 

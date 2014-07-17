@@ -72,12 +72,19 @@
       &:hover {
         text-decoration: none;
       }
+      &:before {
+        -webkit-transition: -webkit-transform 0.2s;
+      }
     }
     li.active a {
       font-weight: bold;
       background: #fff;
       padding-right: 1px;
       margin-right: -1px;
+      &:before {
+        @include scale(1.1);
+        -webkit-transition: -webkit-transform 0.2s;
+      }
     }
   }
 

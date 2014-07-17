@@ -65,7 +65,7 @@
   /** @lends Plumage.collection.Collection.prototype */
   {
 
-    rootUrl: undefined,
+    urlRoot: undefined,
 
     viewAttrs: ['query', 'sortDir', 'sortField', 'page', 'pageSize'],
 
@@ -87,6 +87,8 @@
     hasFilters: true,
 
     relationships: {},
+
+    selections: undefined,
 
     /**
      * Base Collection class for Plumage collections.
@@ -157,7 +159,6 @@
     initialize: function(models, options) {
       options = options || {};
       var meta = _.extend(_.clone(this.defaultMeta), options.meta || {});
-      meta.filter = meta.filter || {};
       this.set(meta, {silent: true});
       delete options.meta;
       _.extend(this, options);
@@ -167,17 +168,49 @@
       return true;
     },
 
+    /**
+     * This Collection's url. Returns an attribute or option named 'href' if it exists.
+     * Otherwise uses urlRoot like backbone.
+     */
     url: function () {
+      var href = this.href || this.get('href');
+      if (href) {
+        return href;
+      }
       return this.urlRoot;
     },
 
-    urlWithParams: function () {
-      var params = $.param(this.getQueryParams(), true);
-      var url = this.url();
-      if (url && params) {
-        url = url + '?' + params;
+
+    /**
+     * Overridden from Model. Takes a special attributes 'models' to use as collection data,
+     * so that attributes and models can be set from the same data.
+     */
+    set: function(key, val, options) {
+      var attr, attrs, unset, changes, silent, changing, prev, current;
+      if (key === null) {
+        return this;
       }
-      return url;
+
+      // Handle both `"key", value` and `{key: value}` -style arguments.
+      if (typeof key === 'object') {
+        attrs = key;
+        options = val;
+      } else {
+        (attrs = {})[key] = val;
+      }
+
+      options = options || {};
+      attrs = _.clone(attrs);
+
+      if (attrs.models) {
+        if (this.processInMemory) {
+          this.resetInMemory(attrs.models);
+        } else {
+          this.reset(attrs.models);
+        }
+        delete attrs.models;
+      }
+      return Model.prototype.set.apply(this, [attrs, options]);
     },
 
     //
@@ -375,6 +408,7 @@
     toViewJSON: function() {
       var result = Model.prototype.toViewJSON.apply(this, arguments);
       result.items = this.toJSON.apply(this, arguments);
+      result.size = this.size();
       return result;
     },
 
@@ -412,6 +446,16 @@
       if (refresh) {
         requestManager.loadModel(this);
       }
+    },
+
+    getSelection: function(selectionName) {
+      if (!this.selections) {
+        this.selections = {};
+      }
+      if (!this.selections[selectionName]) {
+        this.selections[selectionName] = new Plumage.collection.Selection([], {collection: this});
+      }
+      return this.selections[selectionName];
     },
 
     //
@@ -455,50 +499,17 @@
      * the server for a processInMemory collection, call [forceReload]{@link Plumage.collection.Collection#forceReload}
      *
      * If not in memory, load remote data for current model and view state.
-     *
-     * Prevents duplicate request with the same query params using this.latestLoadParams
      */
     load: function(options) {
       options = (options || {});
-      var opts = _.clone(options || {});
-
       if (this.processInMemory && this.fetched) {
         if (this.buffered) {
           throw 'Can not be both buffered and processInMemory';
         }
-        this.onLoad(opts);
+        this.onLoad(_.clone(options));
         return;
       }
-
-      opts.data = _.extend(this.getQueryParams(), opts.data);
-
-      if (_.isEqual(this.latestLoadParams, opts.data)) {
-        return;
-      }
-      this.latestLoadParams = opts.data;
-
-      var success = opts.success,
-        error = opts.error;
-      var collection = this;
-      opts.success = function(model, resp, options) {
-        collection.onLoad(opts);
-        if (success) {
-          success(model, resp, options);
-        }
-      };
-      opts.error = function(model, xhr, options) {
-        if (typeof theApp !== 'undefined' && theApp.logger) {
-          if (xhr.statusText !== 'abort') {
-            theApp.logger.error(xhr.statusText, 'Model load error');
-          }
-        }
-        if (error) {
-          error(model, xhr, opts);
-        }
-      };
-
-      this.fireBeginLoad();
-      return this.fetch(opts);
+      return Model.prototype.load.apply(this, arguments);
     },
 
     /**
@@ -511,10 +522,6 @@
       this.fetched = false;
       this.originalModels = undefined;
       this.load({reset: true});
-    },
-
-    fireBeginLoad: function() {
-      this.trigger('beginLoad', this);
     },
 
     /**
@@ -1034,7 +1041,7 @@
 </div>
 
 <nav class="span4">
-    <h2><a href="index.html">Index</a></h2><h3>Classes</h3><ul><li><a href="Plumage.App.html">App</a></li><li><a href="Plumage.collection.BufferedGridData.html">BufferedGridData</a></li><li><a href="Plumage.collection.Collection.html">Collection</a></li><li><a href="Plumage.collection.GridData.html">GridData</a></li><li><a href="Plumage.controller.BaseController.html">BaseController</a></li><li><a href="Plumage.controller.ModelController.html">ModelController</a></li><li><a href="Plumage.ControllerManager.html">ControllerManager</a></li><li><a href="Plumage.History.html">History</a></li><li><a href="Plumage.model.Filter.html">Filter</a></li><li><a href="Plumage.model.Model.html">Model</a></li><li><a href="Plumage.RequestManager.html">RequestManager</a></li><li><a href="Plumage.Router.html">Router</a></li><li><a href="Plumage.util.Logger.html">Logger</a></li><li><a href="Plumage.view.calendar.Calendar.html">Calendar</a></li><li><a href="Plumage.view.CollectionView.html">CollectionView</a></li><li><a href="Plumage.view.ContainerView.html">ContainerView</a></li><li><a href="Plumage.view.form.fields.DatePicker.html">DatePicker</a></li><li><a href="Plumage.view.form.fields.DateRangePicker.html">DateRangePicker</a></li><li><a href="Plumage.view.form.fields.Field.html">Field</a></li><li><a href="Plumage.view.ModelView.html">ModelView</a></li><li><a href="Plumage.view.View.html">View</a></li></ul><h3>Namespaces</h3><ul><li><a href="Plumage.html">Plumage</a></li><li><a href="Plumage.collection.html">collection</a></li><li><a href="Plumage.controller.html">controller</a></li><li><a href="Plumage.model.html">model</a></li><li><a href="Plumage.util.html">util</a></li><li><a href="Plumage.vendor.html">vendor</a></li><li><a href="Plumage.view.html">view</a></li><li><a href="Plumage.view.calendar.html">calendar</a></li><li><a href="Plumage.view.comment.html">comment</a></li><li><a href="Plumage.view.controller.html">controller</a></li><li><a href="Plumage.view.form.html">form</a></li><li><a href="Plumage.view.form.fields.html">fields</a></li><li><a href="Plumage.view.grid.html">grid</a></li><li><a href="Plumage.view.menu.html">menu</a></li></ul>
+    <h2><a href="index.html">Index</a></h2><h3>Classes</h3><ul><li><a href="Plumage.App.html">App</a></li><li><a href="Plumage.collection.BufferedCollection.html">BufferedCollection</a></li><li><a href="Plumage.collection.Collection.html">Collection</a></li><li><a href="Plumage.collection.GridData.html">GridData</a></li><li><a href="Plumage.controller.BaseController.html">BaseController</a></li><li><a href="Plumage.controller.ModelController.html">ModelController</a></li><li><a href="Plumage.ControllerManager.html">ControllerManager</a></li><li><a href="Plumage.History.html">History</a></li><li><a href="Plumage.model.Filter.html">Filter</a></li><li><a href="Plumage.model.Model.html">Model</a></li><li><a href="Plumage.RequestManager.html">RequestManager</a></li><li><a href="Plumage.Router.html">Router</a></li><li><a href="Plumage.util.Logger.html">Logger</a></li><li><a href="Plumage.view.CollectionView.html">CollectionView</a></li><li><a href="Plumage.view.ContainerView.html">ContainerView</a></li><li><a href="Plumage.view.form.fields.DatePicker.html">DatePicker</a></li><li><a href="Plumage.view.form.fields.Field.html">Field</a></li><li><a href="Plumage.view.ModelView.html">ModelView</a></li><li><a href="Plumage.view.View.html">View</a></li></ul><h3>Namespaces</h3><ul><li><a href="Plumage.html">Plumage</a></li><li><a href="Plumage.collection.html">collection</a></li><li><a href="Plumage.controller.html">controller</a></li><li><a href="Plumage.model.html">model</a></li><li><a href="Plumage.util.html">util</a></li><li><a href="Plumage.vendor.html">vendor</a></li><li><a href="Plumage.view.html">view</a></li><li><a href="Plumage.view.comment.html">comment</a></li><li><a href="Plumage.view.controller.html">controller</a></li><li><a href="Plumage.view.form.html">form</a></li><li><a href="Plumage.view.form.fields.html">fields</a></li><li><a href="Plumage.view.form.fields.picker.html">picker</a></li><li><a href="Plumage.view.grid.html">grid</a></li><li><a href="Plumage.view.menu.html">menu</a></li></ul>
 </nav>
 </div>
 </div>

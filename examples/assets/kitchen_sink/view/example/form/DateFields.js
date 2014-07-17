@@ -32,8 +32,15 @@ define([
         valueAttr: 'toDate'
       },
       {
-        viewCls: Plumage.view.form.fields.DateRangePicker,
-        selector: '.date-range-picker',
+        viewCls: Plumage.view.form.fields.DateRangeField,
+        selector: '.date-range-field',
+        fromAttr: 'fromDate',
+        toAttr: 'toDate'
+      },
+      {
+        viewCls: Plumage.view.form.fields.DateRangeField,
+        selector: '.date-range-field-hour',
+        showHourSelect: true,
         fromAttr: 'fromDate',
         toAttr: 'toDate'
       }

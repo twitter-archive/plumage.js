@@ -1,9 +1,0 @@
-<select {{#if fieldName}}name="{{fieldName}}{{/if}}" multiple="multiple">
-{{#if noSelectionText}}
-<option value="{{noSelectionValue}}" {{^hasSelection}}selected="true"{{/hasSelection}}>{{noSelectionText}}</option>
-{{/if}}
-
-{{#listValues}}
-<option value="{{value}}" class="{{value}}" {{#selected}}selected{{/selected}}>{{label}}</option>
-{{/listValues}}
-</select>

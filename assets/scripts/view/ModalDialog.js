@@ -3,11 +3,11 @@ define([
   'underscore',
   'backbone',
   'PlumageRoot',
-  'view/View',
+  'view/ModelView',
   'text!view/templates/ModalDialog.html'
-], function($, _, Backbone, Plumage, View, template) {
+], function($, _, Backbone, Plumage, ModelView, template) {
 
-  return Plumage.view.ModalDialog = View.extend({
+  return Plumage.view.ModalDialog = ModelView.extend({
 
     template: template,
 
@@ -22,11 +22,11 @@ define([
     initialize: function(options) {
       options = options || {};
       options.modalOptions = _.extend(this.modalOptions, options.modalOptions || {});
-      View.prototype.initialize.apply(this, arguments);
+      ModelView.prototype.initialize.apply(this, arguments);
     },
 
     onRender: function() {
-      View.prototype.onRender.apply(this, arguments);
+      ModelView.prototype.onRender.apply(this, arguments);
       if (this.contentView) {
         this.$('.modal-body').html(this.contentView.render().el);
       }
@@ -38,9 +38,10 @@ define([
     },
 
     getTemplateData: function() {
-      return {
+      var data = ModelView.prototype.getTemplateData.apply(this, arguments);
+      return _.extend(data,{
         header: this.header
-      };
+      });
     },
 
     show: function() {

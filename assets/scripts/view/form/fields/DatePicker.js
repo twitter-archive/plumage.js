@@ -6,7 +6,7 @@ define([
   'moment',
   'PlumageRoot',
   'view/form/fields/Field',
-  'view/calendar/Calendar',
+  'view/form/fields/Calendar',
 
   'text!view/form/fields/templates/DatePicker.html',
 ], function($, _, Backbone, Handlebars, moment, Plumage, Field, Calendar, template) {
@@ -33,6 +33,9 @@ define([
       'mousedown .dropdown-menu': 'onDropdownMouseDown'
     },
 
+    minDate: undefined,
+    maxDate: undefined,
+
     /**
      * Field with a popover calendar for selecting a date.
      *
@@ -46,9 +49,14 @@ define([
     initialize: function(options) {
       Field.prototype.initialize.apply(this, arguments);
       this.subViews = [
-        this.calendar = new Calendar(_.extend({selector: '.calendar'}, this.calendarOptions))
+        new Calendar(_.extend({name: 'calendar', selector: '.calendar'}, this.calendarOptions))
       ].concat(options.subViews || []);
-      this.calendar.on('dayclick', this.onDayClick.bind(this));
+      var calendar = this.getSubView('calendar');
+
+      calendar.setMinDate(this.minDate);
+      calendar.setMaxDate(this.maxDate);
+
+      calendar.on('change', this.onCalendarChange, this);
     },
 
     getInputSelector: function() {
@@ -56,8 +64,7 @@ define([
       return 'input:first';
     },
 
-    getValueString: function() {
-      var value = this.getValue();
+    getValueString: function(value) {
       if (value) {
         return moment(value).format(this.format);
       }
@@ -66,7 +73,7 @@ define([
 
     isDomValueValid: function(value) {
       value = moment(value);
-      return !value || value.isValid && value.isValid() && this.calendar.isDateInRange(value);
+      return !value || value.isValid && value.isValid() && this.getSubView('calendar').isDateInMinMax(value);
     },
 
     processDomValue: function(value) {
@@ -77,7 +84,7 @@ define([
     },
 
     update: function() {
-      this.calendar.setSelectedDate(this.getValue());
+      this.getSubView('calendar').setValue(this.getValue());
       Field.prototype.update.apply(this, arguments);
     },
 
@@ -155,8 +162,8 @@ define([
       this.getInputEl().focus();
     },
 
-    onDayClick: function(calendar, date) {
-      this.setValue(date.valueOf());
+    onCalendarChange: function(calendar, value) {
+      this.setValue(value);
       this.close();
     }
   });

@@ -16,6 +16,8 @@ define([
 
     showSelectAll: false,
 
+    allLabel: 'All',
+
     initialize: function() {
       this.value = [];
       Select.prototype.initialize.apply(this, arguments);
@@ -52,8 +54,11 @@ define([
         }.bind(this));
       }
 
+      if (!this.listModel) {
+        return '';
+      }
       if (labels.length === this.listModel.size()) {
-        return 'All';
+        return this.allLabel;
       }
       return labels.join(', ');
     },

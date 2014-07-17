@@ -27,7 +27,11 @@ define([],function() {
       body: 'my body',
       author: {
         id: 7,
-        name: 'bob'
+        name: 'bob',
+        company: {
+          id: 1,
+          name: 'Twitter'
+        }
       },
       comments: [{
         id: 5,
@@ -43,6 +47,39 @@ define([],function() {
         }
       }]
     },
+
+    POST_DATA_WITH_RELATED_HREFS: {
+      id: 1,
+      body: 'my body',
+      author: {
+        href: '/author_href/7'
+      },
+      comments: {
+        href: '/comments_href'
+      }
+    },
+
+    POST_DATA_WITH_COMMENTS_WITH_ATTRIBTES: {
+      id: 1,
+      body: 'my body',
+      comments: {
+        href: '/comments_href',
+        models: [{
+          id: 5,
+          body: 'my comment',
+          user: {
+            username: 'user1'
+          }
+        }, {
+          id: 6,
+          body: 'my comment2',
+          user: {
+            username: 'user2'
+          }
+        }]
+      }
+    },
+
     POSTS_WITH_COMMENTS: [{
       id: 1,
       body: 'my body',

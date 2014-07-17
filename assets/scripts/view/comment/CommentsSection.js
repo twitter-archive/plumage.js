@@ -79,7 +79,7 @@ define([
       }
     },
 
-    setModel: function(rootModel) {
+    setModel: function(rootModel, parentModel) {
       ModelView.prototype.setModel.apply(this, arguments);
       this.resetCommentForm();
     },

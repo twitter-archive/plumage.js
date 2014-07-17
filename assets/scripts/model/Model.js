@@ -1,8 +1,9 @@
 define(['jquery', 'underscore', 'backbone',
   'PlumageRoot',
   'RequestManager',
-  'util/ModelUtil'],
-function($, _, Backbone, Plumage, requestManager, ModelUtil) {
+  'util/ModelUtil',
+  'collection/BufferedCollection'],
+function($, _, Backbone, Plumage, requestManager, ModelUtil, BufferedCollection) {
 
   return Plumage.model.Model = Backbone.Model.extend(
   /** @lends Plumage.model.Model.prototype */
@@ -87,6 +88,7 @@ function($, _, Backbone, Plumage, requestManager, ModelUtil) {
      * @constructs
      */
     constructor : function (attributes, options ) {
+      options = options || {};
       this.related = {};
       Backbone.Model.apply( this, arguments );
     },
@@ -144,6 +146,21 @@ function($, _, Backbone, Plumage, requestManager, ModelUtil) {
     sync: function(method, model, options) {
       options.cache = false;
       return Backbone.sync.apply(this, [method, model, options]);
+    },
+
+    get: function(attr) {
+      if (!attr) {
+        return;
+      }
+      var parts = attr.split('.');
+      if (parts.length > 1) {
+        var related = this.getRelated(parts[0]);
+        if (related) {
+          return related.get(parts.slice(1).join('.'));
+        }
+      } else {
+        return this.attributes[attr];
+      }
     },
 
     /**
@@ -305,10 +322,10 @@ function($, _, Backbone, Plumage, requestManager, ModelUtil) {
           related = this.createRelatedModel(RelatedClass, relationship, data);
         }
         this.setRelated(key, related);
+        return true;
       } else {
-        this.updateRelatedModel(relationship, related, data);
+        return this.updateRelatedModel(relationship, related, data);
       }
-      return true;
     },
 
     /**
@@ -339,16 +356,24 @@ function($, _, Backbone, Plumage, requestManager, ModelUtil) {
      * @param {String} key Relationship key
      */
     getRelated: function(key) {
-      if (this.related && this.related[key]) {
-        return this.related[key];
-      }
-      if (this.collection && this.collection.hasRelationship(key) && this.collection.getRelated(key)) {
-        return this.collection.getRelated(key);
+      var keyParts = key.split('.'),
+        keyPart = keyParts[0],
+        related;
+
+      if (this.related && this.related[keyPart]) {
+        related = this.related[keyPart];
+      } else if (this.collection && this.collection.hasRelationship(keyPart) && this.collection.getRelated(keyPart)) {
+        related = this.collection.getRelated(keyPart);
+      } else {
+        if (!this.hasRelationship(keyPart)) {
+          throw 'unknown relationship';
+        }
       }
 
-      if (!this.hasRelationship(key)) {
-        throw 'unknown relationship';
+      if (related && keyParts.length > 1) {
+        return related.getRelated(keyParts.slice(1).join('.'));
       }
+      return related;
     },
 
     setRelated: function(key, model) {
@@ -394,6 +419,14 @@ function($, _, Backbone, Plumage, requestManager, ModelUtil) {
         options = options(this);
       }
       var relatedCollection = new RelatedClass(null, options);
+
+      if (relationship.buffered) {
+        if (!relationship.remote) {
+          throw 'if buffered, must also be remote';
+        }
+        relatedCollection = new BufferedCollection(relatedCollection);
+      }
+
       if (relationship.propagateEvents) {
         //TODO different events for collection/model
         relatedCollection.on('destroy', this.onRelationChange.bind(this));
@@ -423,17 +456,16 @@ function($, _, Backbone, Plumage, requestManager, ModelUtil) {
      * @param {Object} data Data to set on Model.
      */
     updateRelatedModel: function(relationship, model, data) {
-      if (relationship.remote) {
-        if (relationship.deferLoad) {
-          model.deferLoad = true;
-        }
-      } else {
-        if (model instanceof Plumage.collection.Collection) {
-          model.resetInMemory(data);
-        } else {
-          model.set(data);
+      if (relationship.remote && relationship.deferLoad) {
+        model.deferLoad = true;
+      }
+      if (model instanceof Plumage.collection.Collection) {
+        if ($.isArray(data)) {
+          data = {models: data};
         }
       }
+      model.set(data, {silent: true});
+      return !$.isEmptyObject(model.changed);
     },
 
     /**
@@ -488,15 +520,35 @@ function($, _, Backbone, Plumage, requestManager, ModelUtil) {
      * @returns {boolean}
      */
     hasUrl: function() {
-      return Boolean(_.result(this, 'urlRoot') || _.result(this.collection, 'url'));
+      return Boolean(_.result(this, 'url') || _.result(this, 'urlRoot'));
     },
 
     /**
-     * This Model's url. Return null if url data is not yet available.
+     * This Model's url. Returns an attribute named 'href' if it exists.
+     * Otherwise uses urlRoot from backbone.
+     *
+     * Do not override this method. Override urlFromAttributes instead.
      * @returns {string} Url or null
      * @see Plumage.model.Model#fetchIfAvailable
+     * @see Plumage.model.Model#urlFromAttributes
      */
     url: function() {
+      var href = this.get('href');
+      if (href) {
+        return href;
+      }
+      return this.urlFromAttributes();
+    },
+
+    /**
+     * Generate the url for this model from its attributes. By default this returns
+     * urlRoot/id
+     *
+     * Override this method if you have custom urls.
+     * Return null if attributes for url are not yet available.
+     * @returns {string} Url or null
+     */
+    urlFromAttributes: function() {
       return Backbone.Model.prototype.url.apply(this, arguments);
     },
 
@@ -509,14 +561,18 @@ function($, _, Backbone, Plumage, requestManager, ModelUtil) {
     urlWithParams: function (extras) {
       extras = extras || {};
       var url = this.url.apply(this, arguments);
-      if (url === null) {
+      if (url === null || url === undefined) {
         return null;
       }
       var params = this.getQueryParams();
       params = _.extend({}, params, extras);
-      if (params) {
+      if (params && !$.isEmptyObject(params)) {
         params = $.param(params, true);
-        return url + '?' + params;
+        if (url.indexOf('?') >= 0) {
+          return url + '&' + params;
+        } else {
+          return url + '?' + params;
+        }
       }
       return url;
     },

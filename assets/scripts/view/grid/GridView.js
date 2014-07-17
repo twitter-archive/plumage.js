@@ -5,9 +5,10 @@ define([
   'PlumageRoot',
   'view/ModelView',
   'collection/GridData',
-  'collection/BufferedGridData',
+  'collection/BufferedCollection',
+  'collection/GridSelection',
   'slickgrid-all'
-], function($, _, Backbone, Plumage, ModelView, GridData, BufferedGridData, Slick) {
+], function($, _, Backbone, Plumage, ModelView, GridData, BufferedCollection, GridSelection, Slick) {
 
   return Plumage.view.grid.GridView = ModelView.extend({
 
@@ -27,6 +28,8 @@ define([
       }
     },
 
+    selection: undefined,
+
     firstShow: true,
 
     infiniteScroll: true,
@@ -38,16 +41,13 @@ define([
     filterView: undefined,
 
     initialize: function () {
-      var me = this,
-      selectionModel = new Slick.RowSelectionModel();
+      var me = this;
       ModelView.prototype.initialize.apply(this, arguments);
       var gridData = this.createGridData();
 
       this.gridEl = $('<div class="grid"></div>');
       this.grid = new Slick.Grid(this.gridEl, gridData, this.columns, _.extend({}, this.defaultGridOptions, this.gridOptions));
-      this.grid.setSelectionModel(selectionModel);
       this.grid.onClick.subscribe(this.onGridClick.bind(this));
-//      selectionModel.onSelectedIdsChanged.subscribe(this.onSelect.bind(this));
 
       this.grid.onSort.subscribe(this.onSort.bind(this));
 
@@ -80,9 +80,10 @@ define([
       $(this.el).append(this.gridEl);
     },
 
-    setModel: function(rootModel) {
+    setModel: function(rootModel, parentModel) {
+      var oldModel = this.model;
       ModelView.prototype.setModel.apply(this, arguments);
-      if (this.model) {
+      if (this.model && this.model !== oldModel) {
         this.grid.setData(this.createGridData(this.model));
         if (this.shown) {
           var vp = this.grid.getViewport();
@@ -91,7 +92,10 @@ define([
           this.grid.render();
         }
       }
+    },
 
+    setSelection: function(selection) {
+      this.grid.setSelectionModel(new GridSelection(selection));
     },
 
     /**
@@ -99,16 +103,14 @@ define([
      */
 
     createGridData: function(model) {
-      var result = [];
       if (model) {
         if (this.infiniteScroll) {
-          result = new BufferedGridData(model);
-          result.on('dataLoaded', this.onBufferLoad.bind(this));
-        } else {
-          result = new GridData(model);
+          model = new BufferedCollection(model);
+          model.on('pageLoad', this.onPageLoad.bind(this));
         }
+        return new GridData(model);
       }
-      return result;
+      return [];
     },
 
     ensureGridData: _.debounce(function(from, to) {
@@ -197,7 +199,6 @@ define([
     },
 
     onGridClick: function(e) {
-      e.stopPropagation();
       var target = e.target;
 
       if (target.tagName === 'A' && $(target).attr('href')) {
@@ -242,11 +243,11 @@ define([
      * Infinite scroll events
      */
 
-    onBufferBeginLoad: function() {
+    onBeginPageLoad: function() {
       this.showLoadingAnimation();
     },
 
-    onBufferLoad: function(gridData, from, to) {
+    onPageLoad: function(gridData, from, to) {
       for (var i = from; i < to; i++) {
         this.grid.invalidateRow(i);
       }

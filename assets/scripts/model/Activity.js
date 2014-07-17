@@ -1,6 +1,8 @@
-define(['jquery', 'underscore', 'backbone', 'PlumageRoot', 'moment', 'model/Model',
+/*jshint -W103 */
+
+define(['jquery', 'underscore', 'backbone', 'handlebars', 'PlumageRoot', 'moment', 'model/Model',
         'model/User'],
-function($, _, Backbone, Plumage, moment, Model) {
+function($, _, Backbone, Handlebars, Plumage, moment, Model) {
 
   return Plumage.model.Activity = Model.extend({
 
@@ -8,11 +10,11 @@ function($, _, Backbone, Plumage, moment, Model) {
 
     actionTexts: {
       'Description': {
-        'create': 'added a description to',
-        'update': 'updated the description of'
+        'create': 'added a description to {{{recipientHTML}}}',
+        'update': 'updated the description of {{{recipientHTML}}}'
       },
       'Comment': {
-        'create': 'commented on'
+        'create': 'commented on {{{recipientHTML}}}'
       }
     },
 
@@ -24,24 +26,35 @@ function($, _, Backbone, Plumage, moment, Model) {
     },
 
     toViewJSON: function() {
-      var model = this.getModel();
       var data = Model.prototype.toViewJSON.apply(this, arguments);
-      data.model_url = model.url();
-      data.model_label = model.getLabel();
-      data.action_text = this.getActionText();
+      data.recipientHTML = this.getRelatedModelHTML(this.get('recipient_type'), this.get('recipient'));
+      data.trackableHTML = this.getRelatedModelHTML(this.get('trackable_type'), this.get('trackable'));
+      data.action_text = this.getActionText(data);
       data.create_at_text = moment(Number(data.created_at)*1000).fromNow();
       return data;
     },
 
-    getModel: function() {
-      var recipientCls = require('model/' + this.get('recipient_type'));
-      return new recipientCls(this.get('recipient'));
+    getRelatedModelHTML: function(modelType, data) {
+      if (modelType) {
+        var modelCls = require('model/' + modelType);
+        var model = new modelCls(data);
+        var label = model.getLabel();
+        return '<a href="'+model.url()+'" class="name" title="'+label+'">'+label+'</a>';
+      }
+      return '';
     },
 
-    getActionText: function() {
-      var actionTexts = this.actionTexts[this.get('trackable_type')];
-      if (actionTexts && actionTexts[this.get('action_type')]) {
-        return actionTexts[this.get('action_type')];
+    getActionText: function(data) {
+      var actionTexts;
+      var context = this;
+      while (!actionTexts && context && context.actionTexts) {
+        actionTexts = context.actionTexts[this.get('trackable_type')];
+        if (!actionTexts || !actionTexts[this.get('action_type')]) {
+          context = context.__proto__;
+        }
+      }
+      if (actionTexts) {
+        return Handlebars.compile(actionTexts[this.get('action_type')])(data);
       }
     }
   });

@@ -22,7 +22,7 @@ function($, Backbone, Plumage, KitchenSinkRouter, KitchenSinkNavView) {
   $('#nav').html(navView.render().el);
 
   var isStatic = Boolean(window.isStatic);
-  var rootUrl = isStatic ? '/examples/kitchen_sink.html' : '/examples/kitchen_sink';
+  var rootUrl = '/examples/kitchen_sink.html';
 
   window.router = new KitchenSinkRouter({
     app: theApp,

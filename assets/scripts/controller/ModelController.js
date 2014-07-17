@@ -80,14 +80,18 @@ function($, _, Backbone, Plumage, BaseController, ModelUtil) {
       view.setModel(this.indexModel);
       this.showView(view);
 
-      this.loadModel(this.indexModel);
+      this.loadModel(this.indexModel).then(function() {
+        view.setModel(model);
+      });
 
       this.indexModel.on('change', this.onIndexChange.bind(this));
     },
 
     /**
      * Logic for binding a model to, and then showing the detail view
-     * Override to add extra event handlers
+     * Override to add extra event handlers.
+     *
+     *
      */
     showDetailModel: function(model) {
 
@@ -103,7 +107,12 @@ function($, _, Backbone, Plumage, BaseController, ModelUtil) {
       view.setModel(model);
       this.showView(view);
 
-      this.loadModel(model);
+      return this.loadModel(model).then(function() {
+        // call setModel again, so subviews can get newly loaded related models
+        if (model.related) {
+          view.setModel(model);
+        }
+      });
     },
 
     /** Get and lazy create the index view */

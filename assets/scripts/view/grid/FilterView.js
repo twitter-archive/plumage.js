@@ -43,7 +43,7 @@ define([
       options = options || {};
 
       this.filterFields = [];
-      this.subViews = [];
+      this.subViews = _.clone(this.subViews);
 
       _.each(this.filterConfigs, function(config){
         var filterConfig = _.extend({}, {
@@ -106,6 +106,10 @@ define([
 
     update: function(isLoad) {
       //don't rerender nothing
-    }
+    },
+
+    setModel: function() {
+      Plumage.view.ModelView.prototype.setModel.apply(this, arguments);
+    },
   });
 });

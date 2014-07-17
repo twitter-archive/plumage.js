@@ -21,7 +21,7 @@ define([
      * Template for html input element.
      * This template is separate so that it can be reused by subclasses.
      */
-    fieldTemplate: '<input type="text" name="{{valueAttr}}" {{#placeholder}}placeholder="{{.}}"{{/placeholder}} value="{{value}}"/>',
+    fieldTemplate: '<input type="text" name="{{valueAttr}}" {{#placeholder}}placeholder="{{.}}"{{/placeholder}} value="{{value}}" {{#readonly}}readonly="readonly"{{/readonly}}/>',
 
     /**
      * optional. model attribute to display as label
@@ -96,9 +96,16 @@ define([
       }
     },
 
+    // This implementation avoids rerendering (and losing cursor position),
+    // however, it has to be overridden frequently.
+    // Maybe move this into a subclass TextField?
     update: function(isLoad) {
       if (this.isRendered) {
-        this.getInputEl().val(this.getValueString());
+        var val = this.getInputEl().val(),
+          newVal = this.getValueString(this.getValue());
+        if (val !== newVal) {
+          this.getInputEl().val(newVal);
+        }
       } else {
         this.render();
       }
@@ -157,9 +164,10 @@ define([
       var data = {
         label: this.getLabel(),
         valueAttr: this.valueAttr,
-        value: this.getValueString(),
-        hasValue: Boolean(this.getValue()),
-        placeholder: this.placeholder
+        value: this.getValueString(this.getValue()),
+        hasValue: this.getValue() !== null && this.getValue() !== undefined,
+        placeholder: this.placeholder,
+        readonly: this.readonly
       };
       return data;
     },
@@ -177,8 +185,8 @@ define([
       return this.value;
     },
 
-    getValueString: function() {
-      return this.getValue();
+    getValueString: function(value) {
+      return value;
     },
 
     setValue: function(newValue, options) {
@@ -198,6 +206,9 @@ define([
 
       if (!options.silent) {
         this.changing = true;
+        this.trigger('change', this, this.getValue());
+
+        //for catching in form
         this.triggerChange();
         this.changing = false;
       }

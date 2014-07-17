@@ -13,8 +13,6 @@ define([], function(){
     vendor: {},
     /** @namespace Plumage.view */
     view: {
-      /** @namespace Plumage.view.calendar */
-      calendar: {},
       /** @namespace Plumage.view.comment */
       comment: {},
       /** @namespace Plumage.view.controller */
@@ -22,7 +20,10 @@ define([], function(){
       /** @namespace Plumage.view.form */
       form: {
         /** @namespace Plumage.view.form.fields */
-        fields: {}
+        fields: {
+          /** @namespace Plumage.view.form.fields.picker */
+          picker: {}
+        }
       },
       /** @namespace Plumage.view.grid */
       grid: {},

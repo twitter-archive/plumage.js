@@ -1,6 +1,5 @@
 *.gem
 *.rbc
-*.log
 .bundle
 .config
 
@@ -16,3 +15,6 @@
 /node_modules
 /build
 .sass-cache
+/gh-pages
+.grunt
+Gemfile.lock

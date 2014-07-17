@@ -1,8 +1,9 @@
 define(['jquery', 'underscore', 'backbone',
   'PlumageRoot',
   'RequestManager',
-  'util/ModelUtil'],
-function($, _, Backbone, Plumage, requestManager, ModelUtil) {
+  'util/ModelUtil',
+  'collection/BufferedCollection'],
+function($, _, Backbone, Plumage, requestManager, ModelUtil, BufferedCollection) {
 
   return Plumage.model.Model = Backbone.Model.extend(
   /** @lends Plumage.model.Model.prototype */
@@ -145,6 +146,21 @@ function($, _, Backbone, Plumage, requestManager, ModelUtil) {
     sync: function(method, model, options) {
       options.cache = false;
       return Backbone.sync.apply(this, [method, model, options]);
+    },
+
+    get: function(attr) {
+      if (!attr) {
+        return;
+      }
+      var parts = attr.split('.');
+      if (parts.length > 1) {
+        var related = this.getRelated(parts[0]);
+        if (related) {
+          return related.get(parts.slice(1).join('.'));
+        }
+      } else {
+        return this.attributes[attr];
+      }
     },
 
     /**
@@ -306,10 +322,10 @@ function($, _, Backbone, Plumage, requestManager, ModelUtil) {
           related = this.createRelatedModel(RelatedClass, relationship, data);
         }
         this.setRelated(key, related);
+        return true;
       } else {
-        this.updateRelatedModel(relationship, related, data);
+        return this.updateRelatedModel(relationship, related, data);
       }
-      return true;
     },
 
     /**
@@ -403,6 +419,14 @@ function($, _, Backbone, Plumage, requestManager, ModelUtil) {
         options = options(this);
       }
       var relatedCollection = new RelatedClass(null, options);
+
+      if (relationship.buffered) {
+        if (!relationship.remote) {
+          throw 'if buffered, must also be remote';
+        }
+        relatedCollection = new BufferedCollection(relatedCollection);
+      }
+
       if (relationship.propagateEvents) {
         //TODO different events for collection/model
         relatedCollection.on('destroy', this.onRelationChange.bind(this));
@@ -441,6 +465,7 @@ function($, _, Backbone, Plumage, requestManager, ModelUtil) {
         }
       }
       model.set(data, {silent: true});
+      return !$.isEmptyObject(model.changed);
     },
 
     /**
@@ -502,15 +527,28 @@ function($, _, Backbone, Plumage, requestManager, ModelUtil) {
      * This Model's url. Returns an attribute named 'href' if it exists.
      * Otherwise uses urlRoot from backbone.
      *
-     * When overriding, return null if url data is not yet available.
+     * Do not override this method. Override urlFromAttributes instead.
      * @returns {string} Url or null
      * @see Plumage.model.Model#fetchIfAvailable
+     * @see Plumage.model.Model#urlFromAttributes
      */
     url: function() {
       var href = this.get('href');
       if (href) {
         return href;
       }
+      return this.urlFromAttributes();
+    },
+
+    /**
+     * Generate the url for this model from its attributes. By default this returns
+     * urlRoot/id
+     *
+     * Override this method if you have custom urls.
+     * Return null if attributes for url are not yet available.
+     * @returns {string} Url or null
+     */
+    urlFromAttributes: function() {
       return Backbone.Model.prototype.url.apply(this, arguments);
     },
 

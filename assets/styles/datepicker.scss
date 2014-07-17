@@ -97,7 +97,6 @@
         }
       }
     }
-
   }
 
   .calendar-wrap {
@@ -114,7 +113,7 @@
 
 /** dropdown-menu positioning */
 
-.date-range-picker .dropdown {
+.date-range-picker .date-picker-dropdown {
   float: left;
 
   .dropdown-menu {
@@ -161,4 +160,54 @@
     right: 41px;
   }
 
+}
+
+
+.date-range-picker .date-field > label {
+  text-align: left;
+}
+
+.date-range-picker .show-hour-select {
+  .date-field > label {
+    width: 36px;
+    text-align: left;
+  }
+
+  .date-field .from-date input, .date-field .to-date input {
+    width: 100px;
+  }
+
+  .hour-picker .dropdown-toggle {
+    width: 48px;
+    padding: 4px 9px;
+  }
+}
+
+.hour-picker {
+
+  .dropdown-menu {
+    width: 324px;
+    padding: 5px 3px;
+    li{
+
+      float: left;
+      a {
+        display: block;
+        background: #D7EEF7;
+        padding: 8px 0;
+        margin: 2px;
+        width: 50px;
+        text-align: center;
+        &:hover {
+          background: #49ABD1;
+        }
+      }
+    }
+    li:nth-child(-n+12) a {
+      background: #FAF2B4;
+      &:hover {
+        background: #E3C205;
+      }
+    }
+  }
 }

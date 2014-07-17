@@ -13,8 +13,6 @@ define('PlumageRoot',[], function(){
     vendor: {},
     /** @namespace Plumage.view */
     view: {
-      /** @namespace Plumage.view.calendar */
-      calendar: {},
       /** @namespace Plumage.view.comment */
       comment: {},
       /** @namespace Plumage.view.controller */
@@ -22,7 +20,10 @@ define('PlumageRoot',[], function(){
       /** @namespace Plumage.view.form */
       form: {
         /** @namespace Plumage.view.form.fields */
-        fields: {}
+        fields: {
+          /** @namespace Plumage.view.form.fields.picker */
+          picker: {}
+        }
       },
       /** @namespace Plumage.view.grid */
       grid: {},
@@ -378,11 +379,205 @@ define('util/ModelUtil',[
     }
   };
 });
+define('collection/BufferedCollection',[
+  'jquery',
+  'underscore',
+  'backbone',
+  'PlumageRoot',
+],
+
+function($, _, Backbone, Plumage) {
+
+
+  /**
+   * Wraps a collection to cache pages.
+   *
+   * @constructs Plumage.collection.BufferedCollection
+   */
+  var BufferedCollection = function(collection) {
+    this.initialize.apply(this, arguments);
+  };
+
+  _.extend(BufferedCollection.prototype, Backbone.Events,
+  /** @lends Plumage.collection.BufferedCollection.prototype */
+  {
+
+    /** buffer of pages */
+    buffer: undefined,
+
+    /** Map of id to index for everything in cache */
+    idToIndex: undefined,
+
+    /** Running requests */
+    requests: undefined,
+
+    /** Total rows on the server. */
+    total: undefined,
+
+    initialize: function(collection, options) {
+      this.requests = [];
+      this.clearBuffer();
+
+      this.collection = collection;
+      this.collection.on('load', this.onCollectionLoad, this);
+      this.collection.on('all', this.onCollectionEvent, this);
+
+    },
+
+    // wrapped overrides
+
+    at: function(index) {
+      return this.buffer[index];
+    },
+
+    getById: function(id) {
+      return this.at(this.idToIndex[id]);
+    },
+
+    indexOf: function(model) {
+      return this.idToIndex[model.id];
+    },
+
+    size: function() {
+      return this.total;
+    },
+
+    /**
+     * Loads missing pages
+     */
+    ensureData: function(from, to) {
+      if (!this.collection.fetched) {
+        //regular load first to get meta data
+        this.trigger('beginPageLoad', this, 0);
+
+        this.collection.once('load', function() {
+          this.ensureData(from, to);
+        }.bind(this));
+
+        this.collection.load();
+
+        return;
+      }
+
+      var pageSize = this.collection.get('pageSize');
+      if (from < 0) {
+        from = 0;
+      }
+      if (!to) {
+        to = from + pageSize-1;
+      }
+      var fromPage = Math.floor(from / pageSize);
+      var toPage = Math.floor(to / pageSize);
+
+      while (this.buffer[fromPage * pageSize] !== undefined && fromPage < toPage) {
+        fromPage += 1;
+      }
+
+      while (this.buffer[toPage * pageSize] !== undefined && fromPage < toPage) {
+        toPage -= 1;
+      }
+
+      if (fromPage > toPage || ((fromPage === toPage) && this.buffer[fromPage * pageSize] !== undefined)) {
+        // already have it
+        return;
+      }
+
+      this.trigger('beginLoad', this, from, to);
+
+      for (var i=fromPage;i<=toPage;i++) {
+        this.loadPage(i);
+      }
+    },
+
+    /** Load page number 'page' */
+    loadPage: function(pageIndex) {
+      //already requesting?
+      if (this.requests[pageIndex] !== undefined) {
+        return;
+      }
+
+      var options = {
+        data: _.extend(this.collection.getQueryParams(), {page: pageIndex, noTotal: true}),
+        success: function (resp) {
+          //silent because so we don't trigger this.onLoad
+          this.collection.reset(resp, {parse: true, silent: true});
+          this.onBufferLoad(this.collection, pageIndex);
+        }.bind(this)
+      };
+
+      this.trigger('beginPageLoad', this, pageIndex);
+      //calling sync directly instead of load so we don't trigger load event
+      this.requests[pageIndex] = this.collection.sync('read', this.collection, options);
+    },
+
+    // Handlers
+
+    /** Loads models into the buffer after a page load request. */
+    onBufferLoad: function(collection, pageIndex) {
+      delete this.requests[pageIndex];
+
+      this.addModelsToBuffer(collection.models, pageIndex, this.collection.get('pageSize'));
+    },
+
+    /**
+     * Propagate all events except load. Triggering of load event is special cased in [onCollectionLoad]{@link Plumage.collection.BufferedCollection#onLoad}
+     */
+    onCollectionEvent: function(e, collection, resp) {
+      // load is handled separately in onCollectionLoad (because named handlers are triggered before all handlers)
+      if (e !== 'load') {
+        this.trigger(e);
+      }
+    },
+
+    /**
+     * Handle collection's initial load event
+     * Clears the buffer and adds the collection's models when the Collection emits the load event.
+     * Does not occur when loading subsequent pages.
+     */
+    onCollectionLoad: function(collection, resp) {
+      this.clearBuffer();
+      this.total = collection.get('total') || collection.size();
+      this.addModelsToBuffer(collection.models, collection.get('page'), collection.get('pageSize'));
+    },
+
+    clearBuffer: function() {
+      this.buffer = [];
+      this.idToIndex = {};
+    },
+
+    /**
+     * Helper that adds a list of models to the buffer.
+     * @private
+     */
+    addModelsToBuffer: function(models, pageIndex, pageSize) {
+      for (var i=0; i<models.length;i++) {
+        var model = models[i];
+        var index = pageIndex * pageSize + i;
+        this.buffer[index] = model;
+        this.idToIndex[model.id] = index;
+      }
+      var from = pageIndex * pageSize;
+      var to = from + models.length;
+      this.trigger('pageLoad', this, from, to);
+    }
+
+
+  });
+
+  var passThroughMethods = ['getRelated', 'setSort'];
+  _.each(passThroughMethods, function(method) {
+    BufferedCollection.prototype[method] = function() {this.collection[method].apply(this.collection, arguments);};
+  });
+
+
+  return Plumage.collection.BufferedCollection = BufferedCollection;
+});
 define('model/Model',['jquery', 'underscore', 'backbone',
   'PlumageRoot',
   'RequestManager',
-  'util/ModelUtil'],
-function($, _, Backbone, Plumage, requestManager, ModelUtil) {
+  'util/ModelUtil',
+  'collection/BufferedCollection'],
+function($, _, Backbone, Plumage, requestManager, ModelUtil, BufferedCollection) {
 
   return Plumage.model.Model = Backbone.Model.extend(
   /** @lends Plumage.model.Model.prototype */
@@ -525,6 +720,21 @@ function($, _, Backbone, Plumage, requestManager, ModelUtil) {
     sync: function(method, model, options) {
       options.cache = false;
       return Backbone.sync.apply(this, [method, model, options]);
+    },
+
+    get: function(attr) {
+      if (!attr) {
+        return;
+      }
+      var parts = attr.split('.');
+      if (parts.length > 1) {
+        var related = this.getRelated(parts[0]);
+        if (related) {
+          return related.get(parts.slice(1).join('.'));
+        }
+      } else {
+        return this.attributes[attr];
+      }
     },
 
     /**
@@ -686,10 +896,10 @@ function($, _, Backbone, Plumage, requestManager, ModelUtil) {
           related = this.createRelatedModel(RelatedClass, relationship, data);
         }
         this.setRelated(key, related);
+        return true;
       } else {
-        this.updateRelatedModel(relationship, related, data);
+        return this.updateRelatedModel(relationship, related, data);
       }
-      return true;
     },
 
     /**
@@ -783,6 +993,14 @@ function($, _, Backbone, Plumage, requestManager, ModelUtil) {
         options = options(this);
       }
       var relatedCollection = new RelatedClass(null, options);
+
+      if (relationship.buffered) {
+        if (!relationship.remote) {
+          throw 'if buffered, must also be remote';
+        }
+        relatedCollection = new BufferedCollection(relatedCollection);
+      }
+
       if (relationship.propagateEvents) {
         //TODO different events for collection/model
         relatedCollection.on('destroy', this.onRelationChange.bind(this));
@@ -821,6 +1039,7 @@ function($, _, Backbone, Plumage, requestManager, ModelUtil) {
         }
       }
       model.set(data, {silent: true});
+      return !$.isEmptyObject(model.changed);
     },
 
     /**
@@ -882,15 +1101,28 @@ function($, _, Backbone, Plumage, requestManager, ModelUtil) {
      * This Model's url. Returns an attribute named 'href' if it exists.
      * Otherwise uses urlRoot from backbone.
      *
-     * When overriding, return null if url data is not yet available.
+     * Do not override this method. Override urlFromAttributes instead.
      * @returns {string} Url or null
      * @see Plumage.model.Model#fetchIfAvailable
+     * @see Plumage.model.Model#urlFromAttributes
      */
     url: function() {
       var href = this.get('href');
       if (href) {
         return href;
       }
+      return this.urlFromAttributes();
+    },
+
+    /**
+     * Generate the url for this model from its attributes. By default this returns
+     * urlRoot/id
+     *
+     * Override this method if you have custom urls.
+     * Return null if attributes for url are not yet available.
+     * @returns {string} Url or null
+     */
+    urlFromAttributes: function() {
       return Backbone.Model.prototype.url.apply(this, arguments);
     },
 
@@ -1189,6 +1421,8 @@ define('collection/Collection',[
 
     relationships: {},
 
+    selections: undefined,
+
     /**
      * Base Collection class for Plumage collections.
      *
@@ -1258,7 +1492,6 @@ define('collection/Collection',[
     initialize: function(models, options) {
       options = options || {};
       var meta = _.extend(_.clone(this.defaultMeta), options.meta || {});
-      meta.filter = meta.filter || {};
       this.set(meta, {silent: true});
       delete options.meta;
       _.extend(this, options);
@@ -1508,6 +1741,7 @@ define('collection/Collection',[
     toViewJSON: function() {
       var result = Model.prototype.toViewJSON.apply(this, arguments);
       result.items = this.toJSON.apply(this, arguments);
+      result.size = this.size();
       return result;
     },
 
@@ -1545,6 +1779,16 @@ define('collection/Collection',[
       if (refresh) {
         requestManager.loadModel(this);
       }
+    },
+
+    getSelection: function(selectionName) {
+      if (!this.selections) {
+        this.selections = {};
+      }
+      if (!this.selections[selectionName]) {
+        this.selections[selectionName] = new Plumage.collection.Selection([], {collection: this});
+      }
+      return this.selections[selectionName];
     },
 
     //
@@ -1588,50 +1832,17 @@ define('collection/Collection',[
      * the server for a processInMemory collection, call [forceReload]{@link Plumage.collection.Collection#forceReload}
      *
      * If not in memory, load remote data for current model and view state.
-     *
-     * Prevents duplicate request with the same query params using this.latestLoadParams
      */
     load: function(options) {
       options = (options || {});
-      var opts = _.clone(options || {});
-
       if (this.processInMemory && this.fetched) {
         if (this.buffered) {
           throw 'Can not be both buffered and processInMemory';
         }
-        this.onLoad(opts);
+        this.onLoad(_.clone(options));
         return;
       }
-
-      opts.data = _.extend(this.getQueryParams(), opts.data);
-
-      if (_.isEqual(this.latestLoadParams, opts.data)) {
-        return;
-      }
-      this.latestLoadParams = opts.data;
-
-      var success = opts.success,
-        error = opts.error;
-      var collection = this;
-      opts.success = function(model, resp, options) {
-        collection.onLoad(opts);
-        if (success) {
-          success(model, resp, options);
-        }
-      };
-      opts.error = function(model, xhr, options) {
-        if (typeof theApp !== 'undefined' && theApp.logger) {
-          if (xhr.statusText !== 'abort') {
-            theApp.logger.error(xhr.statusText, 'Model load error');
-          }
-        }
-        if (error) {
-          error(model, xhr, opts);
-        }
-      };
-
-      this.fireBeginLoad();
-      return this.fetch(opts);
+      return Model.prototype.load.apply(this, arguments);
     },
 
     /**
@@ -1644,10 +1855,6 @@ define('collection/Collection',[
       this.fetched = false;
       this.originalModels = undefined;
       this.load({reset: true});
-    },
-
-    fireBeginLoad: function() {
-      this.trigger('beginLoad', this);
     },
 
     /**
@@ -2194,9 +2401,11 @@ function($, _, Backbone, Plumage, Model) {
     }
   });
 });
-define('model/Activity',['jquery', 'underscore', 'backbone', 'PlumageRoot', 'moment', 'model/Model',
+/*jshint -W103 */
+
+define('model/Activity',['jquery', 'underscore', 'backbone', 'handlebars', 'PlumageRoot', 'moment', 'model/Model',
         'model/User'],
-function($, _, Backbone, Plumage, moment, Model) {
+function($, _, Backbone, Handlebars, Plumage, moment, Model) {
 
   return Plumage.model.Activity = Model.extend({
 
@@ -2204,11 +2413,11 @@ function($, _, Backbone, Plumage, moment, Model) {
 
     actionTexts: {
       'Description': {
-        'create': 'added a description to',
-        'update': 'updated the description of'
+        'create': 'added a description to {{{recipientHTML}}}',
+        'update': 'updated the description of {{{recipientHTML}}}'
       },
       'Comment': {
-        'create': 'commented on'
+        'create': 'commented on {{{recipientHTML}}}'
       }
     },
 
@@ -2220,28 +2429,40 @@ function($, _, Backbone, Plumage, moment, Model) {
     },
 
     toViewJSON: function() {
-      var model = this.getModel();
       var data = Model.prototype.toViewJSON.apply(this, arguments);
-      data.model_url = model.url();
-      data.model_label = model.getLabel();
-      data.action_text = this.getActionText();
+      data.recipientHTML = this.getRelatedModelHTML(this.get('recipient_type'), this.get('recipient'));
+      data.trackableHTML = this.getRelatedModelHTML(this.get('trackable_type'), this.get('trackable'));
+      data.action_text = this.getActionText(data);
       data.create_at_text = moment(Number(data.created_at)*1000).fromNow();
       return data;
     },
 
-    getModel: function() {
-      var recipientCls = require('model/' + this.get('recipient_type'));
-      return new recipientCls(this.get('recipient'));
+    getRelatedModelHTML: function(modelType, data) {
+      if (modelType) {
+        var modelCls = require('model/' + modelType);
+        var model = new modelCls(data);
+        var label = model.getLabel();
+        return '<a href="'+model.url()+'" class="name" title="'+label+'">'+label+'</a>';
+      }
+      return '';
     },
 
-    getActionText: function() {
-      var actionTexts = this.actionTexts[this.get('trackable_type')];
-      if (actionTexts && actionTexts[this.get('action_type')]) {
-        return actionTexts[this.get('action_type')];
+    getActionText: function(data) {
+      var actionTexts;
+      var context = this;
+      while (!actionTexts && context && context.actionTexts) {
+        actionTexts = context.actionTexts[this.get('trackable_type')];
+        if (!actionTexts || !actionTexts[this.get('action_type')]) {
+          context = context.__proto__;
+        }
+      }
+      if (actionTexts) {
+        return Handlebars.compile(actionTexts[this.get('action_type')])(data);
       }
     }
   });
 });
+
 define('collection/ActivityCollection',[
   'PlumageRoot',
   'collection/Collection',
@@ -2250,279 +2471,6 @@ define('collection/ActivityCollection',[
 
   return Plumage.collection.ActivityCollection = Collection.extend({
     model: 'model/Activity'
-  });
-});
-define('collection/GridData',[
-  'jquery',
-  'underscore',
-  'backbone',
-  'PlumageRoot'
-],
-
-function($, _, Backbone, Plumage) {
-
-
-  /**
-   * Adapts a backbone Collection to the  dataview interface.
-   * @constructs Plumage.collection.GridData
-   */
-  var GridData = function() {
-    this.initialize.apply(this, arguments);
-  };
-
-  _.extend(GridData.prototype, Backbone.Events,
-  /** @lends Plumage.collection.GridData.prototype */
-  {
-
-    /** List of events to forward from the Collection */
-    relayEventNames: ['reset'],
-
-    /** The wrapped collection */
-    collection: undefined,
-
-    /** Initializtion logic */
-    initialize: function(collection, options) {
-      _.extend(this, options);
-      this.collection = collection;
-      this.collection.on('all', this.relayEvent, this);
-    },
-
-    ensureData: function() {
-      //do nothing. GridData doesn't load remote data
-    },
-
-    /** calls setSort on Collection */
-    setSort: function(sortField, sortDir){
-      this.collection.setSort(sortField, sortDir, true);
-    },
-
-    /** gets size of collection  */
-    getLength: function() {
-      return this.collection.size();
-    },
-
-    /** get the model at the given index. */
-    getItem: function(index) {
-      return this.collection.at(index);
-    },
-
-    /** Can be overridden to provide row specific options for slickgrid */
-    getItemMetadata: function(index) {
-      return null;
-    },
-
-    /** Get the indes of the model with the given id. */
-    getIndexForId: function (id) {
-      var model = this.collection.getById(id);
-      return this.collection.indexOf(model);
-    },
-
-    /**
-     * Forwards events from Collection as if they were triggered on GridData
-     * @private
-     */
-    relayEvent: function(eventName) {
-      if (_.contains(this.relayEventNames, eventName)) {
-        this.trigger.apply(this, arguments);
-      }
-    }
-  });
-
-  GridData.extend = Backbone.Model.extend;
-
-  return Plumage.collection.GridData = GridData;
-});
-define('collection/BufferedGridData',[
-  'jquery',
-  'underscore',
-  'backbone',
-  'PlumageRoot',
-  'collection/GridData'
-],
-
-function($, _, Backbone, Plumage, GridData) {
-
-  return Plumage.collection.BufferedGridData = GridData.extend(
-  /** @lends Plumage.collection.BufferedGridData.prototype */
-  {
-    /** Loaded data is stored here, instead of in the Collection */
-    data: undefined,
-
-    /** Map of id to index for everything in .data */
-    idToIndex: undefined,
-
-    /** Running requests */
-    requests: undefined,
-
-    /** Total rows on the server. */
-    total: undefined,
-
-    /**
-     * Adapts a backbone Collection to the slickgrid dataview interface.
-     *
-     * Performs paging on the collection when ensureData is called for data outside the current page.
-     *
-     * Data is stored in BufferedGridData and the Collection is mostly used for loading.
-     * @constructs
-     * @extends Plumage.collection.GridData
-     */
-    initialize: function(collection, options) {
-      _.extend(this, options);
-      this.data = [];
-      this.idToIndex = {};
-      this.requests = {};
-
-      this.collection = collection;
-      this.collection.on('load', this.onLoad, this);
-      this.collection.on('beginLoad', function() {
-        this.trigger('dataBeginLoad', this);
-      }, this);
-
-      if (this.collection.fetched) {
-        this.onLoad(this.collection);
-      }
-      //this.collection.on('all', this.relayEvent, this);
-    },
-
-    /** Sets sort field and direction */
-    setSort: function(sortField, sortDir){
-      this.collection.setSort(sortField, sortDir, true);
-    },
-
-    /** gets size of collection  */
-    getLength: function() {
-      if (this.total) {
-        return this.total;
-      }
-      return 0;
-    },
-
-    getItem: function(index) {
-      return this.data[index];
-    },
-
-    getItemMetadata: function(index) {
-      return null;
-    },
-
-    getIndexForId: function (id) {
-      return this.idToIndex[id];
-    },
-
-    //Buffering
-
-    /** Have rows from 'from' to 'to' already been loaded? */
-    isDataBuffered: function(from, to) {
-      for (var i = from; i <= to; i++) {
-        if (this.data[i] === undefined || this.data[i] === null) {
-          return false;
-        }
-      }
-      return true;
-    },
-
-    /** resets the buffer. */
-    clearBuffer: function() {
-      this.data = [];
-      this.idToIndex = {};
-    },
-
-    /** Load data from 'from' to 'to' if it hasn't already been. */
-    ensureData: function(from, to) {
-      if (!this.collection.fetched) {
-        //load first to get meta data
-        this.collection.once('load', function() {
-          this.ensureData(from, to);
-        }.bind(this));
-
-        this.collection.load();
-        return;
-      }
-
-      var pageSize = this.collection.get('pageSize');
-      if (from < 0) {
-        from = 0;
-      }
-      if (!to) {
-        to = from + pageSize-1;
-      }
-      var fromPage = Math.floor(from / pageSize);
-      var toPage = Math.floor(to / pageSize);
-
-      while (this.data[fromPage * pageSize] !== undefined && fromPage < toPage) {
-        fromPage += 1;
-      }
-
-      while (this.data[toPage * pageSize] !== undefined && fromPage < toPage) {
-        toPage -= 1;
-      }
-
-      if (fromPage > toPage || ((fromPage === toPage) && this.data[fromPage * pageSize] !== undefined)) {
-        // already have it
-        return;
-      }
-
-      this.trigger('dataBeginLoad', this, from, to);
-
-      for (var i=fromPage;i<=toPage;i++) {
-        this.loadPage(i);
-      }
-    },
-
-    /** Load page number 'page' */
-    loadPage: function(page) {
-      if (this.requests[page] !== undefined) {
-        return;
-      }
-      var options = {
-        data: _.extend(this.collection.getQueryParams(), {page: page, noTotal: true}),
-        success: function (resp) {
-          //silent because so we don't trigger this.onLoad
-          this.collection.reset(resp, {parse: true, silent: true});
-          this.onBufferLoad(this.collection, page);
-        }.bind(this)
-      };
-      //calling sync directly instead of load so we don't trigger load event
-      this.requests[page] = this.collection.sync('read', this.collection, options);
-    },
-
-    /** Loads models into the buffer after a page load request. */
-    onBufferLoad: function(collection, page) {
-      delete this.requests[page];
-
-      this.addModelsToBuffer(collection.models, page, this.collection.get('pageSize'));
-    },
-
-    /**
-     * Clears the buffer and adds the collection's models when the Collection emits the load event.
-     * Does not occur when loading subsequent pages.
-     * @param {Plumage.collection.Collection} collection The emiting collection.
-     */
-    onLoad: function(collection) {
-      this.clearBuffer();
-      var models = [];
-      for (var i=0; i<collection.size();i++) {
-        models.push(collection.at(i));
-      }
-      this.total = collection.get('total') || collection.size();
-      this.addModelsToBuffer(models, collection.get('page'), collection.get('pageSize'));
-    },
-
-    /**
-     * Helper that adds a list of models to the buffer.
-     * @private
-     */
-    addModelsToBuffer: function(models, page, pageSize) {
-      for (var i=0; i<models.length;i++) {
-        var model = models[i];
-        var index = page * pageSize + i;
-        this.data[index] = model;
-        this.idToIndex[model.id] = index;
-      }
-      var from = page * pageSize;
-      var to = from + models.length;
-      this.trigger('dataLoaded', this, from, to);
-    }
   });
 });
 define('model/Comment',['jquery', 'underscore', 'backbone', 'PlumageRoot', 'model/Model',
@@ -2576,603 +2524,184 @@ define('collection/DataCollection',[
     urlRoot: '/'
   });
 });
-define('collection/UserCollection',[
-  'jquery',
-  'backbone',
-  'PlumageRoot',
-  'collection/Collection',
-  'model/User'
-], function($, Backbone, Plumage, Collection) {
-
-  return Plumage.collection.UserCollection = Collection.extend({
-    model: 'model/User'
-  });
-});
-define('controller/BaseController',[
+define('collection/GridData',[
   'jquery',
   'underscore',
   'backbone',
-  'PlumageRoot',
-  'RequestManager'
+  'PlumageRoot'
 ],
 
-function($, _, Backbone, Plumage, requestManager) {
+function($, _, Backbone, Plumage) {
+
 
   /**
-   * Controller base class.
-   *
-   * Provides common logic for controllers including showing views (see [showView]{@link Plumage.controller.BaseController#showView}),
-   * and loading models (see [loadModel]{@link Plumage.controller.BaseController#loadModel})
-   * @constructs Plumage.controller.BaseController
+   * Adapts a backbone Collection to the  dataview interface.
+   * @constructs Plumage.collection.GridData
    */
-  var BaseController = function () {
+  var GridData = function() {
     this.initialize.apply(this, arguments);
   };
 
-  _.extend(BaseController.prototype,
-  /** @lends Plumage.controller.BaseController.prototype */
+  _.extend(GridData.prototype, Backbone.Events,
+  /** @lends Plumage.collection.GridData.prototype */
   {
 
-    requests: [],
+    /** List of events to forward from the Collection */
+    relayEventNames: ['reset'],
 
-    initialize: function(app) {
-      this.app = app;
+    /** The wrapped collection */
+    collection: undefined,
+
+    /** Initializtion logic */
+    initialize: function(collection, options) {
+      _.extend(this, options);
+      this.collection = collection;
+      this.collection.on('all', this.relayEvent, this);
     },
 
-    /** CSS selector for where to render top level views. See [showView]{@link Plumage.controller.BaseController#showView}. */
-    contentSelector: '#page',
-
-    /** The top level view currently shown by this controller */
-    currentView: undefined,
-
-    /**
-     * Renders and shows a view in the el specified by [contentSelector]{@link Plumage.controller.BaseController#contentSelector}.
-     * This hides and triggers onHide on the current view, cancels outstanding requests, then
-     * shows and triggers onShow on the specified view.
-     *
-     * For more specific css styling, showView also adds the view's [bodyCls]{@link Plumage.view.View#bodyCls}))
-     * attribute to the DOM body element.
-     *
-     * @param {Plumage.view.View} view View to show.
-     */
-    showView: function(view) {
-      var currentView = this.app.views.current;
-      if (currentView) {
-        if (currentView === view) {
-          return;
-        }
-        if (currentView.onHide) {
-          currentView.onHide();
-        }
-        if (currentView.bodyCls) {
-          $('body').removeClass(currentView.bodyCls);
-        }
-      }
-      this.app.views.current = view;
-
-      requestManager.abortOutstandingRequests();
-
-      $(this.contentSelector).html(view.el);
-      if (!view.isRendered) {
-        view.render();
-      }
-      if (view.bodyCls) {
-        $('body').addClass(view.bodyCls);
-      }
-      if (view.onShow) {
-        view.onShow();
+    ensureData: function(from, to) {
+      if (this.collection.ensureData) {
+        this.collection.ensureData(from, to);
       }
     },
 
+    /** calls setSort on Collection */
+    setSort: function(sortField, sortDir){
+      this.collection.setSort(sortField, sortDir, true);
+    },
+
+    /** gets size of collection  */
+    getLength: function() {
+      return this.collection.size();
+    },
+
+    /** get the model at the given index. */
+    getItem: function(index) {
+      return this.collection.at(index);
+    },
+
+    /** Can be overridden to provide row specific options for slickgrid */
+    getItemMetadata: function(index) {
+      return null;
+    },
+
+    /** Get the indes of the model with the given id. */
+    getIndexForId: function (id) {
+      var model = this.collection.getById(id);
+      return this.collection.indexOf(model);
+    },
+
     /**
-     * Load the specified model. Default implementation delegates to requestManager.
-     * @param {Plumage.model.Model} model Model to load.
+     * Forwards events from Collection as if they were triggered on GridData
+     * @private
      */
-    loadModel: function(model, options) {
-      return requestManager.loadModel(model, options);
+    relayEvent: function(eventName) {
+      if (_.contains(this.relayEventNames, eventName)) {
+        this.trigger.apply(this, arguments);
+      }
     }
   });
 
-  BaseController.extend = Backbone.Model.extend;
+  GridData.extend = Backbone.Model.extend;
 
-  return Plumage.controller.BaseController = BaseController;
-
+  return Plumage.collection.GridData = GridData;
 });
-define('controller/ModelController',[
-  'jquery',
-  'underscore',
-  'backbone',
-  'PlumageRoot',
-  'controller/BaseController',
-  'util/ModelUtil'
-],
+define('collection/Selection',['jquery', 'underscore', 'backbone',
+        'PlumageRoot', 'collection/Collection'],
+function($, _, Backbone, Plumage, Collection) {
 
-function($, _, Backbone, Plumage, BaseController, ModelUtil) {
+  return Plumage.collection.Selection = Collection.extend({
 
-  return Plumage.controller.ModelController = BaseController.extend(
-  /** @lends Plumage.controller.ModelController.prototype */
-  {
+    multi: false,
 
-    /** Model Class for detail view. Override this */
-    modelCls: undefined,
+    model: Plumage.model.Model.extend({idAttribute: 'id'}),
 
-    /** Collection Class for index view. Override this */
-    indexModelCls: undefined,
+    collection: undefined,
 
-    /** Options to pass into index model constructor */
-    indexModelOptions: {},
-
-    /** Top level View class for index. Override this */
-    indexViewCls: undefined,
-
-    /** Top level View class for detail. Override this */
-    detailViewCls: undefined,
-
-    /**
-     * Controller with general index and detail handlers.
-     *
-     * Handles creating index and detail models from url params, creating index and detail views,
-     * binding models to said views, showing the view, and loading the model.
-     * @constructs
-     * @extends Plumage.controller.BaseController
-     */
-    initialize : function(app, options) {
-      BaseController.prototype.initialize.apply(this, arguments);
-      options = options || {};
-      this.modelCls = ModelUtil.loadClass(options.modelCls ? options.modelCls : this.modelCls);
-
-      this.indexModelCls = ModelUtil.loadClass(options.indexModelCls ? options.indexModelCls : this.indexModelCls);
-      this.indexModelOptions = options.indexModelOptions ? options.indexModelOptions : this.indexModelOptions;
-      this.indexViewCls = ModelUtil.loadClass(options.indexViewCls ? options.indexViewCls : this.indexViewCls);
-      this.detailViewCls = ModelUtil.loadClass(options.detailViewCls ? options.detailViewCls : this.detailViewCls);
-    },
-
-    /** Get the most recently used index model */
-    getIndexCollection: function() {
-      return this.indexModel;
-    },
-
-    /** Get the most recently used detail model */
-    getDetailModel: function() {
-      return this.detailModel;
-    },
-
-    /** handler for showing the index view. Override this to accept more url params */
-    showIndex: function(params) {
-      params = params || {};
-      if (params && params.filters && typeof(params.filters) === 'string') {
-        params.filters = JSON.parse(params.filters);
+    initialize: function(data, options) {
+      Plumage.collection.Collection.prototype.initialize.apply(this, arguments);
+      if (options && options.collection) {
+        this.collection = options.collection;
+        this.collection.on('load', this.onCollectionLoad, this);
       }
-      var model = this.createIndexModel({}, params);
-      this.showIndexModel(model);
     },
 
-    /** handler for showing the detail view. Override this to accept more url params*/
-    showDetail: function(id, params){
-      var model = this.createDetailModel(id, {}, params);
-      this.showDetailModel(model);
+    getTotalSize: function() {
+      return this.collection.size();
     },
 
-    /** Logic for binding a model to, and then showing the index view */
-    showIndexModel: function(model) {
-      this.indexModel = model;
-      var view = this.getIndexView();
-      view.setModel(this.indexModel);
-      this.showView(view);
-
-      this.loadModel(this.indexModel).then(function() {
-        view.setModel(model);
-      });
-
-      this.indexModel.on('change', this.onIndexChange.bind(this));
+    isSelectedId: function(id) {
+      return this.getById(id) !== null;
     },
 
-    /**
-     * Logic for binding a model to, and then showing the detail view
-     * Override to add extra event handlers
-     */
-    showDetailModel: function(model) {
-
-      if (this.detailModel) {
-        this.detailModel.off('error', this.onModelError, this);
-      }
-
-      this.detailModel = model;
-      this.detailModel.on('error', this.onModelError, this);
-
-      var view = this.getDetailView();
-
-      view.setModel(model);
-      this.showView(view);
-
-      this.loadModel(model).then(function() {
-        view.setModel(model);
-      });
+    isSelectedIndex: function(index) {
+      return this.getById(this.collection.at(index).id) !== undefined;
     },
 
-    /** Get and lazy create the index view */
-    getIndexView: function() {
-      if (!this.indexView) {
-        var index = this.indexView = this.createIndexView();
-      }
-
-      return this.indexView;
+    getSelectedIndices: function() {
+      return this.map(function(selectionItem) {
+        var item = this.collection.getById(selectionItem.id);
+        return this.collection.indexOf(item);
+      }.bind(this));
     },
 
-    /** Get and lazy create the detail view */
-    getDetailView: function() {
-      if (!this.detailView) {
-        this.detailView = this.createDetailView();
-      }
-      return this.detailView;
+    setSelectedIndices: function(indices) {
+      var ids = _.map(indices, function(index) {
+        return this.collection.at(index).id;
+      }.bind(this));
+      this.setSelectedIds(ids);
     },
 
-    // Hooks
-
-    /** Create the index model from specified data. */
-    createIndexModel: function(options, meta) {
-      return this.createCollection(this.indexModelCls, options, meta);
+    getSelectedIds: function(ids) {
+      return this.map(function(item) {return item.id;});
     },
 
-    /**
-     * Create the detail model from specified attributes.
-     * Override to add default attributes, eg empty relationships.
-     */
-    createDetailModel: function(id, attributes, viewState) {
-      return this.createModel(this.modelCls, id, attributes, viewState);
+    setSelectedIds: function(ids) {
+      var data = _.map(ids, function(id) {return {id: id};});
+      this.reset(data);
     },
 
-    /** Helper for creating the detail model. */
-    createModel: function(modelCls, id, attributes, viewState) {
-      attributes = attributes || {};
-      var options = {};
-      if (id) {
-        attributes = _.clone(attributes);
-        attributes[modelCls.prototype.idAttribute] = id;
-      }
-      options.viewState = viewState;
-      return new modelCls(attributes, options);
-    },
+    selectIndex: function(index) {
+      var item = this.collection.at(index);
 
-    createCollection: function(modelCls, options, meta) {
-      options = _.clone(options || {});
-      meta = _.clone(meta || {});
-      var filters = meta.filters;
-      if (filters) {
-        if (filters && typeof(filters) === 'string') {
-          meta.filters = JSON.parse(meta.filters);
+      if (this.getById(item.id) === undefined) {
+        if (!this.multi) {
+          this.deselectAll();
         }
-      }
-      options = _.extend(_.clone(this.indexModelOptions || {}), options);
-      options.meta = meta;
-      return new modelCls(null, options);
-    },
-
-    /** Create the index view. Feel free to override */
-    createIndexView: function () {
-      var index =  new this.indexViewCls();
-      index.on('itemSelected', this.onIndexItemSelected, this);
-      return index;
-    },
-
-    /** Create the detail view. Feel free to override */
-    createDetailView: function () {
-      return new this.detailViewCls();
-    },
-
-
-    // Event Handlers
-
-    /** Show detail view on index item select */
-    onIndexItemSelected: function(selection) {
-      if(selection) {
-        var model = this.createDetailModel(selection.id);
-        model.navigate();
+        this.add(new Plumage.model.Data({id: item.id}));
       }
     },
 
-    /** Reload the index model on change. eg sort field or filter change */
-    onIndexChange: function(collection) {
-      this.reloadIndex(collection);
-    },
+    deselectIndex: function(index) {
+      var item = this.collection.at(index),
+        selectionItem = this.getById(item.id);
 
-    onModelError: function(model, response, options) {
-      if (response.status === 404) {
-        this.createIndexModel().navigate({replace: true});
+      if (selectionItem) {
+        this.remove(selectionItem);
       }
     },
 
-    /** Debounced helper for reloading the index model */
-    reloadIndex: _.debounce(function(collection) {
-      collection.updateUrl();
-      collection.load();
-    }, 200)
-  });
-});
-define('model/SearchResults',['jquery', 'underscore', 'backbone', 'PlumageRoot',
-        'model/Model',
-        'collection/DataCollection'],
-function($, _, Backbone, Plumage, Model) {
-
-  return Plumage.model.SearchResults = Model.extend({
-
-    urlRoot: '/search',
-
-    relationships: {
-      'results': {
-        modelCls: 'collection/DataCollection',
-        forceCreate: true,
-        reverse: 'searchResult'
-      }
-    },
-
-    getSearchResultCount: function() {
-      return this.getRelated('results').size();
-    },
-
-    /**
-     * Override to trim whitespace from the query
-     */
-    set: function(attrs, options) {
-      if (attrs.attributes) { attrs = attrs.attributes; }
-      if (attrs && attrs.query) {
-        attrs.query = $.trim(attrs.query);
-      }
-      return Model.prototype.set.apply(this, arguments);
-    },
-
-    url: function() {
-      return this.urlRoot + '/' + this.get('model') + '/' + encodeURIComponent(this.get('query'));
-    },
-
-    onLoad: function(options, visited) {
-      Model.prototype.onLoad.apply(this, arguments);
-      if (window.piwikTracker) {
-        window.piwikTracker.trackSiteSearch(this.get('query'), false, this.getSearchResultCount());
-      }
-    }
-  });
-});
-define('model/Selection',['jquery', 'underscore', 'backbone', 'PlumageRoot'],
-function($, _, Backbone, Plumage) {
-
-  return Plumage.model.Selection = Backbone.Model.extend({
-    defaults: {
-      selectedId: undefined
-    }
-  });
-});
-define('History',['jquery', 'underscore', 'backbone', 'PlumageRoot'],
-function($, _, Backbone, Plumage) {
-  Plumage.History = Backbone.History.extend(
-  /** @lends Plumage.History.prototype */
-  {
-    /**
-     * Need to override Backbone.History to stop it from
-      * doing nothing if only query params have changed, which started in 1.1
-     *
-     * @constructs
-     */
-    constructor: function() {
-      Backbone.History.apply(this, arguments);
-    },
-
-    /**
-     * Overridden to stop it from doing nothing if only query params have changed.
-     */
-    navigate: function(fragment, options) {
-      if (!Backbone.History.started) {
-        return false;
-      }
-      if (!options || options === true) {
-        options = {trigger: !!options};
-      }
-
-      var url = this.root + (fragment = this.getFragment(fragment || ''));
-
-      // Strip the fragment of the query and hash for matching.
-
-      //CHANGE
-      //fragment = fragment.replace(pathStripper, '');
-      ////////////
-
-      if (this.fragment === fragment) {
-        return;
-      }
-      this.fragment = fragment;
-
-      // Don't include a trailing slash on the root.
-      if (fragment === '' && url !== '/') {
-        url = url.slice(0, -1);
-      }
-
-      // If pushState is available, we use it to set the fragment as a real URL.
-      if (this._hasPushState) {
-        this.history[options.replace ? 'replaceState' : 'pushState']({}, document.title, url);
-
-      // If hash changes haven't been explicitly disabled, update the hash
-      // fragment to store history.
-      } else if (this._wantsHashChange) {
-        this._updateHash(this.location, fragment, options.replace);
-        if (this.iframe && (fragment !== this.getFragment(this.getHash(this.iframe)))) {
-          // Opening and closing the iframe tricks IE7 and earlier to push a
-          // history entry on hash-tag change.  When replace is true, we don't
-          // want this.
-          if(!options.replace) {
-            this.iframe.document.open().close();
-          }
-          this._updateHash(this.iframe.location, fragment, options.replace);
-        }
-
-      // If you've told us that you explicitly don't want fallback hashchange-
-      // based history, then `navigate` becomes a page refresh.
-      } else {
-        return this.location.assign(url);
-      }
-      if (options.trigger) {
-        return this.loadUrl(fragment);
-      }
-    },
-
-  });
-  return Plumage.History;
-});
-
-define('Router',['jquery', 'underscore', 'backbone', 'PlumageRoot', 'History'],
-function($, _, Backbone, Plumage, History) {
-  return Plumage.Router = Backbone.Router.extend(
-  /** @lends Plumage.Router.prototype */
-  {
-    /** Routes config. Map from route pattern to a route options object. Options must include controller and method */
-    controllerRoutes: undefined,
-
-    /** reference to the controllerManager for access to Controller instances*/
-    controllerManager: undefined,
-
-    /** Root url of the application. Passed on to History */
-    rootUrl: '/',
-
-    /** If a route is not recognized, redirect to defaultUrl */
-    defaultUrl: '/',
-
-    /** use html5 push state? If false, falls back to using # for deep urls. */
-    pushState: true,
-
-    /**
-     * Routes requests to Controller handler methods.
-     *
-     * @extends external:Backbone.Router
-     * @constructs
-     */
-    initialize: function(options) {
-      options = options || {};
-      if (options.app !== undefined) {
-        this.app = options.app;
-      }
-      if (options.defaultUrl !== undefined) {
-        this.defaultUrl = options.defaultUrl;
-      }
-      if (options.rootUrl !== undefined) {
-        this.rootUrl = options.rootUrl;
-      }
-      if (options.pushState !== undefined) {
-        this.pushState = options.pushState;
-      }
-      if (options.history !== undefined) {
-        this.history = options.history;
-      } else {
-        this.history = new Plumage.History();
-      }
-
-
-      this.route('*path', 'defaultRoute', function(path){
-        if (window.location.pathname !== this.defaultUrl) {
-          window.location.pathname = this.defaultUrl;
-        }
+    selectAll: function() {
+      var data = this.collection.map(function(item) {
+        return {id: item.id};
       });
+      this.reset(data);
+    },
 
-      for (var route in this.controllerRoutes) {
-        if (!this.controllerRoutes.hasOwnProperty(route)) {
-          continue;
+    deselectAll: function() {
+      this.reset([]);
+    },
+
+    // Event handlers
+
+    onCollectionLoad: function() {
+      var data = [];
+      this.each(function(item){
+        if (this.collection.getById(item.id) !== undefined) {
+          data.push(item);
         }
-        var routeOptions = this.controllerRoutes[route],
-          name = routeOptions.controller + '.' + routeOptions.method,
-          handler = _.bind(this.routeToController, this, routeOptions);
-        this.route(route, name, handler);
-      }
-    },
-
-    start: function() {
-      this.history.start({pushState: this.pushState, root: this.rootUrl});
-    },
-
-    /** Route handler that forwards to method 'options.method'
-     * in Controller 'options.controller'
-     */
-    routeToController: function(options, queryParams){
-      if (this.app.navView) {
-        this.app.navView.select(options.nav);
-      }
-      var ctrl = this.app.controllerManager.getController(options.controller);
-      ctrl[options.method].apply(ctrl, Array.prototype.slice.call(arguments, 1));
-    },
-
-    /**
-     * Override to switch to this.history
-     */
-    route: function(route, name, callback) {
-      if (!_.isRegExp(route)) {
-        route = this._routeToRegExp(route);
-      }
-      if (_.isFunction(name)) {
-        callback = name;
-        name = '';
-      }
-      if (!callback) {
-        callback = this[name];
-      }
-      var router = this;
-      this.history.route(route, function(fragment) {
-        var args = router._extractParameters(route, fragment);
-        router.execute(callback, args);
-        router.trigger.apply(router, ['route:' + name].concat(args));
-        router.trigger('route', name, args);
-        router.history.trigger('route', router, name, args);
-      });
-      return this;
-    },
-
-    navigate: function(url, options) {
-      //remove host and protocol if it's local
-      if (url.indexOf(window.location.origin) === 0) {
-        url = url.slice(window.location.origin.length);
-      }
-
-      //remove url prefix
-      if (url.indexOf(this.rootUrl) === 0) {
-        url = url.slice(this.rootUrl.length);
-      }
-      this.history.navigate(url, options);
-    },
-
-    /** Special navigate method for working around Backbone's ignoring of query params. */
-    navigateWithQueryParams: function(url, options) {
-      if (url === window.location.pathname + window.location.search) {
-        //already there
-        return;
-      }
-
-      this.navigate(url, options);
-    },
-
-    /**
-     * Override to parse query string
-     */
-    execute: function(callback, args) {
-      var queryParams = this.parseQueryString(args.pop());
-      if (queryParams) {
-        args.push(queryParams);
-      }
-      if (callback) {
-        callback.apply(this, args);
-      }
-    },
-
-    parseQueryString: function(queryString) {
-      if (!queryString) {
-        return undefined;
-      }
-      var result = {};
-      queryString = decodeURIComponent(queryString.replace(/\+/g, '%20'));
-      if(queryString) {
-        $.each(queryString.split('&'), function(index, value) {
-          if(value) {
-            var param = value.split('=');
-            result[param[0]] = param[1];
-          }
-        });
-      }
-      return result;
+      }.bind(this));
+      this.reset(data);
     }
   });
 });
@@ -4265,6 +3794,14 @@ define("slickgrid/lib/jquery.event.drop", ["jquery"], function(){});
      * @type {Group}
      */
     this.group = null;
+
+    /***
+     * Whether the totals have been fully initialized / calculated.
+     * Will be set to false for lazy-calculated group totals.
+     * @param initialized
+     * @type {Boolean}
+     */
+    this.initialized = false;
   }
 
   GroupTotals.prototype = new NonDataItem();
@@ -4442,7 +3979,8 @@ if (typeof Slick === "undefined") {
       fullWidthRows: false,
       multiColumnSort: false,
       defaultFormatter: defaultFormatter,
-      forceSyncScrolling: false
+      forceSyncScrolling: false,
+      addNewRowCssClass: "new-row"
     };
 
     var columnDefaults = {
@@ -4532,6 +4070,11 @@ if (typeof Slick === "undefined") {
     // perf counters
     var counter_rows_rendered = 0;
     var counter_rows_removed = 0;
+
+    // These two variables work around a bug with inertial scrolling in Webkit/Blink on Mac.
+    // See http://crbug.com/312427.
+    var rowNodeFromLastMouseWheelEvent;  // this node must not be deleted while inertial scrolling
+    var zombieRowNodeFromLastMouseWheelEvent;  // node that was hidden instead of getting deleted
 
 
     //////////////////////////////////////////////////////////////////////////////////////////////
@@ -4656,7 +4199,7 @@ if (typeof Slick === "undefined") {
         $container
             .bind("resize.slickgrid", resizeCanvas);
         $viewport
-            .bind("click", handleClick)
+            //.bind("click", handleClick)
             .bind("scroll", handleScroll);
         $headerScroller
             .bind("contextmenu", handleHeaderContextMenu)
@@ -4678,6 +4221,12 @@ if (typeof Slick === "undefined") {
             .bind("dragend", handleDragEnd)
             .delegate(".slick-cell", "mouseenter", handleMouseEnter)
             .delegate(".slick-cell", "mouseleave", handleMouseLeave);
+
+        // Work around http://crbug.com/312427.
+        if (navigator.userAgent.toLowerCase().match(/webkit/) &&
+            navigator.userAgent.toLowerCase().match(/macintosh/)) {
+          $canvas.bind("mousewheel", handleMouseWheel);
+        }
       }
     }
 
@@ -5407,7 +4956,7 @@ if (typeof Slick === "undefined") {
           shrinkLeeway -= shrinkSize;
           widths[i] -= shrinkSize;
         }
-        if (prevTotal == total) {  // avoid infinite loop
+        if (prevTotal <= total) {  // avoid infinite loop
           break;
         }
         prevTotal = total;
@@ -5419,14 +4968,18 @@ if (typeof Slick === "undefined") {
         var growProportion = availWidth / total;
         for (i = 0; i < columns.length && total < availWidth; i++) {
           c = columns[i];
-          if (!c.resizable || c.maxWidth <= c.width) {
-            continue;
+          var currentWidth = widths[i];
+          var growSize;
+
+          if (!c.resizable || c.maxWidth <= currentWidth) {
+            growSize = 0;
+          } else {
+            growSize = Math.min(Math.floor(growProportion * currentWidth) - currentWidth, (c.maxWidth - currentWidth) || 1000000) || 1;
           }
-          var growSize = Math.min(Math.floor(growProportion * c.width) - c.width, (c.maxWidth - c.width) || 1000000) || 1;
           total += growSize;
           widths[i] += growSize;
         }
-        if (prevTotal == total) {  // avoid infinite loop
+        if (prevTotal >= total) {  // avoid infinite loop
           break;
         }
         prevTotal = total;
@@ -5750,6 +5303,10 @@ if (typeof Slick === "undefined") {
           (row === activeRow ? " active" : "") +
           (row % 2 == 1 ? " odd" : " even");
 
+      if (!d) {
+        rowCss += " " + options.addNewRowCssClass;
+      }
+
       var metadata = data.getItemMetadata && data.getItemMetadata(row);
 
       if (metadata && metadata.cssClasses) {
@@ -5853,7 +5410,14 @@ if (typeof Slick === "undefined") {
       if (!cacheEntry) {
         return;
       }
-      $canvas[0].removeChild(cacheEntry.rowNode);
+
+      if (rowNodeFromLastMouseWheelEvent == cacheEntry.rowNode) {
+        cacheEntry.rowNode.style.display = 'none';
+        zombieRowNodeFromLastMouseWheelEvent = rowNodeFromLastMouseWheelEvent;
+      } else {
+        $canvas[0].removeChild(cacheEntry.rowNode);
+      }
+
       delete rowsCache[row];
       delete postProcessedRows[row];
       renderedRows--;
@@ -5970,6 +5534,8 @@ if (typeof Slick === "undefined") {
       var oldViewportHasVScroll = viewportHasVScroll;
       // with autoHeight, we do not need to accommodate the vertical scroll bar
       viewportHasVScroll = !options.autoHeight && (numberOfRows * options.rowHeight > viewportH);
+
+      makeActiveCellNormal();
 
       // remove the rows that are now outside of the data range
       // this helps avoid redundant calls to .removeRow() when the size of the data decreased by thousands of rows
@@ -6490,6 +6056,17 @@ if (typeof Slick === "undefined") {
 
     //////////////////////////////////////////////////////////////////////////////////////////////
     // Interactivity
+
+    function handleMouseWheel(e) {
+      var rowNode = $(e.target).closest(".slick-row")[0];
+      if (rowNode != rowNodeFromLastMouseWheelEvent) {
+        if (zombieRowNodeFromLastMouseWheelEvent && zombieRowNodeFromLastMouseWheelEvent != rowNode) {
+          $canvas[0].removeChild(zombieRowNodeFromLastMouseWheelEvent);
+          zombieRowNodeFromLastMouseWheelEvent = null;
+        }
+        rowNodeFromLastMouseWheelEvent = rowNode;
+      }
+    }
 
     function handleDragInit(e, dd) {
       var cell = getCellFromEvent(e);
@@ -7507,10 +7084,20 @@ if (typeof Slick === "undefined") {
                 execute: function () {
                   this.editor.applyValue(item, this.serializedValue);
                   updateRow(this.row);
+                  trigger(self.onCellChange, {
+                    row: activeRow,
+                    cell: activeCell,
+                    item: item
+                  });
                 },
                 undo: function () {
                   this.editor.applyValue(item, this.prevSerializedValue);
                   updateRow(this.row);
+                  trigger(self.onCellChange, {
+                    row: activeRow,
+                    cell: activeCell,
+                    item: item
+                  });
                 }
               };
 
@@ -7522,11 +7109,6 @@ if (typeof Slick === "undefined") {
                 makeActiveCellNormal();
               }
 
-              trigger(self.onCellChange, {
-                row: activeRow,
-                cell: activeCell,
-                item: item
-              });
             } else {
               var newItem = {};
               currentEditor.applyValue(newItem, currentEditor.serializeValue());
@@ -7880,34 +7462,34 @@ define("slickgrid/slick.grid", ["slickgrid/slick.core"], function(){});
         return false;
       }
 
+      if (!_grid.getOptions().multiSelect || (
+          !e.ctrlKey && !e.shiftKey && !e.metaKey)) {
+        return false;
+      }
+
       var selection = rangesToRows(_ranges);
       var idx = $.inArray(cell.row, selection);
 
-      if (!e.ctrlKey && !e.shiftKey && !e.metaKey) {
-        return false;
-      }
-      else if (_grid.getOptions().multiSelect) {
-        if (idx === -1 && (e.ctrlKey || e.metaKey)) {
-          selection.push(cell.row);
-          _grid.setActiveCell(cell.row, cell.cell);
-        } else if (idx !== -1 && (e.ctrlKey || e.metaKey)) {
-          selection = $.grep(selection, function (o, i) {
-            return (o !== cell.row);
-          });
-          _grid.setActiveCell(cell.row, cell.cell);
-        } else if (selection.length && e.shiftKey) {
-          var last = selection.pop();
-          var from = Math.min(cell.row, last);
-          var to = Math.max(cell.row, last);
-          selection = [];
-          for (var i = from; i <= to; i++) {
-            if (i !== last) {
-              selection.push(i);
-            }
+      if (idx === -1 && (e.ctrlKey || e.metaKey)) {
+        selection.push(cell.row);
+        _grid.setActiveCell(cell.row, cell.cell);
+      } else if (idx !== -1 && (e.ctrlKey || e.metaKey)) {
+        selection = $.grep(selection, function (o, i) {
+          return (o !== cell.row);
+        });
+        _grid.setActiveCell(cell.row, cell.cell);
+      } else if (selection.length && e.shiftKey) {
+        var last = selection.pop();
+        var from = Math.min(cell.row, last);
+        var to = Math.max(cell.row, last);
+        selection = [];
+        for (var i = from; i <= to; i++) {
+          if (i !== last) {
+            selection.push(i);
           }
-          selection.push(last);
-          _grid.setActiveCell(cell.row, cell.cell);
         }
+        selection.push(last);
+        _grid.setActiveCell(cell.row, cell.cell);
       }
 
       _ranges = rowsToRanges(selection);
@@ -7933,11 +7515,1035 @@ define("slickgrid/slick.grid", ["slickgrid/slick.core"], function(){});
 })(jQuery);
 define("slickgrid/plugins/slick.rowselectionmodel", function(){});
 
+(function ($) {
+  // register namespace
+  $.extend(true, window, {
+    "Slick": {
+      "CheckboxSelectColumn": CheckboxSelectColumn
+    }
+  });
+
+
+  function CheckboxSelectColumn(options) {
+    var _grid;
+    var _self = this;
+    var _handler = new Slick.EventHandler();
+    var _selectedRowsLookup = {};
+    var _defaults = {
+      columnId: "_checkbox_selector",
+      cssClass: null,
+      toolTip: "Select/Deselect All",
+      width: 30
+    };
+
+    var _options = $.extend(true, {}, _defaults, options);
+
+    function init(grid) {
+      _grid = grid;
+      _handler
+        .subscribe(_grid.onSelectedRowsChanged, handleSelectedRowsChanged)
+        .subscribe(_grid.onClick, handleClick)
+        .subscribe(_grid.onHeaderClick, handleHeaderClick)
+        .subscribe(_grid.onKeyDown, handleKeyDown);
+    }
+
+    function destroy() {
+      _handler.unsubscribeAll();
+    }
+
+    function handleSelectedRowsChanged(e, args) {
+      var selectedRows = _grid.getSelectedRows();
+      var lookup = {}, row, i;
+      for (i = 0; i < selectedRows.length; i++) {
+        row = selectedRows[i];
+        lookup[row] = true;
+        if (lookup[row] !== _selectedRowsLookup[row]) {
+          _grid.invalidateRow(row);
+          delete _selectedRowsLookup[row];
+        }
+      }
+      for (i in _selectedRowsLookup) {
+        _grid.invalidateRow(i);
+      }
+      _selectedRowsLookup = lookup;
+      _grid.render();
+
+      if (selectedRows.length && selectedRows.length == _grid.getDataLength()) {
+        _grid.updateColumnHeader(_options.columnId, "<input type='checkbox' checked='checked'>", _options.toolTip);
+      } else {
+        _grid.updateColumnHeader(_options.columnId, "<input type='checkbox'>", _options.toolTip);
+      }
+    }
+
+    function handleKeyDown(e, args) {
+      if (e.which == 32) {
+        if (_grid.getColumns()[args.cell].id === _options.columnId) {
+          // if editing, try to commit
+          if (!_grid.getEditorLock().isActive() || _grid.getEditorLock().commitCurrentEdit()) {
+            toggleRowSelection(args.row);
+          }
+          e.preventDefault();
+          e.stopImmediatePropagation();
+        }
+      }
+    }
+
+    function handleClick(e, args) {
+      // clicking on a row select checkbox
+      if (_grid.getColumns()[args.cell].id === _options.columnId && $(e.target).is(":checkbox")) {
+        // if editing, try to commit
+        if (_grid.getEditorLock().isActive() && !_grid.getEditorLock().commitCurrentEdit()) {
+          e.preventDefault();
+          e.stopImmediatePropagation();
+          return;
+        }
+
+        toggleRowSelection(args.row);
+        e.stopPropagation();
+        e.stopImmediatePropagation();
+      }
+    }
+
+    function toggleRowSelection(row) {
+      if (_selectedRowsLookup[row]) {
+        _grid.setSelectedRows($.grep(_grid.getSelectedRows(), function (n) {
+          return n != row
+        }));
+      } else {
+        _grid.setSelectedRows(_grid.getSelectedRows().concat(row));
+      }
+    }
+
+    function handleHeaderClick(e, args) {
+      if (args.column.id == _options.columnId && $(e.target).is(":checkbox")) {
+        // if editing, try to commit
+        if (_grid.getEditorLock().isActive() && !_grid.getEditorLock().commitCurrentEdit()) {
+          e.preventDefault();
+          e.stopImmediatePropagation();
+          return;
+        }
+
+        if ($(e.target).is(":checked")) {
+          var rows = [];
+          for (var i = 0; i < _grid.getDataLength(); i++) {
+            rows.push(i);
+          }
+          _grid.setSelectedRows(rows);
+        } else {
+          _grid.setSelectedRows([]);
+        }
+        e.stopPropagation();
+        e.stopImmediatePropagation();
+      }
+    }
+
+    function getColumnDefinition() {
+      return {
+        id: _options.columnId,
+        name: "<input type='checkbox'>",
+        toolTip: _options.toolTip,
+        field: "sel",
+        width: _options.width,
+        resizable: false,
+        sortable: false,
+        cssClass: _options.cssClass,
+        formatter: checkboxSelectionFormatter
+      };
+    }
+
+    function checkboxSelectionFormatter(row, cell, value, columnDef, dataContext) {
+      if (dataContext) {
+        return _selectedRowsLookup[row]
+            ? "<input type='checkbox' checked='checked'>"
+            : "<input type='checkbox'>";
+      }
+      return null;
+    }
+
+    $.extend(this, {
+      "init": init,
+      "destroy": destroy,
+
+      "getColumnDefinition": getColumnDefinition
+    });
+  }
+})(jQuery);
+define("slickgrid/plugins/slick.checkboxselectcolumn", function(){});
+
+(function ($) {
+  function SlickColumnPicker(columns, grid, options) {
+    var $menu;
+    var columnCheckboxes;
+
+    var defaults = {
+      fadeSpeed:250
+    };
+
+    function init() {
+      grid.onHeaderContextMenu.subscribe(handleHeaderContextMenu);
+      grid.onColumnsReordered.subscribe(updateColumnOrder);
+      options = $.extend({}, defaults, options);
+
+      $menu = $("<span class='slick-columnpicker' style='display:none;position:absolute;z-index:20;' />").appendTo(document.body);
+
+      $menu.bind("mouseleave", function (e) {
+        $(this).fadeOut(options.fadeSpeed)
+      });
+      $menu.bind("click", updateColumn);
+
+    }
+
+    function destroy() {
+      grid.onHeaderContextMenu.unsubscribe(handleHeaderContextMenu);
+      grid.onColumnsReordered.unsubscribe(updateColumnOrder);
+      $menu.remove();
+    }
+
+    function handleHeaderContextMenu(e, args) {
+      e.preventDefault();
+      $menu.empty();
+      updateColumnOrder();
+      columnCheckboxes = [];
+
+      var $li, $input;
+      for (var i = 0; i < columns.length; i++) {
+        $li = $("<li />").appendTo($menu);
+        $input = $("<input type='checkbox' />").data("column-id", columns[i].id);
+        columnCheckboxes.push($input);
+
+        if (grid.getColumnIndex(columns[i].id) != null) {
+          $input.attr("checked", "checked");
+        }
+
+        $("<label />")
+            .text(columns[i].name)
+            .prepend($input)
+            .appendTo($li);
+      }
+
+      $("<hr/>").appendTo($menu);
+      $li = $("<li />").appendTo($menu);
+      $input = $("<input type='checkbox' />").data("option", "autoresize");
+      $("<label />")
+          .text("Force fit columns")
+          .prepend($input)
+          .appendTo($li);
+      if (grid.getOptions().forceFitColumns) {
+        $input.attr("checked", "checked");
+      }
+
+      $li = $("<li />").appendTo($menu);
+      $input = $("<input type='checkbox' />").data("option", "syncresize");
+      $("<label />")
+          .text("Synchronous resize")
+          .prepend($input)
+          .appendTo($li);
+      if (grid.getOptions().syncColumnCellResize) {
+        $input.attr("checked", "checked");
+      }
+
+      $menu
+          .css("top", e.pageY - 10)
+          .css("left", e.pageX - 10)
+          .fadeIn(options.fadeSpeed);
+    }
+
+    function updateColumnOrder() {
+      // Because columns can be reordered, we have to update the `columns`
+      // to reflect the new order, however we can't just take `grid.getColumns()`,
+      // as it does not include columns currently hidden by the picker.
+      // We create a new `columns` structure by leaving currently-hidden
+      // columns in their original ordinal position and interleaving the results
+      // of the current column sort.
+      var current = grid.getColumns().slice(0);
+      var ordered = new Array(columns.length);
+      for (var i = 0; i < ordered.length; i++) {
+        if ( grid.getColumnIndex(columns[i].id) === undefined ) {
+          // If the column doesn't return a value from getColumnIndex,
+          // it is hidden. Leave it in this position.
+          ordered[i] = columns[i];
+        } else {
+          // Otherwise, grab the next visible column.
+          ordered[i] = current.shift();
+        }
+      }
+      columns = ordered;
+    }
+
+    function updateColumn(e) {
+      if ($(e.target).data("option") == "autoresize") {
+        if (e.target.checked) {
+          grid.setOptions({forceFitColumns:true});
+          grid.autosizeColumns();
+        } else {
+          grid.setOptions({forceFitColumns:false});
+        }
+        return;
+      }
+
+      if ($(e.target).data("option") == "syncresize") {
+        if (e.target.checked) {
+          grid.setOptions({syncColumnCellResize:true});
+        } else {
+          grid.setOptions({syncColumnCellResize:false});
+        }
+        return;
+      }
+
+      if ($(e.target).is(":checkbox")) {
+        var visibleColumns = [];
+        $.each(columnCheckboxes, function (i, e) {
+          if ($(this).is(":checked")) {
+            visibleColumns.push(columns[i]);
+          }
+        });
+
+        if (!visibleColumns.length) {
+          $(e.target).attr("checked", "checked");
+          return;
+        }
+
+        grid.setColumns(visibleColumns);
+      }
+    }
+
+    function getAllColumns() {
+      return columns;
+    }
+
+    init();
+
+    return {
+      "getAllColumns": getAllColumns,
+      "destroy": destroy
+    };
+  }
+
+  // Slick.Controls.ColumnPicker
+  $.extend(true, window, { Slick:{ Controls:{ ColumnPicker:SlickColumnPicker }}});
+})(jQuery);
+
+define("slickgrid/controls/slick.columnpicker", function(){});
+
 define('slickgrid-all',[
-  'slickgrid/slick.core', 'slickgrid/slick.grid', 'slickgrid/plugins/slick.rowselectionmodel',
+  'slickgrid/slick.core',
+  'slickgrid/slick.grid',
+  'slickgrid/plugins/slick.rowselectionmodel',
+  'slickgrid/plugins/slick.checkboxselectcolumn',
+  'slickgrid/controls/slick.columnpicker'
 ],
 function() {
   return window.Slick;
+});
+define('collection/GridSelection',[
+  'jquery',
+  'underscore',
+  'backbone',
+  'PlumageRoot',
+  'collection/Selection',
+  'slickgrid-all'
+],
+
+function($, _, Backbone, Plumage, Selection, Slick) {
+
+
+  /**
+   * Adapts a Plumage Selection to the slickgrid RowSelection interface.
+   *
+   * Doesn't support cmd, shift selection.
+   *
+   * @constructs Plumage.collection.GridSelection
+   */
+  var GridSelection = function(selection) {
+    this.selection = selection;
+    this.initialize.apply(this, arguments);
+  };
+
+  _.extend(GridSelection.prototype, Backbone.Events,
+  /** @lends Plumage.collection.GridSelection.prototype */
+  {
+    /** wrapped Selection */
+    selection: undefined,
+
+    /** SlickGrid grid instance*/
+    grid: undefined,
+
+    // Optionss
+    selectActiveRow: false,
+
+    initialize: function(options) {
+      options = options || {};
+      _.extend(this, options);
+
+      this.selection.on('change', this.onSelectionChange, this);
+      this.selection.on('reset', this.onSelectionChange, this);
+    },
+
+    /** SlickGrid init */
+    init: function(grid) {
+      this.grid = grid;
+      this.handler = new Slick.EventHandler();
+      this.handler.subscribe(this.grid.onActiveCellChanged, this.onActiveCellChanged.bind(this));
+      this.onSelectedRangesChanged = new Slick.Event();
+    },
+
+    /** SlickGrid destroy */
+    destroy: function() {
+      this.handler.unsubscribeAll();
+      this.selection.off('change', this.onSelectionChange, this);
+      this.selection.off('reset', this.onSelectionChange, this);
+    },
+
+    // SlickGrid getters and setters
+
+    getSelectedRows: function () {
+      return this.selection.getSelectedIndices();
+    },
+
+    setSelectedRows: function (rows) {
+      this.selection.setSelectedIndices(rows);
+    },
+
+    setSelectedRanges: function (ranges) {
+      this.setSelectedRows(this.rangesToRows(ranges));
+    },
+
+    getSelectedRanges: function () {
+      return this.rowsToRanges(this.getSelectedRows());
+    },
+
+    // Event handlers
+
+    onActiveCellChanged: function(e, data) {
+      if (this.selectActiveRow && data.row !== null) {
+        this.setSelectedRows([data.row]);
+      }
+    },
+
+    onSelectionChange: function() {
+      this.onSelectedRangesChanged.notify(this.getSelectedRanges());
+    },
+
+    // SlickGrid helpers
+
+    rowsToRanges: function(rows) {
+      var ranges = [];
+      var lastCell = this.grid.getColumns().length - 1;
+      for (var i = 0; i < rows.length; i++) {
+        ranges.push(new Slick.Range(rows[i], 0, rows[i], lastCell));
+      }
+      return ranges;
+    },
+
+    rangesToRows: function(ranges) {
+      var rows = [];
+      for (var i = 0; i < ranges.length; i++) {
+        for (var j = ranges[i].fromRow; j <= ranges[i].toRow; j++) {
+          rows.push(j);
+        }
+      }
+      return rows;
+    }
+  });
+
+  return Plumage.collection.GridSelection = GridSelection;
+});
+
+define('collection/UserCollection',[
+  'jquery',
+  'backbone',
+  'PlumageRoot',
+  'collection/Collection',
+  'model/User'
+], function($, Backbone, Plumage, Collection) {
+
+  return Plumage.collection.UserCollection = Collection.extend({
+    model: 'model/User'
+  });
+});
+define('controller/BaseController',[
+  'jquery',
+  'underscore',
+  'backbone',
+  'PlumageRoot',
+  'RequestManager'
+],
+
+function($, _, Backbone, Plumage, requestManager) {
+
+  /**
+   * Controller base class.
+   *
+   * Provides common logic for controllers including showing views (see [showView]{@link Plumage.controller.BaseController#showView}),
+   * and loading models (see [loadModel]{@link Plumage.controller.BaseController#loadModel})
+   * @constructs Plumage.controller.BaseController
+   */
+  var BaseController = function () {
+    this.initialize.apply(this, arguments);
+  };
+
+  _.extend(BaseController.prototype,
+  /** @lends Plumage.controller.BaseController.prototype */
+  {
+
+    requests: [],
+
+    initialize: function(app) {
+      this.app = app;
+    },
+
+    /** CSS selector for where to render top level views. See [showView]{@link Plumage.controller.BaseController#showView}. */
+    contentSelector: '#page',
+
+    /** The top level view currently shown by this controller */
+    currentView: undefined,
+
+    /**
+     * Renders and shows a view in the el specified by [contentSelector]{@link Plumage.controller.BaseController#contentSelector}.
+     * This hides and triggers onHide on the current view, cancels outstanding requests, then
+     * shows and triggers onShow on the specified view.
+     *
+     * For more specific css styling, showView also adds the view's [bodyCls]{@link Plumage.view.View#bodyCls}))
+     * attribute to the DOM body element.
+     *
+     * @param {Plumage.view.View} view View to show.
+     */
+    showView: function(view) {
+      var currentView = this.app.views.current;
+      if (currentView) {
+        if (currentView === view) {
+          return;
+        }
+        if (currentView.onHide) {
+          currentView.onHide();
+        }
+        if (currentView.bodyCls) {
+          $('body').removeClass(currentView.bodyCls);
+        }
+      }
+      this.app.views.current = view;
+
+      requestManager.abortOutstandingRequests();
+
+      $(this.contentSelector).html(view.el);
+      if (!view.isRendered) {
+        view.render();
+      }
+      if (view.bodyCls) {
+        $('body').addClass(view.bodyCls);
+      }
+      if (view.onShow) {
+        view.onShow();
+      }
+    },
+
+    /**
+     * Load the specified model. Default implementation delegates to requestManager.
+     * @param {Plumage.model.Model} model Model to load.
+     */
+    loadModel: function(model, options) {
+      return requestManager.loadModel(model, options);
+    }
+  });
+
+  BaseController.extend = Backbone.Model.extend;
+
+  return Plumage.controller.BaseController = BaseController;
+
+});
+define('controller/ModelController',[
+  'jquery',
+  'underscore',
+  'backbone',
+  'PlumageRoot',
+  'controller/BaseController',
+  'util/ModelUtil'
+],
+
+function($, _, Backbone, Plumage, BaseController, ModelUtil) {
+
+  return Plumage.controller.ModelController = BaseController.extend(
+  /** @lends Plumage.controller.ModelController.prototype */
+  {
+
+    /** Model Class for detail view. Override this */
+    modelCls: undefined,
+
+    /** Collection Class for index view. Override this */
+    indexModelCls: undefined,
+
+    /** Options to pass into index model constructor */
+    indexModelOptions: {},
+
+    /** Top level View class for index. Override this */
+    indexViewCls: undefined,
+
+    /** Top level View class for detail. Override this */
+    detailViewCls: undefined,
+
+    /**
+     * Controller with general index and detail handlers.
+     *
+     * Handles creating index and detail models from url params, creating index and detail views,
+     * binding models to said views, showing the view, and loading the model.
+     * @constructs
+     * @extends Plumage.controller.BaseController
+     */
+    initialize : function(app, options) {
+      BaseController.prototype.initialize.apply(this, arguments);
+      options = options || {};
+      this.modelCls = ModelUtil.loadClass(options.modelCls ? options.modelCls : this.modelCls);
+
+      this.indexModelCls = ModelUtil.loadClass(options.indexModelCls ? options.indexModelCls : this.indexModelCls);
+      this.indexModelOptions = options.indexModelOptions ? options.indexModelOptions : this.indexModelOptions;
+      this.indexViewCls = ModelUtil.loadClass(options.indexViewCls ? options.indexViewCls : this.indexViewCls);
+      this.detailViewCls = ModelUtil.loadClass(options.detailViewCls ? options.detailViewCls : this.detailViewCls);
+    },
+
+    /** Get the most recently used index model */
+    getIndexCollection: function() {
+      return this.indexModel;
+    },
+
+    /** Get the most recently used detail model */
+    getDetailModel: function() {
+      return this.detailModel;
+    },
+
+    /** handler for showing the index view. Override this to accept more url params */
+    showIndex: function(params) {
+      params = params || {};
+      if (params && params.filters && typeof(params.filters) === 'string') {
+        params.filters = JSON.parse(params.filters);
+      }
+      var model = this.createIndexModel({}, params);
+      this.showIndexModel(model);
+    },
+
+    /** handler for showing the detail view. Override this to accept more url params*/
+    showDetail: function(id, params){
+      var model = this.createDetailModel(id, {}, params);
+      this.showDetailModel(model);
+    },
+
+    /** Logic for binding a model to, and then showing the index view */
+    showIndexModel: function(model) {
+      this.indexModel = model;
+      var view = this.getIndexView();
+      view.setModel(this.indexModel);
+      this.showView(view);
+
+      this.loadModel(this.indexModel).then(function() {
+        view.setModel(model);
+      });
+
+      this.indexModel.on('change', this.onIndexChange.bind(this));
+    },
+
+    /**
+     * Logic for binding a model to, and then showing the detail view
+     * Override to add extra event handlers.
+     *
+     *
+     */
+    showDetailModel: function(model) {
+
+      if (this.detailModel) {
+        this.detailModel.off('error', this.onModelError, this);
+      }
+
+      this.detailModel = model;
+      this.detailModel.on('error', this.onModelError, this);
+
+      var view = this.getDetailView();
+
+      view.setModel(model);
+      this.showView(view);
+
+      return this.loadModel(model).then(function() {
+        // call setModel again, so subviews can get newly loaded related models
+        if (model.related) {
+          view.setModel(model);
+        }
+      });
+    },
+
+    /** Get and lazy create the index view */
+    getIndexView: function() {
+      if (!this.indexView) {
+        var index = this.indexView = this.createIndexView();
+      }
+
+      return this.indexView;
+    },
+
+    /** Get and lazy create the detail view */
+    getDetailView: function() {
+      if (!this.detailView) {
+        this.detailView = this.createDetailView();
+      }
+      return this.detailView;
+    },
+
+    // Hooks
+
+    /** Create the index model from specified data. */
+    createIndexModel: function(options, meta) {
+      return this.createCollection(this.indexModelCls, options, meta);
+    },
+
+    /**
+     * Create the detail model from specified attributes.
+     * Override to add default attributes, eg empty relationships.
+     */
+    createDetailModel: function(id, attributes, viewState) {
+      return this.createModel(this.modelCls, id, attributes, viewState);
+    },
+
+    /** Helper for creating the detail model. */
+    createModel: function(modelCls, id, attributes, viewState) {
+      attributes = attributes || {};
+      var options = {};
+      if (id) {
+        attributes = _.clone(attributes);
+        attributes[modelCls.prototype.idAttribute] = id;
+      }
+      options.viewState = viewState;
+      return new modelCls(attributes, options);
+    },
+
+    createCollection: function(modelCls, options, meta) {
+      options = _.clone(options || {});
+      meta = _.clone(meta || {});
+      var filters = meta.filters;
+      if (filters) {
+        if (filters && typeof(filters) === 'string') {
+          meta.filters = JSON.parse(meta.filters);
+        }
+      }
+      options = _.extend(_.clone(this.indexModelOptions || {}), options);
+      options.meta = meta;
+      return new modelCls(null, options);
+    },
+
+    /** Create the index view. Feel free to override */
+    createIndexView: function () {
+      var index =  new this.indexViewCls();
+      index.on('itemSelected', this.onIndexItemSelected, this);
+      return index;
+    },
+
+    /** Create the detail view. Feel free to override */
+    createDetailView: function () {
+      return new this.detailViewCls();
+    },
+
+
+    // Event Handlers
+
+    /** Show detail view on index item select */
+    onIndexItemSelected: function(selection) {
+      if(selection) {
+        var model = this.createDetailModel(selection.id);
+        model.navigate();
+      }
+    },
+
+    /** Reload the index model on change. eg sort field or filter change */
+    onIndexChange: function(collection) {
+      this.reloadIndex(collection);
+    },
+
+    onModelError: function(model, response, options) {
+      if (response.status === 404) {
+        this.createIndexModel().navigate({replace: true});
+      }
+    },
+
+    /** Debounced helper for reloading the index model */
+    reloadIndex: _.debounce(function(collection) {
+      collection.updateUrl();
+      collection.load();
+    }, 200)
+  });
+});
+define('model/SearchResults',['jquery', 'underscore', 'backbone', 'PlumageRoot',
+        'model/Model',
+        'collection/DataCollection'],
+function($, _, Backbone, Plumage, Model) {
+
+  return Plumage.model.SearchResults = Model.extend({
+
+    urlRoot: '/search',
+
+    relationships: {
+      'results': {
+        modelCls: 'collection/DataCollection',
+        forceCreate: true,
+        reverse: 'searchResult'
+      }
+    },
+
+    getSearchResultCount: function() {
+      return this.getRelated('results').size();
+    },
+
+    /**
+     * Override to trim whitespace from the query
+     */
+    set: function(attrs, options) {
+      if (attrs.attributes) { attrs = attrs.attributes; }
+      if (attrs && attrs.query) {
+        attrs.query = $.trim(attrs.query);
+      }
+      return Model.prototype.set.apply(this, arguments);
+    },
+
+    url: function() {
+      return this.urlRoot + '/' + this.get('model') + '/' + encodeURIComponent(this.get('query'));
+    },
+
+    onLoad: function(options, visited) {
+      Model.prototype.onLoad.apply(this, arguments);
+      if (window.piwikTracker) {
+        window.piwikTracker.trackSiteSearch(this.get('query'), false, this.getSearchResultCount());
+      }
+    }
+  });
+});
+define('History',['jquery', 'underscore', 'backbone', 'PlumageRoot'],
+function($, _, Backbone, Plumage) {
+  Plumage.History = Backbone.History.extend(
+  /** @lends Plumage.History.prototype */
+  {
+    /**
+     * Need to override Backbone.History to stop it from
+      * doing nothing if only query params have changed, which started in 1.1
+     *
+     * @constructs
+     */
+    constructor: function() {
+      Backbone.History.apply(this, arguments);
+    },
+
+    /**
+     * Overridden to stop it from doing nothing if only query params have changed.
+     */
+    navigate: function(fragment, options) {
+      if (!Backbone.History.started) {
+        return false;
+      }
+      if (!options || options === true) {
+        options = {trigger: !!options};
+      }
+
+      var url = this.root + (fragment = this.getFragment(fragment || ''));
+
+      // Strip the fragment of the query and hash for matching.
+
+      //CHANGE
+      //fragment = fragment.replace(pathStripper, '');
+      ////////////
+
+      if (this.fragment === fragment) {
+        return;
+      }
+      this.fragment = fragment;
+
+      // Don't include a trailing slash on the root.
+      if (fragment === '' && url !== '/') {
+        url = url.slice(0, -1);
+      }
+
+      // If pushState is available, we use it to set the fragment as a real URL.
+      if (this._hasPushState) {
+        this.history[options.replace ? 'replaceState' : 'pushState']({}, document.title, url);
+
+      // If hash changes haven't been explicitly disabled, update the hash
+      // fragment to store history.
+      } else if (this._wantsHashChange) {
+        this._updateHash(this.location, fragment, options.replace);
+        if (this.iframe && (fragment !== this.getFragment(this.getHash(this.iframe)))) {
+          // Opening and closing the iframe tricks IE7 and earlier to push a
+          // history entry on hash-tag change.  When replace is true, we don't
+          // want this.
+          if(!options.replace) {
+            this.iframe.document.open().close();
+          }
+          this._updateHash(this.iframe.location, fragment, options.replace);
+        }
+
+      // If you've told us that you explicitly don't want fallback hashchange-
+      // based history, then `navigate` becomes a page refresh.
+      } else {
+        return this.location.assign(url);
+      }
+      if (options.trigger) {
+        return this.loadUrl(fragment);
+      }
+    },
+
+  });
+  return Plumage.History;
+});
+
+define('Router',['jquery', 'underscore', 'backbone', 'PlumageRoot', 'History'],
+function($, _, Backbone, Plumage, History) {
+  return Plumage.Router = Backbone.Router.extend(
+  /** @lends Plumage.Router.prototype */
+  {
+    /** Routes config. Map from route pattern to a route options object. Options must include controller and method */
+    controllerRoutes: undefined,
+
+    /** reference to the controllerManager for access to Controller instances*/
+    controllerManager: undefined,
+
+    /** Root url of the application. Passed on to History */
+    rootUrl: '/',
+
+    /** If a route is not recognized, redirect to defaultUrl */
+    defaultUrl: '/',
+
+    /** use html5 push state? If false, falls back to using # for deep urls. */
+    pushState: true,
+
+    /**
+     * Routes requests to Controller handler methods.
+     *
+     * @extends external:Backbone.Router
+     * @constructs
+     */
+    initialize: function(options) {
+      options = options || {};
+      if (options.app !== undefined) {
+        this.app = options.app;
+      }
+      if (options.defaultUrl !== undefined) {
+        this.defaultUrl = options.defaultUrl;
+      }
+      if (options.rootUrl !== undefined) {
+        this.rootUrl = options.rootUrl;
+      }
+      if (options.pushState !== undefined) {
+        this.pushState = options.pushState;
+      }
+      if (options.history !== undefined) {
+        this.history = options.history;
+      } else {
+        this.history = new Plumage.History();
+      }
+
+
+      this.route('*path', 'defaultRoute', function(path){
+        if (window.location.pathname !== this.defaultUrl) {
+          window.location.pathname = this.defaultUrl;
+        }
+      });
+
+      for (var route in this.controllerRoutes) {
+        if (!this.controllerRoutes.hasOwnProperty(route)) {
+          continue;
+        }
+        var routeOptions = this.controllerRoutes[route],
+          name = routeOptions.controller + '.' + routeOptions.method,
+          handler = _.bind(this.routeToController, this, routeOptions);
+        this.route(route, name, handler);
+      }
+    },
+
+    start: function() {
+      this.history.start({pushState: this.pushState, root: this.rootUrl});
+    },
+
+    /** Route handler that forwards to method 'options.method'
+     * in Controller 'options.controller'
+     */
+    routeToController: function(options, queryParams){
+      if (this.app.navView) {
+        this.app.navView.select(options.nav);
+      }
+      var ctrl = this.app.controllerManager.getController(options.controller);
+      ctrl[options.method].apply(ctrl, Array.prototype.slice.call(arguments, 1));
+    },
+
+    /**
+     * Override to switch to this.history
+     */
+    route: function(route, name, callback) {
+      if (!_.isRegExp(route)) {
+        route = this._routeToRegExp(route);
+      }
+      if (_.isFunction(name)) {
+        callback = name;
+        name = '';
+      }
+      if (!callback) {
+        callback = this[name];
+      }
+      var router = this;
+      this.history.route(route, function(fragment) {
+        var args = router._extractParameters(route, fragment);
+        router.execute(callback, args);
+        router.trigger.apply(router, ['route:' + name].concat(args));
+        router.trigger('route', name, args);
+        router.history.trigger('route', router, name, args);
+      });
+      return this;
+    },
+
+    navigate: function(url, options) {
+      //remove host and protocol if it's local
+      if (url.indexOf(window.location.origin) === 0) {
+        url = url.slice(window.location.origin.length);
+      }
+
+      //remove url prefix
+      if (url.indexOf(this.rootUrl) === 0) {
+        url = url.slice(this.rootUrl.length);
+      }
+      this.history.navigate(url, options);
+    },
+
+    /** Special navigate method for working around Backbone's ignoring of query params. */
+    navigateWithQueryParams: function(url, options) {
+      if (url === window.location.pathname + window.location.search) {
+        //already there
+        return;
+      }
+
+      this.navigate(url, options);
+    },
+
+    /**
+     * Override to parse query string
+     */
+    execute: function(callback, args) {
+      var queryParams = this.parseQueryString(args.pop());
+      if (queryParams) {
+        args.push(queryParams);
+      }
+      if (callback) {
+        callback.apply(this, args);
+      }
+    },
+
+    parseQueryString: function(queryString) {
+      if (!queryString) {
+        return undefined;
+      }
+      var result = {};
+      queryString = decodeURIComponent(queryString.replace(/\+/g, '%20'));
+      if(queryString) {
+        $.each(queryString.split('&'), function(index, value) {
+          if(value) {
+            var param = value.split('=');
+            result[param[0]] = param[1];
+          }
+        });
+      }
+      return result;
+    }
+  });
 });
 define('util/ArrayUtil',[
   'jquery',
@@ -8002,6 +8608,28 @@ define('util/DateTimeUtil',[
   Plumage.util.defaultDateFormat = 'MMM Do YYYY, HH:mm:ss';
 
   return Plumage.util.DateTimeUtil = {
+
+    isSameDay: function(date1, date2, isUtc) {
+      if (!date1 || !date2) {
+        return false;
+      }
+      if ($.isNumeric(date1)) {
+        date1 = isUtc ? moment.utc(date1) : moment(date1);
+      }
+      if ($.isNumeric(date2)) {
+        date2 = isUtc ? moment.utc(date2) : moment(date2);
+      }
+      return date1.format('YYYY-MM-DD') === date2.format('YYYY-MM-DD');
+    },
+
+    isDateInRange: function(date, minDate, maxDate, isUtc) {
+      if ($.isNumeric(date)) {
+        date = isUtc ? moment.utc(date) : moment(date);
+      }
+
+      return !((minDate && ! Plumage.util.DateTimeUtil.isSameDay(date, minDate) && date.isBefore(minDate)) || (
+          maxDate && ! Plumage.util.DateTimeUtil.isSameDay(date, maxDate, isUtc) && date.isAfter(maxDate)));
+    },
 
     formatDate: function(timestamp, dateFormat) {
       dateFormat = dateFormat || Plumage.util.defaultDateFormat;
@@ -8116,6 +8744,12 @@ define('view/View',[
     // Life Cycle
     ///////////////
 
+    constructor: function(options) {
+      options = options || {};
+      _.extend(this, options);
+
+      Backbone.View.apply(this, arguments);
+    },
 
     /**
      * View class that renders to a DOM element.
@@ -8134,8 +8768,6 @@ define('view/View',[
      * @extends Backbone.View
      */
     initialize:function (options) {
-      options = options || {};
-      _.extend(this, options);
       this.template = this.initTemplate(this.template);
     },
 
@@ -8658,6 +9290,15 @@ define('view/ModelView',[
     initialize:function (options) {
       ContainerView.prototype.initialize.apply(this, arguments);
 
+      this.buildSubViews();
+
+      //Backbone.View constructor will already set model if it's passed in.
+      if (this.model) {
+        throw 'Do not pass model into constructor. call setModel';
+      }
+    },
+
+    buildSubViews: function() {
       var viewBuilder = new ViewBuilder({
         defaultViewCls: this.defaultSubViewCls,
         defaultViewOptions: this.defaultSubViewOptions
@@ -8667,11 +9308,6 @@ define('view/ModelView',[
       this.subViews = _.map(this.subViews, function(subView) {
         return viewBuilder.buildView(subView);
       });
-
-      //Backbone.View constructor will already set model if it's passed in.
-      if (this.model) {
-        throw 'Do not pass model into constructor. call setModel';
-      }
     },
 
     /**
@@ -8703,21 +9339,27 @@ define('view/ModelView',[
 
     /**
      * Bind a model if applicable. Call setModel on your top level view in your Controller.
+     *
+     * Calls onModelLoad if the model has changed (set model != this.model) and is already loaded.
+     *
      * @params {Plumage.model.Model} rootModel The root model
      * @params {Plumage.model.Model} parentModel The model the parent view bound to. For relative relationships.
+     * @params {Boolean} force Ignore modelCls. Normally used when modelCls = false.
      */
-    setModel: function(rootModel, parentModel) {
-      if (this.rootModelCls && rootModel) {
-        var rootModelCls = requirejs(this.rootModelCls);
-        if (!(rootModel instanceof rootModelCls)) {
-          return;
+    setModel: function(rootModel, parentModel, force) {
+      if (!force) {
+        if (this.rootModelCls && rootModel) {
+          var rootModelCls = requirejs(this.rootModelCls);
+          if (!(rootModel instanceof rootModelCls)) {
+            return;
+          }
         }
+        this.rootModel = rootModel;
       }
-      this.rootModel = rootModel;
 
       var model = this.getModelFromRoot(this.relationship, rootModel, parentModel),
         changed = true;
-      if (this.modelCls !== undefined) {
+      if (!force && this.modelCls !== undefined) {
         if (this.modelCls === false) {
           return;
         }
@@ -8742,7 +9384,7 @@ define('view/ModelView',[
         this.model.on('error', this.onModelError, this);
       }
 
-      if (changed) {
+      if (changed && this.model && this.model.fetched) {
         this.onModelLoad();
       }
 
@@ -9211,7 +9853,7 @@ define('view/form/fields/Field',[
      * Template for html input element.
      * This template is separate so that it can be reused by subclasses.
      */
-    fieldTemplate: '<input type="text" name="{{valueAttr}}" {{#placeholder}}placeholder="{{.}}"{{/placeholder}} value="{{value}}"/>',
+    fieldTemplate: '<input type="text" name="{{valueAttr}}" {{#placeholder}}placeholder="{{.}}"{{/placeholder}} value="{{value}}" {{#readonly}}readonly="readonly"{{/readonly}}/>',
 
     /**
      * optional. model attribute to display as label
@@ -9286,9 +9928,16 @@ define('view/form/fields/Field',[
       }
     },
 
+    // This implementation avoids rerendering (and losing cursor position),
+    // however, it has to be overridden frequently.
+    // Maybe move this into a subclass TextField?
     update: function(isLoad) {
       if (this.isRendered) {
-        this.getInputEl().val(this.getValueString());
+        var val = this.getInputEl().val(),
+          newVal = this.getValueString(this.getValue());
+        if (val !== newVal) {
+          this.getInputEl().val(newVal);
+        }
       } else {
         this.render();
       }
@@ -9347,9 +9996,10 @@ define('view/form/fields/Field',[
       var data = {
         label: this.getLabel(),
         valueAttr: this.valueAttr,
-        value: this.getValueString(),
-        hasValue: Boolean(this.getValue()),
-        placeholder: this.placeholder
+        value: this.getValueString(this.getValue()),
+        hasValue: this.getValue() !== null && this.getValue() !== undefined,
+        placeholder: this.placeholder,
+        readonly: this.readonly
       };
       return data;
     },
@@ -9367,8 +10017,8 @@ define('view/form/fields/Field',[
       return this.value;
     },
 
-    getValueString: function() {
-      return this.getValue();
+    getValueString: function(value) {
+      return value;
     },
 
     setValue: function(newValue, options) {
@@ -9388,6 +10038,9 @@ define('view/form/fields/Field',[
 
       if (!options.silent) {
         this.changing = true;
+        this.trigger('change', this, this.getValue());
+
+        //for catching in form
         this.triggerChange();
         this.changing = false;
       }
@@ -10024,6 +10677,9 @@ define('view/form/fields/Select',[
      */
     initialize: function() {
       Field.prototype.initialize.apply(this, arguments);
+      if (this.listValues && this.defaultToFirst) {
+        this.setValue(this.listValues[0].value);
+      }
     },
 
     /**
@@ -10127,7 +10783,7 @@ define('view/form/fields/Select',[
 
     hasSelection: function() {
       var value = this.getValue();
-      return Boolean(value && value !== this.noSelectionValue);
+      return value !== null && value !== undefined && value !== this.noSelectionValue;
     },
 
     /**
@@ -10279,6 +10935,422 @@ define('view/form/fields/ButtonGroupSelect',[
   });
 });
 
+define('text!view/form/fields/templates/Calendar.html',[],function () { return '<table cellpadding="0" cellspacing="0">\n<thead>\n<tr>\n\t{{#if showWeekNumbers}}\n\t  <th></th>\n\t{{/if}}\n\t{{#if prevAvailable}}\n\t  <th class="prev available"><i class="icon-arrow-left"></i></th>\n\t{{else}}\n\t  <th></th>\n\t{{/if}}\n  <th colspan="5" style="width: auto">{{month}} {{year}}</th>\n  {{#if nextAvailable}}\n    <th class="next available"><i class="icon-arrow-right"></i></th>\n  {{else}}\n    <th></th>\n  {{/if}}\n</tr>\n<tr>\n\t{{#if showWeekNumbers}}\n\t  <th class="week">{{weekLabel}}</th>\n\t{{/if}}\n\t{{#each locale.daysOfWeek}}\n\t  <th>{{.}}</th>\n\t{{/each}}\n</tr>\n</thead>\n<tbody>\n{{#each calendar}}\n{{setIndex @index}}\n<tr>\n  {{#if showWeekNumbers}}\n    <td class="week">?</td>\n  {{/if}}\n  {{#each .}}\n    <td class="{{cls}}" data-row="{{../index}}" data-col="{{@index}}">\n\t    <div class="day {{cname}}">{{number}}</div>\n\t  </td>\n  {{/each}}\n</tr>\n{{/each}}\n\n</tbody>\n</table>';});
+
+define('view/form/fields/Calendar',[
+  'jquery',
+  'underscore',
+  'backbone',
+  'handlebars',
+  'moment',
+  'PlumageRoot',
+  'view/form/fields/Field',
+  'util/DateTimeUtil',
+  'text!view/form/fields/templates/Calendar.html'
+], function($, _, Backbone, Handlebars, moment, Plumage, Field, DateTimeUtil, template) {
+
+  return Plumage.view.form.fields.Calendar = Field.extend(
+  /** @lends Plumage.view.calendar.Calendar.prototype */
+  {
+    template: template,
+
+    className: 'calendar-view',
+
+    /** Which month to show. 0 indexed number */
+    month: undefined,
+
+    /** Which year to show. eg 2014 */
+    year: undefined,
+
+    minDateAttr: 'minDate',
+
+    /** min selectable date, inclusive. Set minDate with setMinDate */
+    minDate: undefined,
+
+    maxDateAttr: 'maxDate',
+
+    /** max selectable date, inclusive. Set maxDate with setMaxDate */
+    maxDate: undefined,
+
+    /** for showing selected range */
+    fromAttr: undefined,
+
+    /** for showing selected range */
+    toAttr: undefined,
+
+    /** Show week index in a column on the left? */
+    showWeekNumbers: false,
+
+    utc: false,
+
+    locale: {
+      weekLabel: 'W',
+      customRangeLabel: 'Custom Range',
+      daysOfWeek: moment()._lang._weekdaysMin.slice(),
+      monthNames: moment()._lang._monthsShort.slice(),
+      firstDay: 0
+    },
+
+    events: {
+      'click .prev': 'onPrevClick',
+      'click .next': 'onNextClick',
+      'click .day': 'onDayClick'
+    },
+
+    /**
+     * View that renders a selectable calendar.
+     *
+     * Useful when incoporated in fields like [DatePicker]{@link Plumage.view.form.fields.DatePicker}
+     * and [DateRangePicker]{@link Plumage.view.form.fields.DateRangePicker}.
+     *
+     * Not a [ModelView]{@link Plumage.view.ModelView}, but keeps and updates its own view state
+     * ([selectedDate]{@link Plumage.view.calendar.Calendar#selectedDate}, [month]{@link Plumage.view.calendar.Calendar#month},
+     * [year]{@link Plumage.view.calendar.Calendar#year},
+     *
+     * Calendar can also limit selectable dates with [minDate]{@link Plumage.view.calendar.Calendar#minDate} and
+     * [maxDate]{@link Plumage.view.calendar.Calendar#maxDate}, and highlight a selected range (useful in a date range picker)
+     * with [fromDate]{@link Plumage.view.calendar.Calendar#fromDate} and
+     * [toDate]{@link Plumage.view.calendar.Calendar#toDate}.
+     *
+     * Emitted events: prevclick, nextclick, dayclick
+     *
+     * @constructs
+     * @extends Plumage.view.View
+     */
+    initialize: function() {
+      Field.prototype.initialize.apply(this, arguments);
+
+      this.month = this.month !== undefined ? this.month : moment().month();
+      this.year = this.year ? this.year : moment().year();
+    },
+
+    getTemplateData: function() {
+      var data = _.clone(this.locale);
+
+      var calendar = this.getCalendarDates(this.month, this.year);
+
+      for(var i=0;i<calendar.length;i++) {
+        var week = calendar[i];
+        for(var j=0;j<week.length;j++) {
+          var day = week[j];
+          _.extend(day, {
+            number: day.date[2],
+            cls: this.getClassesForDate(day.date, i, j).join(' ')
+          });
+        }
+      }
+      return {
+        locale: this.locale,
+        month: this.locale.monthNames[this.month],
+        year: this.year,
+        prevAvailable: this.isPrevMonthAvailable(),
+        nextAvailable: this.isNextMonthAvailable(),
+        showWeekNumbers: this.showWeekNumbers,
+        calendar: calendar
+      };
+    },
+
+    update: function(isLoad) {
+      if (this.isRendered && this.shouldRender(isLoad)) {
+        this.render();
+      }
+    },
+
+    updateModel: function(rootModel, parentModel) {
+      var model = this.getModelFromRoot(this.relationship, rootModel, parentModel),
+        value = this.getValue();
+
+      var modelValue = model.get(this.valueAttr);
+      if (modelValue) {
+        //don't change hour
+        var m = this.utc ? moment.utc(modelValue) : moment(modelValue);
+        var date = this.getSelectedDate();
+        m.year(date[0]);
+        m.month(date[1]);
+        m.date(date[2]);
+        value = m.valueOf();
+      }
+      model.set(this.valueAttr, value);
+    },
+
+    /**
+     * Set the month to display (view state), and update.
+     */
+    setMonth: function(month, year) {
+      this.month = month;
+      this.year = year;
+      this.update();
+    },
+
+    setValue: function(value, options) {
+      if (!this.isDateInMinMax(this.toDateTuple(value))) {
+        return;
+      }
+      Field.prototype.setValue.apply(this, arguments);
+      value = this.getValue();
+      if (value) {
+        var m = this.utc ? moment.utc(value) : moment(value);
+        this.month = m.month();
+        this.year = m.year();
+      }
+      this.update();
+    },
+
+    /**
+     * Get the minimum selectable date (inclusive)
+     */
+    getMinDate: function() {
+      if (this.minDate) {
+        return this.minDate;
+      }
+      if (this.model && this.minDateAttr) {
+        return this.toDateTuple(this.model.get(this.minDateAttr));
+      }
+      return null;
+    },
+
+    setMinDate: function(minDate) {
+      this.minDate = this.toDateTuple(minDate);
+    },
+
+    setMaxDate: function(maxDate) {
+      this.maxDate = this.toDateTuple(maxDate);
+    },
+
+    /**
+     * Set the maximum selectable date (inclusive)
+     */
+    getMaxDate: function() {
+      if (this.maxDate) {
+        return this.maxDate;
+      }
+      if (this.model && this.maxDateAttr) {
+        return this.toDateTuple(this.model.get(this.maxDateAttr));
+      }
+      return null;
+    },
+
+    //
+    // Helpers
+    //
+
+    toDateTuple: function(date) {
+      if (!date) {
+        return null;
+      }
+      if ($.isArray(date)) {
+        return date;
+      }
+      var m = date;
+      if ($.isNumeric(m)) {
+        m = this.utc ? moment.utc(m) : moment(m);
+      } else {
+        m = moment(m);
+      }
+      return [m.year(), m.month(), m.date()];
+    },
+
+    getSelectedDate: function() {
+      var value = this.getValue();
+      if (value) {
+        return this.toDateTuple(this.getValue());
+      }
+      return null;
+    },
+
+    getFromDate: function() {
+      if (this.model && this.fromAttr) {
+        return this.toDateTuple(this.model.get(this.fromAttr));
+      }
+      return null;
+    },
+
+    getToDate: function() {
+      if (this.model && this.toAttr) {
+        return this.toDateTuple(this.model.get(this.toAttr));
+      }
+      return null;
+    },
+
+    /**
+     * Helper: Get 2d array of days
+     */
+    getCalendarDates: function (month, year) {
+      var calendar = [];
+      var curDate = this.getFirstDate(month, year);
+      for(var i=0;i<6;i++) {
+        var week = [];
+        for(var j=0;j<7;j++) {
+          week.push({
+            date: curDate,
+          });
+          var m = moment(curDate).add('day', 1);
+          curDate = [m.year(), m.month(), m.date()];
+        }
+        calendar.push(week);
+      }
+      return calendar;
+    },
+
+    /**
+     * Helper: Get first day on calendar page for month, year
+     */
+    getFirstDate: function(month, year) {
+      var firstDay = moment([year, month, 1]),
+        monthAgo = moment(firstDay).subtract('month', 1);
+
+      var daysInLastMonth = monthAgo.daysInMonth(),
+        dayOfWeek = firstDay.day(),
+        firstDate = daysInLastMonth - dayOfWeek + this.locale.firstDay + 1;
+
+      if (firstDate > daysInLastMonth) {
+        firstDate -= 7;
+      }
+      if (dayOfWeek === this.locale.firstDay) {
+        firstDate = daysInLastMonth - 6;
+      }
+      return [monthAgo.year(), monthAgo.month(), firstDate];
+    },
+
+    /**
+     * Helper: Get CSS classes for a day element.
+     */
+    getClassesForDate: function(date, row, col) {
+      var inMonth = this.isDateTupleInMonth(date);
+      var classes = [
+        this.isDateInMinMax(date) ? 'active' : 'disabled',
+        inMonth ? null : 'off',
+        _.isEqual(date, this.getSelectedDate()) ? 'selected' : null,
+        inMonth && _.isEqual(date, this.getFromDate()) ? 'start-date' : null,
+        inMonth && _.isEqual(date, this.getToDate()) ? 'end-date' : null,
+        this.isDateInSelectedRange(date) ? 'in-range' : null,
+        this.getShadowClass(date, row, col)
+      ];
+
+      return _.compact(classes);
+    },
+
+    /**
+     * Helper: Get box shadow class for dates off the current month.
+     */
+    getShadowClass: function(date, row, col) {
+      if (!this.isDateTupleInMonth(date)) {
+        if (row < 2) {
+          var nextWeek = this.toDateTuple(moment(date).add('day', 7)),
+            tomorrow = this.toDateTuple(moment(date).add('day', 1));
+          if (this.isDateTupleInMonth(nextWeek)) {
+            if (col < 6 && this.isDateTupleInMonth(tomorrow)) {
+              return 'shadow-bottom-right';
+            } else {
+              return 'shadow-bottom';
+            }
+          }
+        } else {
+          var lastWeek = this.toDateTuple(moment(date).subtract('day', 7)),
+            yesterday = this.toDateTuple(moment(date).subtract('day', 1));
+          if (this.isDateTupleInMonth(lastWeek)) {
+            if (col > 0 && this.isDateTupleInMonth(yesterday)) {
+              return 'shadow-top-left';
+            } else {
+              return 'shadow-top';
+            }
+          }
+        }
+      }
+      return null;
+    },
+
+    isDateTupleInRange: function(date, minDate, maxDate) {
+      return (!minDate || moment(date) >= moment(minDate)) && (!maxDate || moment(date) <= moment(maxDate));
+    },
+
+    isDateInSelectedRange: function(date) {
+      var fromDate = this.getFromDate(),
+        toDate = this.getToDate();
+      if (!fromDate || !toDate) {
+        return false;
+      }
+      return this.isDateTupleInRange(date, fromDate, toDate);
+    },
+
+    isDateInMinMax: function(date) {
+      date = this.toDateTuple(date);
+      return this.isDateTupleInRange(date, this.getMinDate(), this.getMaxDate());
+    },
+
+    isDateTupleInMonth: function(date) {
+      return date[1] === this.month;
+    },
+
+    isPrevMonthAvailable: function() {
+      var m = moment([this.year, this.month, 1]).subtract('day', 1);
+      return this.isDateInMinMax(this.toDateTuple(m));
+    },
+
+    isNextMonthAvailable: function() {
+      var firstDate = moment([this.year, this.month, 1]),
+        m = moment([this.year, this.month, firstDate.daysInMonth()]).add('day', 1);
+      return this.isDateInMinMax(this.toDateTuple(m));
+    },
+
+    getDateFromDayEl: function(el) {
+      el = $(el);
+      var td = el.parent();
+      var dateNumber = Number(el.text());
+
+      if (td.hasClass('off')) {
+        var offMonth = moment([this.year, this.month, 1]);
+        if (td.data('row') < 3) {
+          offMonth = offMonth.subtract('month', 1);
+        } else {
+          offMonth = offMonth.add('month', 1);
+        }
+        return this.toDateTuple(offMonth.date(dateNumber));
+      }
+      return [this.year, this.month, dateNumber];
+    },
+
+    //
+    // EventHandlers
+    //
+
+    onModelChange: function (e) {
+      if (e.changed[this.valueAttr] !== undefined || e.changed[this.minDateAttr] !== undefined || e.changed[this.maxDateAttr] !== undefined) {
+        this.updateValueFromModel();
+      }
+    },
+
+    onPrevClick: function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      var lastMonth = moment([this.year, this.month, 1]).subtract('month', 1);
+      this.setMonth(lastMonth.month(), lastMonth.year());
+
+      this.trigger('prevclick', this);
+    },
+
+    onNextClick: function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      var nextMonth = moment([this.year, this.month, 1]).add('month', 1);
+      this.setMonth(nextMonth.month(), nextMonth.year());
+
+      this.trigger('nextclick', this);
+    },
+
+    onDayClick: function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      var td = $(e.target).parent();
+      if (!td.hasClass('disabled')) {
+        var date = this.getDateFromDayEl(e.target),
+          m = this.utc ? moment.utc(date) : moment(date);
+        this.setValue(m.valueOf());
+      }
+    }
+  });
+});
+
 define('text!view/form/fields/templates/Checkbox.html',[],function () { return '<label class="checkbox {{cls}}">\n  <input type="checkbox" name="{{../fieldName}}" {{#selected}}checked="true"{{/selected}} value="true">\n  <span>{{checkboxLabel}}</span>\n</label>\n';});
 
 define('view/form/fields/Checkbox',[
@@ -10333,359 +11405,6 @@ define('view/form/fields/Checkbox',[
 });
 
 
-define('text!view/calendar/templates/Calendar.html',[],function () { return '<table cellpadding="0" cellspacing="0">\n<thead>\n<tr>\n\t{{#if showWeekNumbers}}\n\t  <th></th>\n\t{{/if}}\n\t{{#if prevAvailable}}\n\t  <th class="prev available"><i class="icon-arrow-left"></i></th>\n\t{{else}}\n\t  <th></th>\n\t{{/if}}\n  <th colspan="5" style="width: auto">{{month}} {{year}}</th>\n  {{#if nextAvailable}}\n    <th class="next available"><i class="icon-arrow-right"></i></th>\n  {{else}}\n    <th></th>\n  {{/if}}\n</tr>\n<tr>\n\t{{#if showWeekNumbers}}\n\t  <th class="week">{{weekLabel}}</th>\n\t{{/if}}\n\t{{#each locale.daysOfWeek}}\n\t  <th>{{.}}</th>\n\t{{/each}}\n</tr>\n</thead>\n<tbody>\n{{#each calendar}}\n{{setIndex @index}}\n<tr>\n  {{#if showWeekNumbers}}\n    <td class="week">?</td>\n  {{/if}}\n  {{#each .}}\n    <td class="{{cls}}" data-row="{{../index}}" data-col="{{@index}}">\n\t    <div class="day {{cname}}">{{number}}</div>\n\t  </td>\n  {{/each}}\n</tr>\n{{/each}}\n\n</tbody>\n</table>';});
-
-define('view/calendar/Calendar',[
-  'jquery',
-  'underscore',
-  'backbone',
-  'handlebars',
-  'moment',
-  'PlumageRoot',
-  'view/View',
-  'text!view/calendar/templates/Calendar.html'
-], function($, _, Backbone, Handlebars, moment, Plumage, View, template) {
-
-  return Plumage.view.calendar.Calendar = View.extend(
-  /** @lends Plumage.view.calendar.Calendar.prototype */
-  {
-    template: template,
-
-    className: 'calendar-view',
-
-    /** Which month to show. 0 indexed number */
-    month: undefined,
-
-    /** Which year to show. eg 2014 */
-    year: undefined,
-
-    /** min selectable date, inclusive. Set minDate with setMinDate */
-    minDate: false,
-
-    /** max selectable date, inclusive. Set maxDate with setMaxDate */
-    maxDate: false,
-
-    /** Currently selected date, as moment */
-    selectedDate: undefined,
-
-    /** for showing selected range */
-    fromDate: undefined,
-
-    /** for showing selected range */
-    toDate: undefined,
-
-    /** Show week index in a column on the left? */
-    showWeekNumbers: false,
-
-    locale: {
-      weekLabel: 'W',
-      customRangeLabel: 'Custom Range',
-      daysOfWeek: moment()._lang._weekdaysMin.slice(),
-      monthNames: moment()._lang._monthsShort.slice(),
-      firstDay: 0
-    },
-
-    events: {
-      'click .prev': 'onPrevClick',
-      'click .next': 'onNextClick',
-      'click .day': 'onDayClick'
-    },
-
-    /**
-     * View that renders a selectable calendar.
-     *
-     * Useful when incoporated in fields like [DatePicker]{@link Plumage.view.form.fields.DatePicker}
-     * and [DateRangePicker]{@link Plumage.view.form.fields.DateRangePicker}.
-     *
-     * Not a [ModelView]{@link Plumage.view.ModelView}, but keeps and updates its own view state
-     * ([selectedDate]{@link Plumage.view.calendar.Calendar#selectedDate}, [month]{@link Plumage.view.calendar.Calendar#month},
-     * [year]{@link Plumage.view.calendar.Calendar#year},
-     *
-     * Calendar can also limit selectable dates with [minDate]{@link Plumage.view.calendar.Calendar#minDate} and
-     * [maxDate]{@link Plumage.view.calendar.Calendar#maxDate}, and highlight a selected range (useful in a date range picker)
-     * with [fromDate]{@link Plumage.view.calendar.Calendar#fromDate} and
-     * [toDate]{@link Plumage.view.calendar.Calendar#toDate}.
-     *
-     * Emitted events: prevclick, nextclick, dayclick
-     *
-     * @constructs
-     * @extends Plumage.view.View
-     */
-    initialize: function() {
-      View.prototype.initialize.apply(this, arguments);
-
-      this.month = this.month !== undefined ? this.month : moment().month();
-      this.year = this.year ? this.year : moment().year();
-      this.fromDate = this.fromDate && moment(this.fromDate);
-      this.toDate = this.toDate && moment(this.toDate);
-    },
-
-    getTemplateData: function() {
-      var data = _.clone(this.locale);
-
-      var calendar = this.getCalendarDates(this.month, this.year);
-
-      for(var i=0;i<calendar.length;i++) {
-        var week = calendar[i];
-        for(var j=0;j<week.length;j++) {
-          var day = week[j];
-          _.extend(day, {
-            number: day.date.date(),
-            cls: this.getClassesForDate(day.date, i, j).join(' ')
-          });
-        }
-      }
-      return {
-        locale: this.locale,
-        month: this.locale.monthNames[this.month],
-        year: this.year,
-        prevAvailable: this.isPrevMonthAvailable(),
-        nextAvailable: this.isNextMonthAvailable(),
-        showWeekNumbers: this.showWeekNumbers,
-        calendar: calendar
-      };
-    },
-
-    /**
-     * Set the month to display (view state), and update.
-     * Either pass month and year, or a moment object.
-     */
-    setMonth: function(month, year) {
-      if (!$.isNumeric(month)) {
-        year = month.year();
-        month = month.month();
-      }
-      this.month = month;
-      this.year = year;
-      this.update();
-    },
-
-    setSelectedDate: function(selectedDate, options) {
-      var oldDate = this.selectedDate;
-
-      if (selectedDate) {
-        this.selectedDate = moment(selectedDate);
-        this.month = this.selectedDate.month();
-        this.year = this.selectedDate.year();
-        this.update();
-
-      } else {
-        this.selectedDate = null;
-        this.update();
-      }
-
-      if (selectedDate !== oldDate && !(options && options.silent)) {
-        this.trigger('dateselected', this, this.selectedDate);
-      }
-    },
-
-    /**
-     * Set the range of days to highlight as selected.
-     */
-    setSelectedRange: function(fromDate, toDate) {
-      this.fromDate = moment(fromDate);
-      this.toDate = moment(toDate);
-    },
-
-    /**
-     * Set the minimum selectable date (inclusive)
-     */
-    setMinDate: function(minDate) {
-      if (minDate) {
-        minDate = moment(minDate);
-      }
-      this.minDate = minDate;
-    },
-
-    /**
-     * Set the maximum selectable date (inclusive)
-     */
-    setMaxDate: function(maxDate) {
-      if(maxDate) {
-        maxDate = moment(maxDate);
-      }
-      this.maxDate = moment(maxDate);
-    },
-
-    //
-    // Helpers
-    //
-
-    /**
-     * Helper: Get 2d array of days
-     */
-    getCalendarDates: function (month, year) {
-      var calendar = [];
-      var curDate = this.getFirstDate(month, year);
-      for(var i=0;i<6;i++) {
-        var week = [];
-        for(var j=0;j<7;j++) {
-          week.push({
-            date: moment(curDate),
-          });
-          curDate = curDate.add('hour', 24);
-        }
-        calendar.push(week);
-      }
-      return calendar;
-    },
-
-    /**
-     * Helper: Get first day on calendar page for month, year
-     */
-    getFirstDate: function(month, year) {
-      var firstDay = moment([year, month, 1]),
-        monthAgo = moment(firstDay).subtract('month', 1);
-
-      var daysInLastMonth = monthAgo.daysInMonth(),
-        dayOfWeek = firstDay.day(),
-        firstDate = daysInLastMonth - dayOfWeek + this.locale.firstDay + 1;
-
-      if (firstDate > daysInLastMonth) {
-        firstDate -= 7;
-      }
-      if (dayOfWeek === this.locale.firstDay) {
-        firstDate = daysInLastMonth - 6;
-      }
-      return new moment([monthAgo.year(), monthAgo.month(), firstDate, 12]);
-    },
-
-    /**
-     * Helper: Get CSS classes for a day element.
-     */
-    getClassesForDate: function(date, row, col) {
-      var inMonth = this.isDateInMonth(date);
-      var classes = [
-        this.isDateInMinMax(date) ? 'active' : 'disabled',
-        inMonth ? null : 'off',
-        this.isSameDay(date, this.selectedDate) ? 'selected' : null,
-        inMonth && this.isSameDay(date, this.fromDate) ? 'start-date' : null,
-        inMonth && this.isSameDay(date, this.toDate) ? 'end-date' : null,
-        this.isDateInSelectedRange(date) ? 'in-range' : null,
-        this.getShadowClass(date, row, col)
-      ];
-
-      return _.compact(classes);
-    },
-
-    /**
-     * Helper: Get box shadow class for dates off the current month.
-     */
-    getShadowClass: function(date, row, col) {
-      if (!this.isDateInMonth(date)) {
-        if (row < 2) {
-          var nextWeek = moment(date).add('day', 7),
-            tomorrow = moment(date).add('day', 1);
-          if (this.isDateInMonth(nextWeek)) {
-            if (col < 6 && this.isDateInMonth(tomorrow)) {
-              return 'shadow-bottom-right';
-            } else {
-              return 'shadow-bottom';
-            }
-          }
-        } else {
-          var lastWeek = moment(date).subtract('day', 7),
-            yesterday = moment(date).subtract('day', 1);
-          if (this.isDateInMonth(lastWeek)) {
-            if (col > 0 && this.isDateInMonth(yesterday)) {
-              return 'shadow-top-left';
-            } else {
-              return 'shadow-top';
-            }
-          }
-        }
-      }
-      return null;
-    },
-
-    isSameDay: function(date1, date2) {
-      if (!date1 || !date2) {
-        return false;
-      }
-      return date1.format('YYYY-MM-DD') === date2.format('YYYY-MM-DD');
-    },
-
-    isDateInSelectedRange: function(date) {
-      if (!this.fromDate || !this.toDate) {
-        return false;
-      }
-      return this.isDateInRange(date, this.fromDate, this.toDate);
-    },
-
-    isDateInMinMax: function(date) {
-      return this.isDateInRange(date, this.minDate, this.maxDate);
-    },
-
-    isDateInRange: function(date, minDate, maxDate) {
-      return !((minDate && !this.isSameDay(date, minDate) && date.isBefore(minDate)) || (
-          maxDate && !this.isSameDay(date, maxDate) && date.isAfter(maxDate)));
-    },
-
-    isDateInMonth: function(date) {
-      return date.month() === this.month;
-    },
-
-    isPrevMonthAvailable: function() {
-      return this.isDateInMinMax(moment([this.year, this.month, 1]).subtract('day', 1));
-    },
-
-    isNextMonthAvailable: function() {
-      var firstDate = moment([this.year, this.month, 1]);
-      return this.isDateInMinMax(moment([this.year, this.month, firstDate.daysInMonth()]).add('day', 1));
-    },
-
-    getDateFromDayEl: function(el) {
-      el = $(el);
-      var td = el.parent();
-      var dateNumber = Number(el.text());
-
-      if (td.hasClass('off')) {
-        var offMonth =  moment([this.year, this.month, 1]);
-        if (td.data('row') < 3) {
-          offMonth = offMonth.subtract('month', 1);
-        } else {
-          offMonth = offMonth.add('month', 1);
-        }
-        return offMonth.date(dateNumber);
-      }
-      return moment([this.year, this.month, dateNumber]);
-    },
-
-    //
-    // EventHandlers
-    //
-
-    onPrevClick: function(e) {
-      e.preventDefault();
-      e.stopPropagation();
-      var lastMonth = moment([this.year, this.month, 1]).subtract('month', 1);
-      this.setMonth(lastMonth);
-
-      this.trigger('prevclick', this);
-    },
-
-    onNextClick: function(e) {
-      e.preventDefault();
-      e.stopPropagation();
-      var lastMonth = moment([this.year, this.month, 1]).add('month', 1);
-      this.setMonth(lastMonth);
-
-      this.trigger('nextclick', this);
-    },
-
-    onDayClick: function(e) {
-      e.preventDefault();
-      e.stopPropagation();
-      var td = $(e.target).parent();
-      if (!td.hasClass('disabled')) {
-        var date = this.getDateFromDayEl(e.target);
-        this.setSelectedDate(date);
-        this.trigger('dayclick', this, date);
-      }
-    }
-  });
-});
-
 define('text!view/form/fields/templates/DatePicker.html',[],function () { return '<div class="dropdown">\n\t<div class="input-prepend">\n\t  <button class="btn" data-toggle="dropdown" data-target="#"><i class="icon-calendar"></i></button>\n\t  {{> field}}\n\t</div>\n\n\t<div class="date-picker dropdown-menu form-inline">\n    <div class="calendar"></div>\n\t</div>\n</div>';});
 
 define('view/form/fields/DatePicker',[
@@ -10696,7 +11415,7 @@ define('view/form/fields/DatePicker',[
   'moment',
   'PlumageRoot',
   'view/form/fields/Field',
-  'view/calendar/Calendar',
+  'view/form/fields/Calendar',
 
   'text!view/form/fields/templates/DatePicker.html',
 ], function($, _, Backbone, Handlebars, moment, Plumage, Field, Calendar, template) {
@@ -10723,6 +11442,9 @@ define('view/form/fields/DatePicker',[
       'mousedown .dropdown-menu': 'onDropdownMouseDown'
     },
 
+    minDate: undefined,
+    maxDate: undefined,
+
     /**
      * Field with a popover calendar for selecting a date.
      *
@@ -10736,9 +11458,14 @@ define('view/form/fields/DatePicker',[
     initialize: function(options) {
       Field.prototype.initialize.apply(this, arguments);
       this.subViews = [
-        this.calendar = new Calendar(_.extend({selector: '.calendar'}, this.calendarOptions))
+        new Calendar(_.extend({name: 'calendar', selector: '.calendar'}, this.calendarOptions))
       ].concat(options.subViews || []);
-      this.calendar.on('dayclick', this.onDayClick.bind(this));
+      var calendar = this.getSubView('calendar');
+
+      calendar.setMinDate(this.minDate);
+      calendar.setMaxDate(this.maxDate);
+
+      calendar.on('change', this.onCalendarChange, this);
     },
 
     getInputSelector: function() {
@@ -10746,8 +11473,7 @@ define('view/form/fields/DatePicker',[
       return 'input:first';
     },
 
-    getValueString: function() {
-      var value = this.getValue();
+    getValueString: function(value) {
       if (value) {
         return moment(value).format(this.format);
       }
@@ -10756,7 +11482,7 @@ define('view/form/fields/DatePicker',[
 
     isDomValueValid: function(value) {
       value = moment(value);
-      return !value || value.isValid && value.isValid() && this.calendar.isDateInRange(value);
+      return !value || value.isValid && value.isValid() && this.getSubView('calendar').isDateInMinMax(value);
     },
 
     processDomValue: function(value) {
@@ -10767,7 +11493,7 @@ define('view/form/fields/DatePicker',[
     },
 
     update: function() {
-      this.calendar.setSelectedDate(this.getValue());
+      this.getSubView('calendar').setValue(this.getValue());
       Field.prototype.update.apply(this, arguments);
     },
 
@@ -10845,17 +11571,441 @@ define('view/form/fields/DatePicker',[
       this.getInputEl().focus();
     },
 
-    onDayClick: function(calendar, date) {
-      this.setValue(date.valueOf());
+    onCalendarChange: function(calendar, value) {
+      this.setValue(value);
       this.close();
     }
   });
 });
 
 
-define('text!view/form/fields/templates/DateRangePicker.html',[],function () { return '<div class="dropdown">\n\t<div class="input-prepend">\n\t  <button class="btn" data-toggle="dropdown" data-target="#"><i class="icon-calendar"></i></button>\n\t  {{> field}}\n\t</div>\n\n\t<div class="dropdown-menu form-inline opens{{opens}}">\n\t  <div class="calendar-wrap">\n      <div class="date-field">\n        <label class="control-label" for="daterangepicker_from">From</label>\n        <input type="text" name="daterangepicker_from" value="{{fromDate}}" readonly="readonly" />\n      </div>\n      <div class="from-calendar"></div>\n    </div>\n\n    <div class="calendar-wrap">\n      <div class="date-field">\n        <label class="control-label" for="daterangepicker_to">To</label>\n        <input type="text" name="daterangepicker_to" value="{{toDate}}" readonly="readonly" />\n      </div>\n      <div class="to-calendar"></div>\n    </div>\n\n    <div class="ranges-wrap">\n      <ul class="ranges">\n        {{#ranges}}\n          <li><a href="#">{{name}}</a></li>\n        {{/ranges}}\n      </ul>\n      <button class="btn btn-small apply">Apply</button>\n      <a href="#" class="cancel">cancel</a>\n    </div>\n\t</div>\n</div>\n<div class="clear"></div>';});
+define('text!view/form/fields/templates/DropdownSelect.html',[],function () { return '\n{{#if label}}\n<div class="control-group">\n  <label class="control-label" for="{{valueAttr}}">{{label}}</label>\n  <div class="controls">\n{{/if}}\n\n<span class="dropdown-select dropdown">\n<input type="hidden" {{#if fieldName}}name="{{fieldName}}"{{/if}} value="{{value}}"/>\n<a class="btn dropdown-toggle {{buttonCls}}" data-toggle="dropdown" href="#">\n  {{#iconCls}}\n    <i class="{{.}} icon-white"></i>\n  {{/iconCls}}\n  {{#if hasSelection}}\n    {{valueLabel}}\n  {{else}}\n    {{noSelectionText}}\n  {{/if}}\n  <span class="caret"></span>\n</a>\n<ul class="dropdown-menu">\n{{#listValues}}\n  <li data-value="{{value}}" class="{{value}}{{#selected}} active{{/selected}} {{#disabled}}disabled{{/disabled}}">\n    <a href="#">{{label}}</a>\n  </li>\n{{/listValues}}\n</ul>\n</span>\n\n{{#if label}}\n  </div>\n</div>\n{{/if}}';});
 
-define('view/form/fields/DateRangePicker',[
+define('view/form/fields/DropdownSelect',[
+  'jquery',
+  'underscore',
+  'backbone',
+  'handlebars',
+  'PlumageRoot',
+  'view/form/fields/Select',
+  'text!view/form/fields/templates/DropdownSelect.html',
+  'bootstrap'
+], function($, _, Backbone, Handlebars, Plumage, Select, template) {
+
+  return Plumage.view.form.fields.DropdownSelect = Select.extend({
+
+    template: template,
+
+    modelAttr: 'filter',
+
+    noSelectionText: 'Click to select',
+
+    noSelectionValue: '',
+
+    buttonCls: undefined,
+
+    iconCls: undefined,
+
+    preventFocus: false,
+
+    events:{
+      'click li a': 'onItemClick',
+      'click .dropdown-toggle': 'onToggleClick'
+    },
+
+    initialize: function() {
+      Select.prototype.initialize.apply(this, arguments);
+    },
+
+    onRender: function() {
+      Select.prototype.onRender.apply(this, arguments);
+    },
+
+    getTemplateData: function() {
+      var data = Select.prototype.getTemplateData.apply(this, arguments);
+      data = _.extend(data, {
+        buttonCls: this.buttonCls,
+        iconCls: this.iconCls
+      });
+      return data;
+    },
+
+    onToggleClick: function(e) {
+      if (this.preventFocus) {
+        e.preventDefault();
+        e.stopPropagation();
+        this.$('.dropdown').toggleClass('open');
+      }
+    },
+
+    onItemClick: function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      var li = $(e.target).closest('li'),
+        value = li && li.data('value');
+
+      this.$el.removeClass('open');
+      this.setValue(value);
+    }
+  });
+});
+define('view/form/fields/HourSelect',[
+  'jquery',
+  'underscore',
+  'backbone',
+  'handlebars',
+  'moment',
+  'PlumageRoot',
+  'view/form/fields/DropdownSelect',
+  'bootstrap'
+], function($, _, Backbone, Handlebars, moment, Plumage, DropdownSelect, template) {
+
+  return Plumage.view.form.fields.HourSelect = DropdownSelect.extend({
+    className: 'hour-picker',
+
+    maxDate: undefined,
+    minDate: undefined,
+
+    hourFormat: 'ha',
+
+    utc: false,
+
+    initialize: function(options) {
+      this.listValues = _.map(_.range(24), function(x){
+        return {
+          value: x,
+          label: moment({hour: x}).format(this.hourFormat)
+        };
+      }.bind(this));
+      DropdownSelect.prototype.initialize.apply(this, arguments);
+    },
+
+
+
+    getTemplateData: function() {
+      var data = DropdownSelect.prototype.getTemplateData.apply(this, arguments);
+      var modelValue = this.model.get(this.valueAttr);
+      var m = this.utc ? moment.utc(modelValue) : moment(modelValue);
+
+      _.each(data.listValues, function(x) {
+        x.disabled = !this.isHourInMinMax(x.value);
+      }, this);
+      return data;
+    },
+
+    getValueFromModel: function() {
+      if (this.model) {
+        var result = this.model.get(this.valueAttr);
+        if (result > 1000) {
+          var m = this.utc ? moment.utc(result) : moment(result);
+          result = m.hour();
+        }
+        return result === undefined ? '' : result;
+      }
+    },
+
+    updateModel: function(rootModel, parentModel) {
+      var model = this.getModelFromRoot(this.relationship, rootModel, parentModel),
+        value = this.getValue();
+
+      var modelValue = model.get(this.valueAttr);
+      var m = this.utc ? moment.utc(modelValue) : moment(modelValue);
+      value = m.hour(value).valueOf();
+
+      model.set(this.valueAttr, value);
+    },
+
+    getMinDate: function() {
+      if (this.model && this.minDateAttr) {
+        return this.model.get(this.minDateAttr);
+      }
+      return null;
+    },
+
+    /**
+     * Set the maximum selectable date (inclusive)
+     */
+    getMaxDate: function() {
+      if (this.model && this.maxDateAttr) {
+        return this.model.get(this.maxDateAttr);
+      }
+      return null;
+    },
+
+    setValue: function(value) {
+      if (!this.isHourInMinMax(value)) {
+        return;
+      }
+      DropdownSelect.prototype.setValue.apply(this, arguments);
+    },
+
+    isHourInMinMax: function(hour) {
+      var minDate = this.getMinDate(),
+        maxDate = this.getMaxDate();
+
+      var modelValue = this.model.get(this.valueAttr);
+      var m = this.utc ? moment.utc(modelValue) : moment(modelValue);
+      m.hour(hour);
+
+      return (!minDate || m >= moment(minDate)) && (!maxDate || m <= moment(maxDate));
+    },
+
+
+    onModelChange: function (e) {
+      if (e.changed[this.valueAttr] !== undefined || e.changed[this.minDateAttr] !== undefined || e.changed[this.maxDateAttr] !== undefined) {
+        this.updateValueFromModel();
+      }
+    },
+  });
+});
+
+define('text!view/form/fields/picker/templates/DateRangePicker.html',[],function () { return '<div class="calendar-wrap">\n  <div class="date-field">\n    <label class="control-label" for="daterangepicker_from">From</label>\n    <span class="from-date"></span>\n    {{#if showHourSelect}}<span class="from-hour"></span>{{/if}}\n  </div>\n  <div class="from-calendar"></div>\n</div>\n\n<div class="calendar-wrap">\n  <div class="date-field">\n    <label class="control-label" for="daterangepicker_to">To</label>\n    <span class="to-date"></span>\n    {{#if showHourSelect}}<span class="to-hour"></span>{{/if}}\n  </div>\n  <div class="to-calendar"></div>\n</div>\n\n<div class="ranges-wrap">\n  <ul class="ranges">\n    {{#ranges}}\n      <li><a href="#">{{name}}</a></li>\n    {{/ranges}}\n  </ul>\n  <button class="btn btn-small apply">Apply</button>\n  <a href="#" class="cancel">cancel</a>\n</div>\n';});
+
+define('view/form/fields/picker/DateRangePicker',[
+  'jquery',
+  'underscore',
+  'backbone',
+  'handlebars',
+  'moment',
+  'PlumageRoot',
+  'view/ModelView',
+  'view/form/fields/Field',
+  'view/form/fields/HourSelect',
+  'view/form/fields/Calendar',
+  'text!view/form/fields/picker/templates/DateRangePicker.html',
+], function($, _, Backbone, Handlebars, moment, Plumage, ModelView, Field, HourSelect, Calendar, template) {
+
+  return  Plumage.view.form.fields.picker.DateRangePicker = ModelView.extend(
+  /** @lends Plumage.view.form.fields.picker.DateRangePicker.prototype */
+  {
+    template: template,
+
+    modelCls: false, //never bind via setModel
+
+    className: 'date-range-picker dropdown-menu form-inline',
+
+    showHourSelect: false,
+
+    /** min selectable date, inclusive. */
+    minDate: undefined,
+
+    /** min selectable date, inclusive. */
+    maxDate: undefined,
+
+    /** Which side to open the picker on*/
+    opens: 'right',
+
+    /**
+     * Date format for text fields. Other formats can be typed into the main field, as long it can be
+     * parsed by moment.js
+     */
+    dateFormat: 'MMM D, YYYY',
+
+    utc: false,
+
+    /**
+     * Preset ranges. Shown as buttons on the side.
+     * Array of json objects with attributes:
+     *  - name: Text of the button
+     *  - from: moment date object for the start of the range.
+     *  - to: moment date object for the end of the range.
+     *
+     *  from and to can also be 'today' or 'yesterday'
+     */
+    ranges: [
+      {name: 'Today', from:'today', to:'today'},
+      {name: 'Yesterday', from:{day: -1}, to:{day: -1}},
+      {name: 'Last 7 Days', from:{day: -6}, to:'today'},
+      {name: 'Last 30 Days', from:{day: -29}, to:'today'},
+      {name: 'Last 90 Days', from:{day: -89}, to:'today'}
+    ],
+
+    events: {
+      'click .ranges a': 'onRangeClick',
+      'click .apply': 'onApplyClick',
+      'click .cancel': 'onCancelClick',
+      'mousedown': 'onMouseDown'
+    },
+
+    subViews: [{
+      viewCls: Calendar,
+      name: 'fromCal',
+      selector: '.from-calendar',
+      valueAttr: 'fromDate',
+      fromAttr: 'fromDate',
+      toAttr: 'toDate',
+      minDateAttr: 'minDate',
+      maxDateAttr: 'toDate',
+      updateModelOnChange: true
+    }, {
+      viewCls: Calendar,
+      name: 'toCal',
+      selector: '.to-calendar',
+      valueAttr: 'toDate',
+      fromAttr: 'fromDate',
+      toAttr: 'toDate',
+      minDateAttr: 'fromDate',
+      maxDateAttr: 'maxDate',
+      updateModelOnChange: true,
+    }, {
+      viewCls: Field,
+      selector: '.from-date',
+      name: 'fromDate',
+      valueAttr: 'fromDate',
+      readonly: true,
+      replaceEl: true
+    }, {
+      viewCls: Field,
+      selector: '.to-date',
+      name: 'toDate',
+      valueAttr: 'toDate',
+      readonly: true,
+      replaceEl: true
+    }, {
+      viewCls: HourSelect,
+      name: 'fromHour',
+      selector: '.from-hour',
+      valueAttr: 'fromDate',
+      minDateAttr: 'minDate',
+      maxDateAttr: 'toDate',
+      updateModelOnChange: true,
+      preventFocus: true,
+      replaceEl: true
+    }, {
+      viewCls: HourSelect,
+      name: 'toHour',
+      selector: '.to-hour',
+      valueAttr: 'toDate',
+      minDateAttr: 'fromDate',
+      maxDateAttr: 'maxDate',
+      updateModelOnChange: true,
+      preventFocus: true,
+      replaceEl: true
+    }],
+
+    /**
+     * @constructs
+     * @extends Plumage.view.ModelView
+     */
+    initialize: function(options) {
+
+      if (this.utc) {
+        this.subViews = _.map(this.subViews, _.clone);
+        _.each(this.subViews, function(x){x.utc = true;});
+      }
+
+      ModelView.prototype.initialize.apply(this, arguments);
+
+      var formatDate = function(date) {
+        var m = this.utc ? moment.utc(date) : moment(date);
+        return m.format(this.dateFormat);
+      }.bind(this);
+
+      this.getSubView('fromDate').getValueString = formatDate;
+      this.getSubView('toDate').getValueString = formatDate;
+
+      this.setModel(new Plumage.model.Model({}, {urlRoot: '/'}), null, true);
+    },
+
+    onRender: function() {
+      ModelView.prototype.onRender.apply(this, arguments);
+      this.$el.addClass('opens' + this.opens);
+      this.$el.toggleClass('show-hour-select', this.showHourSelect);
+    },
+
+    getTemplateData: function() {
+      var data = ModelView.prototype.getTemplateData.apply(this, arguments);
+
+      return _.extend(data, {
+        ranges: this.ranges,
+        opens: this.opens,
+        showHourSelect: this.showHourSelect
+      });
+    },
+
+    update: function() {
+      var fromCal = this.getSubView('fromCal'),
+        toCal = this.getSubView('toCal');
+      ModelView.prototype.update.apply(this, arguments);
+    },
+
+    setShowHourSelect: function(showHourSelect) {
+      this.showHourSelect = showHourSelect;
+      if(this.isRendered) {
+        this.render();
+      }
+    },
+
+    //
+    // Helpers
+    //
+
+    /** Helper: select the specified preset (value from [ranges]{@link Plumage.view.form.fields.DateRangePicker#ranges}) */
+    selectPresetRange: function(range) {
+      var value = [range.from, range.to];
+      var today = this.utc ? moment.utc({hour: 0}) : moment({hour: 0});
+      for (var i=0; i<value.length; i++) {
+        if (value[i] === 'today') {
+          value[i] = today;
+        } else {
+          value[i] = today.clone().add(value[i]);
+        }
+      }
+      this.model.set({
+        fromDate: value[0].valueOf(),
+        toDate: value[1].valueOf()
+      });
+      this.update();
+    },
+
+    //
+    // Events
+    //
+    onChange: function(e) {
+      //disable automatic updating from Field
+    },
+
+    onMouseDown: function(e) {
+      //do nothing so input doesn't lose focus
+      e.preventDefault();
+      e.stopPropagation();
+    },
+
+    onKeyDown: function(e) {
+      if (e.keyCode === 13) { //on enter
+        e.preventDefault();
+        this.close();
+        this.updateValueFromDom();
+      } else if(e.keyCode === 27) {
+        this.close();
+        this.update();
+      }
+    },
+
+    onRangeClick: function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      var range = _.findWhere(this.ranges, {name: e.target.text});
+      this.selectPresetRange(range);
+    },
+
+    onApplyClick: function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      this.trigger('apply', this, this.model);
+    },
+
+    onCancelClick: function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      this.trigger('close');
+    },
+  });
+});
+
+define('text!view/form/fields/templates/DateRangeField.html',[],function () { return '<div class="dropdown {{#if showHourPicker}}show-hour-picker{{/if}}">\n\t<div class="input-prepend">\n\t  <button class="btn" data-toggle="dropdown" data-target="#"><i class="icon-calendar"></i></button>\n\t  {{> field}}\n\t</div>\n\t<div class="picker"></div>\n</div>\n<div class="clear"></div>';});
+
+define('view/form/fields/DateRangeField',[
   'jquery',
   'underscore',
   'backbone',
@@ -10863,15 +12013,15 @@ define('view/form/fields/DateRangePicker',[
   'moment',
   'PlumageRoot',
   'view/form/fields/Field',
-  'view/calendar/Calendar',
-  'text!view/form/fields/templates/DateRangePicker.html',
-], function($, _, Backbone, Handlebars, moment, Plumage, Field, Calendar, template) {
+  'view/form/fields/picker/DateRangePicker',
+  'text!view/form/fields/templates/DateRangeField.html',
+], function($, _, Backbone, Handlebars, moment, Plumage, Field, DateRangePicker, template) {
 
-  return  Plumage.view.form.fields.DateRangePicker = Field.extend(
-  /** @lends Plumage.view.form.fields.DateRangePicker.prototype */
+  return  Plumage.view.form.fields.DateRangeField = Field.extend(
+  /** @lends Plumage.view.form.fields.DateRangeField.prototype */
   {
 
-    template: Handlebars.compile(template),
+    template: template,
 
     className: 'date-range-picker',
 
@@ -10881,17 +12031,14 @@ define('view/form/fields/DateRangePicker',[
     /** model attribute used as the end of the selected date range. */
     toAttr: undefined,
 
+    /** show hour select */
+    showHourSelect: false,
+
     /** min selectable date, inclusive. */
     minDate: undefined,
 
     /** min selectable date, inclusive. */
     maxDate: undefined,
-
-    /** from Date view state before applying  */
-    fromDate: undefined,
-
-    /** to Date view state before applying  */
-    toDate: undefined,
 
     /** Options to pass on to contained [Calendar]{@link Plumage.view.calendar.Calendar} object. */
     calendarOptions: undefined,
@@ -10905,40 +12052,30 @@ define('view/form/fields/DateRangePicker',[
      */
     format: 'MMM D, YYYY',
 
-    /**
-     * Preset ranges. Shown as buttons on the side.
-     * Array of json objects with attributes:
-     *  - name: Text of the button
-     *  - from: moment date object for the start of the range.
-     *  - to: moment date object for the end of the range.
-     *
-     *  from and to can also be 'today' or 'yesterday'
-     */
-    ranges: [
-      {name: 'Today', from:'today', to:'today'},
-      {name: 'Yesterday', from:'yesterday', to:'yesterday'},
-      {name: 'Last 7 Days', from:moment().hour(12).startOf('hour').subtract('day', 6), to:'today'},
-      {name: 'Last 30 Days', from:moment().hour(12).startOf('hour').subtract('day', 29), to:'today'},
-      {name: 'Last 90 Days', from:moment().hour(12).startOf('hour').subtract('day', 89), to:'today'}
-    ],
+    formatWithHour: 'MMM D ha, YYYY',
+
+    utc: false,
 
     events: {
       'focus input:first': 'onFocus',
       'blur input:first': 'onBlur',
       'click input:first': 'onInputClick',
       'click button:first': 'onButtonClick',
-      'click .ranges a': 'onRangeClick',
-      'click .apply': 'onApplyClick',
-      'click .cancel': 'onCancelClick',
-      'mousedown .dropdown-menu': 'onDropdownMouseDown'
     },
+
+    subViews: [{
+      viewCls: DateRangePicker,
+      name: 'picker',
+      selector: '.picker',
+      replaceEl: true
+    }],
 
     /**
      * Field for selecting a date range.
      *
-     * DateRangePicker uses two model attributes to get and store its selection, unlike a normal
-     * field that only uses one. The two attribute names are specified by [fromAttr]{@link Plumage.view.form.fields.DateRangePicker#fromAttr}
-     * and [toAttr]{@link Plumage.view.form.fields.DateRangePicker#toAttr}, for the start
+     * DateRangeField uses two model attributes to get and store its selection, unlike a normal
+     * field that only uses one. The two attribute names are specified by [fromAttr]{@link Plumage.view.form.fields.DateRangeField#fromAttr}
+     * and [toAttr]{@link Plumage.view.form.fields.DateRangeField#toAttr}, for the start
      * and end of the range respectively.
      *
      * The user can either select from and to dates from the left and right calendars respectively, or they
@@ -10952,44 +12089,17 @@ define('view/form/fields/DateRangePicker',[
      * @extends Plumage.view.form.fields.Field
      */
     initialize:function(options) {
-      options = options || {};
-      Field.prototype.initialize.apply(this, arguments);
-      this.subViews = [
-        this.fromCalendar = new Calendar(_.extend({selector: '.from-calendar'}, this.calendarOptions)),
-        this.toCalendar = new Calendar(_.extend({selector: '.to-calendar'}, this.calendarOptions))
-      ].concat(options.subViews || []);
-      this.fromCalendar.on('dayclick', this.onDayClick.bind(this));
-      this.toCalendar.on('dayclick  ', this.onDayClick.bind(this));
+      if (this.utc) {
+        _.each(this.subViews, function(x){x.utc = true;});
+      }
 
       Field.prototype.initialize.apply(this, arguments);
-    },
 
-    getTemplateData: function() {
-      var data = Field.prototype.getTemplateData.apply(this, arguments);
-      return _.extend(data, {
-        ranges: this.ranges,
-        fromDate: moment(this.fromDate).format(this.format),
-        toDate: moment(this.toDate).format(this.format),
-        opens: this.opens
-      });
-    },
+      var picker = this.getSubView('picker');
+      picker.showHourSelect = this.showHourSelect;
 
-    update: function() {
-      this.fromCalendar.setMinDate(this.minDate);
-      this.fromCalendar.setMaxDate(this.toDate);
-      this.fromCalendar.setSelectedRange(this.fromDate, this.toDate);
-      this.fromCalendar.setSelectedDate(this.fromDate);
-
-      this.$('input[name=daterangepicker_from]').val(moment(this.fromDate).format(this.format));
-
-      this.toCalendar.setMinDate(this.fromDate);
-      this.toCalendar.setMaxDate(this.maxDate);
-      this.toCalendar.setSelectedRange(this.fromDate, this.toDate);
-      this.toCalendar.setSelectedDate(this.toDate);
-      this.$('input[name=daterangepicker_to]').val(moment(this.toDate).format(this.format));
-
-      Field.prototype.update.apply(this, arguments);
-
+      picker.on('apply', this.onPickerApply, this);
+      picker.on('close', this.onPickerClose, this);
     },
 
     getInputSelector: function() {
@@ -10997,14 +12107,21 @@ define('view/form/fields/DateRangePicker',[
       return 'input:first';
     },
 
+    setShowHourSelect: function(showHourSelect) {
+      this.showHourSelect = showHourSelect;
+      this.getSubView('picker').setShowHourSelect(showHourSelect);
+    },
+
     //
     // Value
     //
 
-    getValueString: function() {
-      var value = this.getValue();
+    getValueString: function(value) {
       if (value && value.length) {
-        return moment(value[0]).format(this.format) + ' - ' + moment(value[1]).format(this.format);
+        var format = this.showHourSelect ? this.formatWithHour : this.format;
+        var m0 = this.utc ? moment.utc(value[0]) : moment(value[0]);
+        var m1 = this.utc ? moment.utc(value[1]) : moment(value[1]);
+        return m0.format(format) + ' - ' + m1.format(format);
       }
       return '';
     },
@@ -11032,7 +12149,8 @@ define('view/form/fields/DateRangePicker',[
         return false;
       }
 
-      return this.fromCalendar.isDateInMinMax(fromDate) && this.fromCalendar.isDateInMinMax(fromDate);
+      return Plumage.util.DateTimeUtil.isDateInRange(fromDate, this.minDate, this.maxDate) &&
+        Plumage.util.DateTimeUtil.isDateInRange(toDate, this.minDate, this.maxDate);
     },
 
     processDomValue: function(value) {
@@ -11043,17 +12161,6 @@ define('view/form/fields/DateRangePicker',[
         fromDate = moment(values[0].trim()).valueOf(),
         toDate = moment(values[1].trim()).valueOf();
       return [fromDate, toDate];
-    },
-
-    updateSelection: function() {
-      var value = this.getValue();
-      if (value) {
-        this.fromDate = value[0];
-        this.toDate = value[1];
-      } else {
-        this.fromDate = undefined;
-        this.toDate = undefined;
-      }
     },
 
     //
@@ -11076,20 +12183,21 @@ define('view/form/fields/DateRangePicker',[
         value = this.getValue();
 
       var newValues = {};
-      if (value) {
-        newValues[this.fromAttr] = value[0];
-        newValues[this.toAttr] = value[1];
-        model.set(newValues);
-      } else {
-        newValues[this.fromAttr] = null;
-        newValues[this.toAttr] = null;
-        model.set(newValues);
-      }
+      newValues[this.fromAttr] = value[0];
+      newValues[this.toAttr] = value[1];
+      model.set(newValues);
     },
 
-    // Keep view state up to date
+    //update the picker model
     valueChanged: function() {
-      this.updateSelection();
+      var pickerModel = this.getSubView('picker').model;
+      var value = this.getValue();
+      pickerModel.set({
+        minDate: this.minDate,
+        maxDate: this.maxDate,
+        fromDate: value[0],
+        toDate: value[1]
+      });
     },
 
     //
@@ -11099,7 +12207,7 @@ define('view/form/fields/DateRangePicker',[
     /** Helper: select the specified preset (value from [ranges]{@link Plumage.view.form.fields.DateRangePicker#ranges}) */
     selectPresetRange: function(range) {
       var value = [range.from, range.to];
-      var today = moment().hour(12).startOf('hour');
+      var today = moment({hour: 12});
       for (var i=0; i<value.length; i++) {
         if (value[i] === 'today') {
           value[i] = today;
@@ -11127,7 +12235,7 @@ define('view/form/fields/DateRangePicker',[
 
     /** Is the dropdown open? */
     isOpen: function() {
-      return this.$('.dropdown').hasClass('open');
+      return this.$('> .dropdown').hasClass('open');
     },
 
     /** Toggle dropdown open/closed */
@@ -11139,15 +12247,14 @@ define('view/form/fields/DateRangePicker',[
       }
     },
 
-    /** Open the dropdown */
     open: function() {
       this.update();
-      this.$('.dropdown').addClass('open');
+      this.$('> .dropdown').addClass('open');
     },
 
     /** Close the dropdown */
     close: function() {
-      this.$('.dropdown').removeClass('open');
+      this.$('> .dropdown').removeClass('open');
     },
 
     //
@@ -11171,17 +12278,6 @@ define('view/form/fields/DateRangePicker',[
       //do nothing so input doesn't lose focus
       e.preventDefault();
       e.stopPropagation();
-    },
-
-    onKeyDown: function(e) {
-      if (e.keyCode === 13) { //on enter
-        e.preventDefault();
-        this.close();
-        this.updateValueFromDom();
-      } else if(e.keyCode === 27) {
-        this.close();
-        this.update();
-      }
     },
 
     onSubmit: function(e) {
@@ -11208,37 +12304,15 @@ define('view/form/fields/DateRangePicker',[
       this.getInputEl().focus();
     },
 
-    onDayClick: function(calendar, date) {
-      if (date.valueOf) {
-        date = date.valueOf();
-      }
-      if (calendar === this.fromCalendar) {
-        this.fromDate = date;
-      } else {
-        this.toDate = date;
-      }
-      this.update();
-    },
-
-    onRangeClick: function(e) {
-      e.preventDefault();
-      e.stopPropagation();
-      var range = _.findWhere(this.ranges, {name: e.target.text});
-      this.selectPresetRange(range);
-    },
-
-    onApplyClick: function(e) {
-      e.preventDefault();
-      e.stopPropagation();
-      this.applySelection();
-      this.getInputEl().blur();
-    },
-
-    onCancelClick: function(e) {
-      e.preventDefault();
-      e.stopPropagation();
+    onPickerApply: function(picker, value) {
+      var pickerModel = picker.model;
+      this.setValue([pickerModel.get('fromDate'), pickerModel.get('toDate')]);
       this.close();
     },
+
+    onPickerClose: function() {
+      this.close();
+    }
   });
 });
 
@@ -11261,6 +12335,8 @@ define('view/form/fields/MultiSelect',[
     template: Handlebars.compile(template),
 
     showSelectAll: false,
+
+    allLabel: 'All',
 
     initialize: function() {
       this.value = [];
@@ -11302,7 +12378,7 @@ define('view/form/fields/MultiSelect',[
         return '';
       }
       if (labels.length === this.listModel.size()) {
-        return 'All';
+        return this.allLabel;
       }
       return labels.join(', ');
     },
@@ -11438,66 +12514,6 @@ define('view/form/fields/DropdownMultiSelect',[
 
 });
 
-
-define('text!view/form/fields/templates/DropdownSelect.html',[],function () { return '\n{{#if label}}\n<div class="control-group">\n  <label class="control-label" for="{{valueAttr}}">{{label}}</label>\n  <div class="controls">\n{{/if}}\n\n<span class="dropdown-select dropdown">\n<input type="hidden" {{#if fieldName}}name="{{fieldName}}"{{/if}} value="{{value}}"/>\n<a class="btn dropdown-toggle {{buttonCls}}" data-toggle="dropdown" href="#">\n  {{#iconCls}}\n    <i class="{{.}} icon-white"></i>\n  {{/iconCls}}\n  {{#if hasSelection}}\n    {{valueLabel}}\n  {{else}}\n    {{noSelectionText}}\n  {{/if}}\n  <span class="caret"></span>\n</a>\n<ul class="dropdown-menu">\n{{#listValues}}\n  <li data-value="{{value}}" class="{{value}}{{#selected}} active{{/selected}}"><a href="#">{{label}}</a></li>\n{{/listValues}}\n</ul>\n</span>\n\n{{#if label}}\n  </div>\n</div>\n{{/if}}';});
-
-define('view/form/fields/DropdownSelect',[
-  'jquery',
-  'underscore',
-  'backbone',
-  'handlebars',
-  'PlumageRoot',
-  'view/form/fields/Select',
-  'text!view/form/fields/templates/DropdownSelect.html',
-  'bootstrap'
-], function($, _, Backbone, Handlebars, Plumage, Select, template) {
-
-  return Plumage.view.form.fields.DropdownSelect = Select.extend({
-
-    template: Handlebars.compile(template),
-
-    modelAttr: 'filter',
-
-    noSelectionText: 'Click to select',
-
-    noSelectionValue: '',
-
-    buttonCls: undefined,
-
-    iconCls: undefined,
-
-    events:{
-      'click li a': 'onItemClick'
-    },
-
-    initialize: function() {
-      Select.prototype.initialize.apply(this, arguments);
-    },
-
-    onRender: function() {
-      Select.prototype.onRender.apply(this, arguments);
-    },
-
-    getTemplateData: function() {
-      var data = Select.prototype.getTemplateData.apply(this, arguments);
-      data = _.extend(data, {
-        buttonCls: this.buttonCls,
-        iconCls: this.iconCls
-      });
-      return data;
-    },
-
-    onItemClick: function(e) {
-      e.preventDefault();
-      e.stopPropagation();
-      var li = $(e.target).closest('li'),
-        value = li && li.data('value');
-
-      this.$el.removeClass('open');
-      this.setValue(value);
-    }
-  });
-});
 
 define('text!view/form/fields/templates/TypeAhead.html',[],function () { return '<span class="typeahead-select {{#if menuShown}}open{{/if}}">\n<span class="input-append">\n  <input type="text" placeholder="{{noSelectionText}}" value="{{value}}">\n  <button class="btn cancel-typeahead"><i class="icon-remove"></i></button>\n</span>\n\n<ul class="dropdown-menu">\n</ul>\n</span>';});
 
@@ -12272,7 +13288,7 @@ define('view/menu/DropdownMenu',[
 });
 
 
-define('text!view/grid/templates/FilterView.html',[],function () { return '\n{{#if hasFilters}}<span>Filter by:</span>{{/if}}\n\n<span class="filters"></span>\n\n<span class="more-menu"></span>\n\n<span class="search"></span>\n';});
+define('text!view/grid/templates/FilterView.html',[],function () { return '\n{{#if hasFilters}}<span>Filter by:</span>{{/if}}\n\n<span class="filters"></span>\n\n<span class="actions"></span>\n\n<span class="more-menu"></span>\n\n<span class="search"></span>\n';});
 
 define('view/grid/FilterView',[
   'jquery',
@@ -12319,7 +13335,7 @@ define('view/grid/FilterView',[
       options = options || {};
 
       this.filterFields = [];
-      this.subViews = [];
+      this.subViews = _.clone(this.subViews);
 
       _.each(this.filterConfigs, function(config){
         var filterConfig = _.extend({}, {
@@ -12382,7 +13398,11 @@ define('view/grid/FilterView',[
 
     update: function(isLoad) {
       //don't rerender nothing
-    }
+    },
+
+    setModel: function() {
+      Plumage.view.ModelView.prototype.setModel.apply(this, arguments);
+    },
   });
 });
 
@@ -12438,9 +13458,10 @@ define('view/grid/GridView',[
   'PlumageRoot',
   'view/ModelView',
   'collection/GridData',
-  'collection/BufferedGridData',
+  'collection/BufferedCollection',
+  'collection/GridSelection',
   'slickgrid-all'
-], function($, _, Backbone, Plumage, ModelView, GridData, BufferedGridData, Slick) {
+], function($, _, Backbone, Plumage, ModelView, GridData, BufferedCollection, GridSelection, Slick) {
 
   return Plumage.view.grid.GridView = ModelView.extend({
 
@@ -12460,6 +13481,8 @@ define('view/grid/GridView',[
       }
     },
 
+    selection: undefined,
+
     firstShow: true,
 
     infiniteScroll: true,
@@ -12471,16 +13494,13 @@ define('view/grid/GridView',[
     filterView: undefined,
 
     initialize: function () {
-      var me = this,
-      selectionModel = new Slick.RowSelectionModel();
+      var me = this;
       ModelView.prototype.initialize.apply(this, arguments);
       var gridData = this.createGridData();
 
       this.gridEl = $('<div class="grid"></div>');
       this.grid = new Slick.Grid(this.gridEl, gridData, this.columns, _.extend({}, this.defaultGridOptions, this.gridOptions));
-      this.grid.setSelectionModel(selectionModel);
       this.grid.onClick.subscribe(this.onGridClick.bind(this));
-//      selectionModel.onSelectedIdsChanged.subscribe(this.onSelect.bind(this));
 
       this.grid.onSort.subscribe(this.onSort.bind(this));
 
@@ -12514,8 +13534,9 @@ define('view/grid/GridView',[
     },
 
     setModel: function(rootModel, parentModel) {
+      var oldModel = this.model;
       ModelView.prototype.setModel.apply(this, arguments);
-      if (this.model) {
+      if (this.model && this.model !== oldModel) {
         this.grid.setData(this.createGridData(this.model));
         if (this.shown) {
           var vp = this.grid.getViewport();
@@ -12524,7 +13545,10 @@ define('view/grid/GridView',[
           this.grid.render();
         }
       }
+    },
 
+    setSelection: function(selection) {
+      this.grid.setSelectionModel(new GridSelection(selection));
     },
 
     /**
@@ -12532,16 +13556,14 @@ define('view/grid/GridView',[
      */
 
     createGridData: function(model) {
-      var result = [];
       if (model) {
         if (this.infiniteScroll) {
-          result = new BufferedGridData(model);
-          result.on('dataLoaded', this.onBufferLoad.bind(this));
-        } else {
-          result = new GridData(model);
+          model = new BufferedCollection(model);
+          model.on('pageLoad', this.onPageLoad.bind(this));
         }
+        return new GridData(model);
       }
-      return result;
+      return [];
     },
 
     ensureGridData: _.debounce(function(from, to) {
@@ -12630,7 +13652,6 @@ define('view/grid/GridView',[
     },
 
     onGridClick: function(e) {
-      e.stopPropagation();
       var target = e.target;
 
       if (target.tagName === 'A' && $(target).attr('href')) {
@@ -12675,11 +13696,11 @@ define('view/grid/GridView',[
      * Infinite scroll events
      */
 
-    onBufferBeginLoad: function() {
+    onBeginPageLoad: function() {
       this.showLoadingAnimation();
     },
 
-    onBufferLoad: function(gridData, from, to) {
+    onPageLoad: function(gridData, from, to) {
       for (var i = from; i < to; i++) {
         this.grid.invalidateRow(i);
       }
@@ -12746,7 +13767,7 @@ define('view/ListItemView',[ 'jquery', 'underscore', 'backbone',
 
 define('view/ListView',[ 'jquery', 'underscore', 'backbone',
   'PlumageRoot',
-  'model/Selection',
+  'collection/Selection',
   'view/CollectionView','view/ListItemView' ], function($, _, Backbone, Plumage,
       Selection, CollectionView, ListItemView) {
 
@@ -12924,6 +13945,123 @@ define('view/ListAndDetailView',[
   });
 });
 
+define('text!view/templates/ModalDialog.html',[],function () { return '<div class="modal hide fade" tabindex="-1" role="dialog" aria-hidden="true">\n  <div class="modal-header">\n    <button type="button" class="close" data-dismiss="modal" aria-hidden="true">x</button>\n    <h3 id="myModalLabel">{{header}}</h3>\n  </div>\n  <div class="modal-body">\n  </div>\n  <div class="modal-footer">\n    <button class="btn" data-dismiss="modal" aria-hidden="true">Close</button>\n  </div>\n</div>';});
+
+define('view/ModalDialog',[
+  'jquery',
+  'underscore',
+  'backbone',
+  'PlumageRoot',
+  'view/ModelView',
+  'text!view/templates/ModalDialog.html'
+], function($, _, Backbone, Plumage, ModelView, template) {
+
+  return Plumage.view.ModalDialog = ModelView.extend({
+
+    template: template,
+
+    contentView: undefined,
+
+    header: '',
+
+    modalOptions: {
+      show:false
+    },
+
+    initialize: function(options) {
+      options = options || {};
+      options.modalOptions = _.extend(this.modalOptions, options.modalOptions || {});
+      ModelView.prototype.initialize.apply(this, arguments);
+    },
+
+    onRender: function() {
+      ModelView.prototype.onRender.apply(this, arguments);
+      if (this.contentView) {
+        this.$('.modal-body').html(this.contentView.render().el);
+      }
+
+      if (this.$el.closest('html').length === 0) {
+        $('body').append(this.$el);
+        this.$('.modal').modal(this.modalOptions);
+      }
+    },
+
+    getTemplateData: function() {
+      var data = ModelView.prototype.getTemplateData.apply(this, arguments);
+      return _.extend(data,{
+        header: this.header
+      });
+    },
+
+    show: function() {
+      if (!this.isRendered) {
+        this.render();
+      }
+      this.$('.modal').modal('show');
+    },
+
+    hide: function() {
+      this.$('.modal').modal('hide');
+    }
+  });
+});
+
+
+
+define('text!view/templates/ConfirmationDialog.html',[],function () { return '<div class="modal hide fade" tabindex="-1" role="dialog" aria-hidden="true">\n  <div class="modal-header">\n    <button type="button" class="close" data-dismiss="modal" aria-hidden="true">x</button>\n    <h3 id="myModalLabel">{{{headerTemplate}}}</h3>\n  </div>\n  <div class="modal-body">\n    {{{bodyTemplate}}}\n  </div>\n  <div class="modal-footer">\n  <button class="btn" data-dismiss="modal" aria-hidden="true">Cancel</button>\n    <button class="btn confirm {{buttonCls}}">{{buttonText}}</button>\n  </div>\n</div>';});
+
+define('view/ConfirmationDialog',[
+  'jquery',
+  'underscore',
+  'backbone',
+  'handlebars',
+  'PlumageRoot',
+  'view/ModalDialog',
+  'text!view/templates/ConfirmationDialog.html'
+], function($, _, Backbone, Handlebars, Plumage, ModalDialog, template) {
+
+  return Plumage.view.ConfirmationDialog = ModalDialog.extend({
+
+    template: template,
+
+    headerTemplate: 'Confirmation Dialog',
+
+    bodyTemplate: 'Are you sure you want to do this?',
+
+    buttonText: 'Confirm',
+
+    buttonCls: 'btn-success',
+
+    events: {
+      'click .confirm': 'onConfirmClick'
+    },
+
+    initialize: function(options) {
+      options = options || {};
+      ModalDialog.prototype.initialize.apply(this, arguments);
+      this.headerTemplate = this.initTemplate(this.headerTemplate);
+      this.bodyTemplate = this.initTemplate(this.bodyTemplate);
+    },
+
+    getTemplateData: function() {
+      var data = ModalDialog.prototype.getTemplateData.apply(this, arguments);
+      return _.extend(data, {
+        headerTemplate: this.headerTemplate(data),
+        bodyTemplate: this.bodyTemplate(data),
+        buttonText: this.buttonText,
+        buttonCls: this.buttonCls
+      });
+    },
+
+    onConfirmClick: function() {
+      this.trigger('confirm');
+      this.hide();
+    }
+  });
+});
+
+
+
 define('text!view/templates/DisplayField.html',[],function () { return '{{#if label}}\n<div class="control-group">\n  {{#label}}\n  <label class="control-label">{{.}}</label>\n  {{/label}}\n  <div class="controls">\n{{/if}}\n    <div class="field-value">\n      {{#if loading}}\n        <span class="loading">loading...</span>\n      {{else}}\n        {{value}}\n      {{/if}}\n    </div>\n{{#if label}}\n  </div>\n</div>\n{{/if}}';});
 
 
@@ -13084,68 +14222,6 @@ define('view/MessageView',[
     }
   });
 });
-
-define('text!view/templates/ModalDialog.html',[],function () { return '<div class="modal hide fade" tabindex="-1" role="dialog" aria-hidden="true">\n  <div class="modal-header">\n    <button type="button" class="close" data-dismiss="modal" aria-hidden="true">x</button>\n    <h3 id="myModalLabel">{{header}}</h3>\n  </div>\n  <div class="modal-body">\n  </div>\n  <div class="modal-footer">\n    <button class="btn" data-dismiss="modal" aria-hidden="true">Close</button>\n  </div>\n</div>';});
-
-define('view/ModalDialog',[
-  'jquery',
-  'underscore',
-  'backbone',
-  'PlumageRoot',
-  'view/View',
-  'text!view/templates/ModalDialog.html'
-], function($, _, Backbone, Plumage, View, template) {
-
-  return Plumage.view.ModalDialog = View.extend({
-
-    template: template,
-
-    contentView: undefined,
-
-    header: '',
-
-    modalOptions: {
-      show:false
-    },
-
-    initialize: function(options) {
-      options = options || {};
-      options.modalOptions = _.extend(this.modalOptions, options.modalOptions || {});
-      View.prototype.initialize.apply(this, arguments);
-    },
-
-    onRender: function() {
-      View.prototype.onRender.apply(this, arguments);
-      if (this.contentView) {
-        this.$('.modal-body').html(this.contentView.render().el);
-      }
-
-      if (this.$el.closest('html').length === 0) {
-        $('body').append(this.$el);
-        this.$('.modal').modal(this.modalOptions);
-      }
-    },
-
-    getTemplateData: function() {
-      return {
-        header: this.header
-      };
-    },
-
-    show: function() {
-      if (!this.isRendered) {
-        this.render();
-      }
-      this.$('.modal').modal('show');
-    },
-
-    hide: function() {
-      this.$('.modal').modal('hide');
-    }
-  });
-});
-
-
 
 define('text!view/templates/NavView.html',[],function () { return '\n<div id="nav-top">\n  <a class="brand" href="/">\n    <span class="nav-title">{{title}}</span>\n    {{#subtitle}}<span class="nav-subtitle">{{.}}</span>{{/subtitle}}\n  </a>\n  <div id="extra-links">\n  {{#aboutUrl}}\n    <a class="outlink" href="{{.}}" target="_">about</a>\n  {{/aboutUrl}}\n\n  {{#helpUrl}}\n    <a class="outlink" href="{{.}}" target="_">help</a>\n  {{/helpUrl}}\n  </div>\n\n  <div id="nav-top-right" class="nav pull-right">\n    <div class="nav-search"></div>\n  </div>\n  <div class="clear"></div>\n</div>\n\n{{#if navItems}}\n<div id="main-nav" class="navbar">\n  <div class="navbar-inner">\n    <ul class="nav-menu nav menu">\n      {{#navItems}}\n      <li class="{{className}}"><a href="{{url}}">{{label}}</a></li>\n      {{/navItems}}\n    </ul>\n\n    <ul class="nav right-nav pull-right">\n      <li class="user-menu"></li>\n    </ul>\n  </div>\n</div>\n{{/if}}';});
 
@@ -13791,11 +14867,13 @@ define('plumage',[
   'PlumageRoot',
   'App',
   'collection/ActivityCollection',
+  'collection/BufferedCollection',
   'collection/Collection',
-  'collection/BufferedGridData',
   'collection/CommentCollection',
   'collection/DataCollection',
   'collection/GridData',
+  'collection/Selection',
+  'collection/GridSelection',
   'collection/UserCollection',
   'controller/BaseController',
   'controller/ModelController',
@@ -13805,7 +14883,6 @@ define('plumage',[
   'model/Comment',
   'model/Data',
   'model/SearchResults',
-  'model/Selection',
   'model/User',
   'RequestManager',
   'Router',
@@ -13824,14 +14901,16 @@ define('plumage',[
   'view/ContainerView',
   'view/controller/IndexView',
   'view/form/fields/ButtonGroupSelect',
+  'view/form/fields/Calendar',
   'view/form/fields/CategorySelect',
   'view/form/fields/Checkbox',
   'view/form/fields/DatePicker',
-  'view/form/fields/DateRangePicker',
+  'view/form/fields/DateRangeField',
   'view/form/fields/DropdownMultiSelect',
   'view/form/fields/DropdownSelect',
   'view/form/fields/Field',
   'view/form/fields/FilterTypeAhead',
+  'view/form/fields/HourSelect',
   'view/form/fields/InPlaceTextField',
   'view/form/fields/MultiSelect',
   'view/form/fields/Radio',
@@ -13840,6 +14919,7 @@ define('plumage',[
   'view/form/fields/Select',
   'view/form/fields/TextArea',
   'view/form/fields/TypeAhead',
+  'view/form/fields/picker/DateRangePicker',
   'view/form/Form',
   'view/form/SelectField',
   'view/grid/FilterView',
@@ -13849,6 +14929,7 @@ define('plumage',[
   'view/ListItemView',
   'view/ListView',
   'view/menu/DropdownMenu',
+  'view/ConfirmationDialog',
   'view/DisplayField',
   'view/MessageView',
   'view/ModalDialog',

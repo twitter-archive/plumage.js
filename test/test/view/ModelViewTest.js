@@ -37,27 +37,29 @@ define([
 //    sinon.spy(view, 'onModelError');
 
     view.setModel(model);
-    ok(view.onModelLoad.calledOnce, 'should fire load on set');
+    ok(!view.onModelLoad.called, 'should not fire load on set unlead');
 
     model.trigger('change');
     ok(view.onModelChange.calledOnce, 'should handle change event');
 
     model.trigger('load');
-    ok(view.onModelLoad.calledTwice, 'should handle load event');
+    ok(view.onModelLoad.calledOnce, 'should handle load event');
 
     var newModel = new Post(ExampleData.POST_DATA_WITH_RELATED);
+    newModel.onLoad();
+
     view.setModel(newModel);
-    ok(view.onModelLoad.calledTwice, 'do not fire load when setting model with same id');
+    ok(view.onModelLoad.calledOnce, 'do not fire load when setting model with same id');
 
     model.trigger('load');
-    ok(view.onModelLoad.calledTwice, 'stop listening to old model');
+    ok(view.onModelLoad.calledOnce, 'stop listening to old model');
 
     newModel.trigger('load');
-    ok(view.onModelLoad.calledThrice, 'start listening to new model');
+    ok(view.onModelLoad.calledTwice, 'start listening to new model');
 
     view.remove();
     newModel.trigger('load');
-    ok(view.onModelLoad.calledThrice, 'stop listening after being removed');
+    ok(view.onModelLoad.calledTwice, 'stop listening after being removed');
 
     view.setModel(undefined);
     equal(view.model, undefined, 'should successfully set model to null');

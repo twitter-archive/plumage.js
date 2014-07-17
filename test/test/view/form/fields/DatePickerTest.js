@@ -56,7 +56,7 @@ define([
     field.update();
 
     equal(field.getValue(), getDate(0));
-    equal(field.calendar.selectedDate.valueOf(), getDate(0));
+    equal(field.getSubView('calendar').getValue(), getDate(0));
 
     model.set('post_date', getDate(1));
     equal(field.getValue(), getDate(1));

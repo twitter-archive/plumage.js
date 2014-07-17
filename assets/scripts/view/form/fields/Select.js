@@ -66,6 +66,9 @@ define([
      */
     initialize: function() {
       Field.prototype.initialize.apply(this, arguments);
+      if (this.listValues && this.defaultToFirst) {
+        this.setValue(this.listValues[0].value);
+      }
     },
 
     /**
@@ -169,7 +172,7 @@ define([
 
     hasSelection: function() {
       var value = this.getValue();
-      return Boolean(value && value !== this.noSelectionValue);
+      return value !== null && value !== undefined && value !== this.noSelectionValue;
     },
 
     /**

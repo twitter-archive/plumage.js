@@ -89,7 +89,9 @@ function($, _, Backbone, Plumage, BaseController, ModelUtil) {
 
     /**
      * Logic for binding a model to, and then showing the detail view
-     * Override to add extra event handlers
+     * Override to add extra event handlers.
+     *
+     *
      */
     showDetailModel: function(model) {
 
@@ -105,8 +107,11 @@ function($, _, Backbone, Plumage, BaseController, ModelUtil) {
       view.setModel(model);
       this.showView(view);
 
-      this.loadModel(model).then(function() {
-        view.setModel(model);
+      return this.loadModel(model).then(function() {
+        // call setModel again, so subviews can get newly loaded related models
+        if (model.related) {
+          view.setModel(model);
+        }
       });
     },
 

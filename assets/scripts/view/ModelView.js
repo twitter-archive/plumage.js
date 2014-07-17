@@ -83,6 +83,15 @@ define([
     initialize:function (options) {
       ContainerView.prototype.initialize.apply(this, arguments);
 
+      this.buildSubViews();
+
+      //Backbone.View constructor will already set model if it's passed in.
+      if (this.model) {
+        throw 'Do not pass model into constructor. call setModel';
+      }
+    },
+
+    buildSubViews: function() {
       var viewBuilder = new ViewBuilder({
         defaultViewCls: this.defaultSubViewCls,
         defaultViewOptions: this.defaultSubViewOptions
@@ -92,11 +101,6 @@ define([
       this.subViews = _.map(this.subViews, function(subView) {
         return viewBuilder.buildView(subView);
       });
-
-      //Backbone.View constructor will already set model if it's passed in.
-      if (this.model) {
-        throw 'Do not pass model into constructor. call setModel';
-      }
     },
 
     /**
@@ -128,21 +132,27 @@ define([
 
     /**
      * Bind a model if applicable. Call setModel on your top level view in your Controller.
+     *
+     * Calls onModelLoad if the model has changed (set model != this.model) and is already loaded.
+     *
      * @params {Plumage.model.Model} rootModel The root model
      * @params {Plumage.model.Model} parentModel The model the parent view bound to. For relative relationships.
+     * @params {Boolean} force Ignore modelCls. Normally used when modelCls = false.
      */
-    setModel: function(rootModel, parentModel) {
-      if (this.rootModelCls && rootModel) {
-        var rootModelCls = requirejs(this.rootModelCls);
-        if (!(rootModel instanceof rootModelCls)) {
-          return;
+    setModel: function(rootModel, parentModel, force) {
+      if (!force) {
+        if (this.rootModelCls && rootModel) {
+          var rootModelCls = requirejs(this.rootModelCls);
+          if (!(rootModel instanceof rootModelCls)) {
+            return;
+          }
         }
+        this.rootModel = rootModel;
       }
-      this.rootModel = rootModel;
 
       var model = this.getModelFromRoot(this.relationship, rootModel, parentModel),
         changed = true;
-      if (this.modelCls !== undefined) {
+      if (!force && this.modelCls !== undefined) {
         if (this.modelCls === false) {
           return;
         }
@@ -167,7 +177,7 @@ define([
         this.model.on('error', this.onModelError, this);
       }
 
-      if (changed) {
+      if (changed && this.model && this.model.fetched) {
         this.onModelLoad();
       }
 

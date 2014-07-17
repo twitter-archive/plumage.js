@@ -33,8 +33,10 @@ function($, _, Backbone, Plumage) {
       this.collection.on('all', this.relayEvent, this);
     },
 
-    ensureData: function() {
-      //do nothing. GridData doesn't load remote data
+    ensureData: function(from, to) {
+      if (this.collection.ensureData) {
+        this.collection.ensureData(from, to);
+      }
     },
 
     /** calls setSort on Collection */

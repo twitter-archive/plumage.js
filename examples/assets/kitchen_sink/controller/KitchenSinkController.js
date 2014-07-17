@@ -39,6 +39,7 @@ function($, _, Backbone, Plumage, ExampleSectionView, ExampleSection, examples) 
           model.preloadSource(function(){
             this.doShowSection(model, example, options);
           }.bind(this));
+          model.onLoad();
         }
         this.exampleSections[section] = model;
       }

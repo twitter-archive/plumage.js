@@ -41,6 +41,12 @@ define([
     // Life Cycle
     ///////////////
 
+    constructor: function(options) {
+      options = options || {};
+      _.extend(this, options);
+
+      Backbone.View.apply(this, arguments);
+    },
 
     /**
      * View class that renders to a DOM element.
@@ -59,8 +65,6 @@ define([
      * @extends Backbone.View
      */
     initialize:function (options) {
-      options = options || {};
-      _.extend(this, options);
       this.template = this.initTemplate(this.template);
     },
 

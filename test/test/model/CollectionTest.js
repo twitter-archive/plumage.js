@@ -28,14 +28,14 @@ define([
     equal(collection.size(), 3);
     equal(collection.at(1).get('body'), 'my body2');
 
-    ok(collection.get('filter') !== undefined, 'filter should exist');
+    ok(collection.getRelated('filters') !== undefined, 'filter should exist');
 
-    collection.get('filter').foo = 'bar';
+    collection.setFilter('foo', 'bar');
     collection.set('foo', 'bar');
 
     var collection2 = new PostCollection();
     equal(collection2.get('foo'), undefined, 'should not share meta');
-    ok(collection2.get('filter') !== collection.get('filter'), 'should not share filter');
+    ok(collection2.getFilters('foo').length === 0, 'should not share filter');
   });
 
   test('Can set attributes and models', function() {

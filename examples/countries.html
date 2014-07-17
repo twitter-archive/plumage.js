@@ -6,11 +6,12 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <script type="text/javascript">
-window.isStatic = false;
+window.isStatic = true;
 
-var rootUrl = '', i;
+//single page app, so must use absolute urls
+var rootUrl = '/plumage.js', i;
 
-var css = ["/dist/plumage.css", "/examples/assets/styles/countries.css"];
+var css = ["/plumage.css", "/examples/assets/styles/countries.css"];
 var js = ["/assets/scripts/vendor/require.js", "/assets/scripts/config.js"];
 
 for (i=0; i<css.length; i++) {
@@ -25,7 +26,7 @@ for (i=0; i<js.length; i++) {
 require.config({
   baseUrl: rootUrl + '/assets/scripts',
   paths: {
-    plumage: rootUrl + '/dist/plumage.min', // remove this line to use uncompiled source
+    plumage: rootUrl + '/plumage.min', // remove this line to use uncompiled source
     data: rootUrl + '/examples/assets/data',
     example: rootUrl + '/examples/assets/example',
     countries: rootUrl + '/examples/assets/countries',

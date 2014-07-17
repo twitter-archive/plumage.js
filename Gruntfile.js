@@ -53,12 +53,11 @@ module.exports = function (grunt) {
       },
       test: {
         options: {
-          keepalive: true,
           middleware: function (connect) {
             return [
               mountFolder(connect, 'build'),
               mountFolder(connect, 'test'),
-              mountFolder(connect, 'examples/example_models'),
+              mountFolder(connect, 'examples/assets'),
               mountFolder(connect, 'assets')
             ];
           }
@@ -75,6 +74,15 @@ module.exports = function (grunt) {
               mountApp(connect, '/examples/countries.html', 'examples/countries.html'),
               mountApp(connect, '/examples/kitchen_sink.html', 'examples/kitchen_sink.html'),
               connect().use('/examples', connect.static(path.resolve('examples')))
+            ];
+          }
+        }
+      },
+      'gh-pages': {
+        options: {
+          middleware: function (connect) {
+            return [
+              mountFolder(connect, 'gh-pages')
             ];
           }
         }
@@ -103,6 +111,14 @@ module.exports = function (grunt) {
       ]
     },
 
+    qunit: {
+      all: {
+        options: {
+          urls: ['http://localhost:9000/']
+        }
+      }
+    },
+
     /**
      * Building
      **/
@@ -111,63 +127,50 @@ module.exports = function (grunt) {
       server: 'build'
     },
 
-    /** Compile scss to css */
-    compass: {
-
+    sass: {
       options: {
-        cssDir: 'build/styles',
-        imagesDir: 'assets/images',
-        javascriptsDir: 'assets/scripts',
-        relativeAssets: true,
-        importPath: [
+        loadPath: [
           'assets/styles',
           'assets/bower_components',
           'assets/bower_components/twitter-bootstrap-sass/vendor/assets/stylesheets'
-        ]
+        ],
       },
-
       plumage: {
-        options: {
-          sassDir: 'assets/styles',
-          specify: 'assets/styles/plumage.scss',
+        lineNumbers: true,
+        files: {
+          'build/styles/plumage.css': 'assets/styles/plumage.scss'
         }
       },
-
       dist: {
         options: {
-          sassDir: 'assets/styles',
-          specify: 'assets/styles/plumage.scss',
-          noLineComments: true
+          lineNumbers: false,
+        },
+        files: {
+          'build/styles/plumage.css': 'assets/styles/plumage.scss'
         }
       },
 
       docs: {
         options: {
-          cssDir: 'build/docs/styles',
-          sassDir: 'docs/styles',
-          specify: 'docs/styles/docs.scss'
+          loadPath: [
+            'build/docs/styles',
+            'assets/bower_components',
+            'assets/bower_components/twitter-bootstrap-sass/vendor/assets/stylesheets'
+          ],
+        },
+        files: {
+          'build/docs/styles/docs.css': 'docs/styles/docs.scss'
         }
       },
 
       examples: {
         options: {
-          cssDir: 'examples/assets/styles',
-          sassDir: 'examples/assets/styles',
-          importPath: [
-            'assets/bower_components',
-            'assets/bower_components/twitter-bootstrap-sass/vendor/assets/stylesheets'
-          ],
-          specify: ['examples/assets/styles/kitchensink.scss', 'examples/assets/styles/countries.scss']
-        }
-      },
-
-      bootstrap: {
-        options: {
-          sassDir: 'assets/bower_components/twitter-bootstrap-sass/vendor/assets/stylesheets',
-          cssDir: 'build/styles'
+        },
+        files: {
+          'examples/assets/styles/kitchensink.css': 'examples/assets/styles/kitchensink.scss',
+          'examples/assets/styles/countries.css': 'examples/assets/styles/countries.scss'
         }
       }
-
     },
 
     /** Concatenate js with require.js */
@@ -200,7 +203,16 @@ module.exports = function (grunt) {
         files: [
           {expand: true, cwd: 'build/scripts/', src: ['plumage.js', 'plumage.min.js'], dest: 'dist/'},
           {expand: true, cwd: 'build/styles/', src: ['plumage.css'], dest: 'dist/'},
-          {expand: true, cwd: 'build', src: ['docs/**'], dest: 'dist/'}
+        ]
+      },
+      'gh-pages': {
+        files: [
+          {expand: true, cwd: '.', src: ['examples/**', 'assets/**', 'test/test/environment.js'], dest: 'gh-pages/plumage.js'},
+          {expand: true, cwd: 'build/docs', src: ['**'], dest: 'gh-pages/plumage.js'},
+          {expand: true, cwd: 'build/scripts/', src: ['plumage.js', 'plumage.min.js'], dest: 'gh-pages/plumage.js'},
+          {expand: true, cwd: 'build/styles/', src: ['plumage.css'], dest: 'gh-pages/plumage.js'},
+          {expand: true, cwd: 'assets/scripts/vendor/slickgrid/images', src: ['sort-*', 'header-*'], dest: 'gh-pages/plumage.js'},
+
         ]
       }
     },
@@ -225,7 +237,7 @@ module.exports = function (grunt) {
           'assets/scripts/model/Filter.js',
           'assets/scripts/collection/Collection.js',
           'assets/scripts/collection/GridData.js',
-          'assets/scripts/collection/BufferedGridData.js',
+          'assets/scripts/collection/BufferedCollection.js',
 
           'assets/scripts/view/View.js',
           'assets/scripts/view/ContainerView.js',
@@ -255,9 +267,9 @@ module.exports = function (grunt) {
       options: {
         nospawn: true
       },
-      compass: {
+      sass: {
         files: ['assets/styles/**/*.{scss,sass}', 'examples/styles/**/*.{scss,sass}'],
-        tasks: ['compass', 'copy']
+        tasks: ['sass', 'copy']
       },
       requirejs: {
         files: ['assets/scripts/**/*.{js,html}'],
@@ -267,35 +279,56 @@ module.exports = function (grunt) {
         files: ['docs/**/*.{html,scss}'],
         tasks: ['docs']
       }
+    },
+    'gh-pages': {
+      options: {
+        base: 'gh-pages/plumage.js'
+      },
+      src: ['**']
     }
   });
 
   grunt.registerTask('examples', [
-    'compass',
-    'copy',
+    'sass',
     'requirejs',
-    'connect:docs',
+    'copy:gh-pages',
+    'connect:gh-pages',
     'open',
+    'watch'
+  ]);
+
+  grunt.registerTask('test-browser', [
+    'jshint',
+    'connect:test',
+    'open:server',
     'watch'
   ]);
 
   grunt.registerTask('test', [
     'jshint',
     'connect:test',
-    'open:server'
+    'qunit'
   ]);
 
   grunt.registerTask('build', [
     'jshint',
-    'compass:dist',
+    'sass:dist',
     'requirejs',
     'uglify',
-    'copy'
+    'copy:dist'
   ]);
 
   grunt.registerTask('docs', [
     'jekyll:build',
-    'compass:docs',
-    'watch'
+    'sass:docs',
+    'jsdoc:build',
   ]);
+
+  grunt.registerTask('gh-pages-deploy', [
+    'build',
+    'docs',
+    'copy:gh-pages',
+    'gh-pages'
+  ]);
+
 };

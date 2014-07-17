@@ -26,10 +26,16 @@
   font: bold 14px;
 }
 
+.slick-cell-checkboxsel {
+  text-align: center;
+  input {
+    margin: 0;
+  }
+}
+
 .grid-canvas .slick-cell a, .grid-canvas .slick-cell a:hover {
   color: $link-color;
 }
-
 
 .slick-row.odd{
   background: #F2F4F5;

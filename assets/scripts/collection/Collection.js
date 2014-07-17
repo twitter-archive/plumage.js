@@ -35,6 +35,8 @@ define([
 
     relationships: {},
 
+    selections: undefined,
+
     /**
      * Base Collection class for Plumage collections.
      *
@@ -104,7 +106,6 @@ define([
     initialize: function(models, options) {
       options = options || {};
       var meta = _.extend(_.clone(this.defaultMeta), options.meta || {});
-      meta.filter = meta.filter || {};
       this.set(meta, {silent: true});
       delete options.meta;
       _.extend(this, options);
@@ -354,6 +355,7 @@ define([
     toViewJSON: function() {
       var result = Model.prototype.toViewJSON.apply(this, arguments);
       result.items = this.toJSON.apply(this, arguments);
+      result.size = this.size();
       return result;
     },
 
@@ -391,6 +393,16 @@ define([
       if (refresh) {
         requestManager.loadModel(this);
       }
+    },
+
+    getSelection: function(selectionName) {
+      if (!this.selections) {
+        this.selections = {};
+      }
+      if (!this.selections[selectionName]) {
+        this.selections[selectionName] = new Plumage.collection.Selection([], {collection: this});
+      }
+      return this.selections[selectionName];
     },
 
     //
@@ -434,50 +446,17 @@ define([
      * the server for a processInMemory collection, call [forceReload]{@link Plumage.collection.Collection#forceReload}
      *
      * If not in memory, load remote data for current model and view state.
-     *
-     * Prevents duplicate request with the same query params using this.latestLoadParams
      */
     load: function(options) {
       options = (options || {});
-      var opts = _.clone(options || {});
-
       if (this.processInMemory && this.fetched) {
         if (this.buffered) {
           throw 'Can not be both buffered and processInMemory';
         }
-        this.onLoad(opts);
+        this.onLoad(_.clone(options));
         return;
       }
-
-      opts.data = _.extend(this.getQueryParams(), opts.data);
-
-      if (_.isEqual(this.latestLoadParams, opts.data)) {
-        return;
-      }
-      this.latestLoadParams = opts.data;
-
-      var success = opts.success,
-        error = opts.error;
-      var collection = this;
-      opts.success = function(model, resp, options) {
-        collection.onLoad(opts);
-        if (success) {
-          success(model, resp, options);
-        }
-      };
-      opts.error = function(model, xhr, options) {
-        if (typeof theApp !== 'undefined' && theApp.logger) {
-          if (xhr.statusText !== 'abort') {
-            theApp.logger.error(xhr.statusText, 'Model load error');
-          }
-        }
-        if (error) {
-          error(model, xhr, opts);
-        }
-      };
-
-      this.fireBeginLoad();
-      return this.fetch(opts);
+      return Model.prototype.load.apply(this, arguments);
     },
 
     /**
@@ -490,10 +469,6 @@ define([
       this.fetched = false;
       this.originalModels = undefined;
       this.load({reset: true});
-    },
-
-    fireBeginLoad: function() {
-      this.trigger('beginLoad', this);
     },
 
     /**

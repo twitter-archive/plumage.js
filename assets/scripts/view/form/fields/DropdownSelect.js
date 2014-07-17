@@ -11,7 +11,7 @@ define([
 
   return Plumage.view.form.fields.DropdownSelect = Select.extend({
 
-    template: Handlebars.compile(template),
+    template: template,
 
     modelAttr: 'filter',
 
@@ -23,8 +23,11 @@ define([
 
     iconCls: undefined,
 
+    preventFocus: false,
+
     events:{
-      'click li a': 'onItemClick'
+      'click li a': 'onItemClick',
+      'click .dropdown-toggle': 'onToggleClick'
     },
 
     initialize: function() {
@@ -42,6 +45,14 @@ define([
         iconCls: this.iconCls
       });
       return data;
+    },
+
+    onToggleClick: function(e) {
+      if (this.preventFocus) {
+        e.preventDefault();
+        e.stopPropagation();
+        this.$('.dropdown').toggleClass('open');
+      }
     },
 
     onItemClick: function(e) {

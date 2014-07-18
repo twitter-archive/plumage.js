@@ -43,7 +43,7 @@ define([
   test('utc', function() {
     var picker = createView({utc: true});
 
-    var value = moment([2013,11,31,23]).valueOf();
+    var value = moment([2013,11,31,23]).zone(-8).valueOf();
     picker.model.set('fromDate', value);
     picker.render();
 

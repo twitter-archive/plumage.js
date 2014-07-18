@@ -1,4 +1,4 @@
-### About Plumage.js
+### Plumage.js [![build status](https://secure.travis-ci.org/twitter/plumage.js.png?branch=master)](http://travis-ci.org/twitter/plumage.js)
 JS UI framework for complex UIs.
 
 ### Installation

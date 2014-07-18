@@ -40,22 +40,10 @@ define([
     equal(picker.model.get('fromDate').valueOf(), moment.utc({hour: 0}).add({day: -1}).valueOf());
   });
 
-  test('utc', function() {
-    var picker = createView({utc: true});
-
-    var value = moment([2013,11,31,23]).zone(-8).valueOf();
-    picker.model.set('fromDate', value);
-    picker.render();
-
-    equal(picker.getSubView('fromDate').$('input').val(), 'Jan 1, 2014', 'should display date in UTC');
-
-    deepEqual(picker.getSubView('fromCal').toDateTuple(value), [2014,0,1], 'should select utc date');
-  });
-
   test('hours', function() {
-    var picker = createView({showHourSelect: true});
+    var picker = createView({showHourSelect: true, utc: true});
 
-    var value = moment([2014,0,1, 12]).valueOf();
+    var value = moment.utc([2014,0,1, 12]).valueOf();
     picker.model.set('fromDate', value);
     picker.render();
 

@@ -80,7 +80,11 @@ Load the page and you should see the 'Hello Plumage!' alert.
 Next you'll probably want some [Models](Plumage.model.Model.html), [Collections](Plumage.collection.Collection.html) and
 [Views](Plumage.view.ModelView.html). A good place to start is the source code of the [Countries example](../examples/countries).
 
+### License
 
+Copyright 2014 Twitter, Inc. and other contributors
+
+Licensed under the MIT License
 
 
 

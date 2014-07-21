@@ -2524,88 +2524,6 @@ define('collection/DataCollection',[
     urlRoot: '/'
   });
 });
-define('collection/GridData',[
-  'jquery',
-  'underscore',
-  'backbone',
-  'PlumageRoot'
-],
-
-function($, _, Backbone, Plumage) {
-
-
-  /**
-   * Adapts a backbone Collection to the  dataview interface.
-   * @constructs Plumage.collection.GridData
-   */
-  var GridData = function() {
-    this.initialize.apply(this, arguments);
-  };
-
-  _.extend(GridData.prototype, Backbone.Events,
-  /** @lends Plumage.collection.GridData.prototype */
-  {
-
-    /** List of events to forward from the Collection */
-    relayEventNames: ['reset'],
-
-    /** The wrapped collection */
-    collection: undefined,
-
-    /** Initializtion logic */
-    initialize: function(collection, options) {
-      _.extend(this, options);
-      this.collection = collection;
-      this.collection.on('all', this.relayEvent, this);
-    },
-
-    ensureData: function(from, to) {
-      if (this.collection.ensureData) {
-        this.collection.ensureData(from, to);
-      }
-    },
-
-    /** calls setSort on Collection */
-    setSort: function(sortField, sortDir){
-      this.collection.setSort(sortField, sortDir, true);
-    },
-
-    /** gets size of collection  */
-    getLength: function() {
-      return this.collection.size();
-    },
-
-    /** get the model at the given index. */
-    getItem: function(index) {
-      return this.collection.at(index);
-    },
-
-    /** Can be overridden to provide row specific options for slickgrid */
-    getItemMetadata: function(index) {
-      return null;
-    },
-
-    /** Get the indes of the model with the given id. */
-    getIndexForId: function (id) {
-      var model = this.collection.getById(id);
-      return this.collection.indexOf(model);
-    },
-
-    /**
-     * Forwards events from Collection as if they were triggered on GridData
-     * @private
-     */
-    relayEvent: function(eventName) {
-      if (_.contains(this.relayEventNames, eventName)) {
-        this.trigger.apply(this, arguments);
-      }
-    }
-  });
-
-  GridData.extend = Backbone.Model.extend;
-
-  return Plumage.collection.GridData = GridData;
-});
 define('collection/Selection',['jquery', 'underscore', 'backbone',
         'PlumageRoot', 'collection/Collection'],
 function($, _, Backbone, Plumage, Collection) {
@@ -13451,13 +13369,95 @@ define('view/grid/Formatters',[
     }
   };
 });
+define('view/grid/GridData',[
+  'jquery',
+  'underscore',
+  'backbone',
+  'PlumageRoot'
+],
+
+function($, _, Backbone, Plumage) {
+
+
+  /**
+   * Adapts a backbone Collection to the slickgrid data interface.
+   * @constructs Plumage.collection.GridData
+   */
+  var GridData = function() {
+    this.initialize.apply(this, arguments);
+  };
+
+  _.extend(GridData.prototype, Backbone.Events,
+  /** @lends Plumage.collection.GridData.prototype */
+  {
+
+    /** List of events to forward from the Collection */
+    relayEventNames: ['reset'],
+
+    /** The wrapped collection */
+    collection: undefined,
+
+    /** Initializtion logic */
+    initialize: function(collection, options) {
+      _.extend(this, options);
+      this.collection = collection;
+      this.collection.on('all', this.relayEvent, this);
+    },
+
+    ensureData: function(from, to) {
+      if (this.collection.ensureData) {
+        this.collection.ensureData(from, to);
+      }
+    },
+
+    /** calls setSort on Collection */
+    setSort: function(sortField, sortDir){
+      this.collection.setSort(sortField, sortDir, true);
+    },
+
+    /** gets size of collection  */
+    getLength: function() {
+      return this.collection.size();
+    },
+
+    /** get the model at the given index. */
+    getItem: function(index) {
+      return this.collection.at(index);
+    },
+
+    /** Can be overridden to provide row specific options for slickgrid */
+    getItemMetadata: function(index) {
+      return null;
+    },
+
+    /** Get the indes of the model with the given id. */
+    getIndexForId: function (id) {
+      var model = this.collection.getById(id);
+      return this.collection.indexOf(model);
+    },
+
+    /**
+     * Forwards events from Collection as if they were triggered on GridData
+     * @private
+     */
+    relayEvent: function(eventName) {
+      if (_.contains(this.relayEventNames, eventName)) {
+        this.trigger.apply(this, arguments);
+      }
+    }
+  });
+
+  GridData.extend = Backbone.Model.extend;
+
+  return Plumage.view.grid.GridData = GridData;
+});
 define('view/grid/GridView',[
   'jquery',
   'underscore',
   'backbone',
   'PlumageRoot',
   'view/ModelView',
-  'collection/GridData',
+  'view/grid/GridData',
   'collection/BufferedCollection',
   'collection/GridSelection',
   'slickgrid-all'
@@ -13470,6 +13470,8 @@ define('view/grid/GridView',[
     columns: undefined,
 
     gridOptions: {},
+
+    gridDataCls: GridData,
 
     defaultGridOptions: {
       editable: false,
@@ -13561,7 +13563,7 @@ define('view/grid/GridView',[
           model = new BufferedCollection(model);
           model.on('pageLoad', this.onPageLoad.bind(this));
         }
-        return new GridData(model);
+        return new this.gridDataCls(model);
       }
       return [];
     },
@@ -14871,7 +14873,6 @@ define('plumage',[
   'collection/Collection',
   'collection/CommentCollection',
   'collection/DataCollection',
-  'collection/GridData',
   'collection/Selection',
   'collection/GridSelection',
   'collection/UserCollection',
@@ -14925,6 +14926,7 @@ define('plumage',[
   'view/grid/FilterView',
   'view/grid/Formatters',
   'view/grid/GridView',
+  'view/grid/GridData',
   'view/ListAndDetailView',
   'view/ListItemView',
   'view/ListView',

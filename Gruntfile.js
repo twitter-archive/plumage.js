@@ -236,7 +236,6 @@ module.exports = function (grunt) {
           'assets/scripts/model/Model.js',
           'assets/scripts/model/Filter.js',
           'assets/scripts/collection/Collection.js',
-          'assets/scripts/collection/GridData.js',
           'assets/scripts/collection/BufferedCollection.js',
 
           'assets/scripts/view/View.js',
@@ -247,6 +246,7 @@ module.exports = function (grunt) {
           'assets/scripts/view/form/fields/Field.js',
           'assets/scripts/view/form/fields/DatePicker.js',
           'assets/scripts/view/form/fields/DateRangePicker.js',
+          'assets/scripts/view/grid/GridData.js',
           'assets/scripts/util/Logger.js',
         ],
         options: {

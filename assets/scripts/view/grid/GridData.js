@@ -9,7 +9,7 @@ function($, _, Backbone, Plumage) {
 
 
   /**
-   * Adapts a backbone Collection to the  dataview interface.
+   * Adapts a backbone Collection to the slickgrid data interface.
    * @constructs Plumage.collection.GridData
    */
   var GridData = function() {
@@ -78,5 +78,5 @@ function($, _, Backbone, Plumage) {
 
   GridData.extend = Backbone.Model.extend;
 
-  return Plumage.collection.GridData = GridData;
+  return Plumage.view.grid.GridData = GridData;
 });

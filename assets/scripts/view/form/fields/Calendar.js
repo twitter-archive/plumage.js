@@ -61,8 +61,8 @@ define([
     /**
      * View that renders a selectable calendar.
      *
-     * Useful when incoporated in fields like [DatePicker]{@link Plumage.view.form.fields.DatePicker}
-     * and [DateRangePicker]{@link Plumage.view.form.fields.DateRangePicker}.
+     * Useful when incoporated in fields like [DateField]{@link Plumage.view.form.fields.DateField}
+     * and [DateRangeField]{@link Plumage.view.form.fields.DateRangeField}.
      *
      * Not a [ModelView]{@link Plumage.view.ModelView}, but keeps and updates its own view state
      * ([selectedDate]{@link Plumage.view.calendar.Calendar#selectedDate}, [month]{@link Plumage.view.calendar.Calendar#month},
@@ -148,13 +148,16 @@ define([
         return;
       }
       Field.prototype.setValue.apply(this, arguments);
-      value = this.getValue();
+      this.update();
+    },
+
+    valueChanged: function() {
+      var value = this.getValue();
       if (value) {
         var m = this.utc ? moment.utc(value) : moment(value);
         this.month = m.month();
         this.year = m.year();
       }
-      this.update();
     },
 
     /**

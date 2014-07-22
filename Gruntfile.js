@@ -244,8 +244,8 @@ module.exports = function (grunt) {
           'assets/scripts/view/CollectionView.js',
           'assets/scripts/view/calendar/Calendar.js',
           'assets/scripts/view/form/fields/Field.js',
-          'assets/scripts/view/form/fields/DatePicker.js',
-          'assets/scripts/view/form/fields/DateRangePicker.js',
+          'assets/scripts/view/form/fields/DateField.js',
+          'assets/scripts/view/form/fields/DateRangeField.js',
           'assets/scripts/view/grid/GridData.js',
           'assets/scripts/util/Logger.js',
         ],
@@ -278,6 +278,10 @@ module.exports = function (grunt) {
       docs: {
         files: ['docs/**/*.{html,scss}'],
         tasks: ['docs']
+      },
+      copy: {
+        files: ['assets/scripts/**/*.{js,html}', 'examples/assets/**/*.{js,html}'],
+        tasks: ['copy']
       }
     },
     'gh-pages': {

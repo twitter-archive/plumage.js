@@ -11,10 +11,10 @@ define([
   'ViewBuilder',
   'view/View',
   'view/form/fields/Field',
-  'view/form/fields/DatePicker',
+  'view/form/fields/DateField',
   'view/form/fields/Select',
   'text!test/templates/TestView.html'
-], function($, _, Backbone, sinon, Environment, EventLog, ViewBuilder, View, Field, DatePicker, Select, testViewTemplate) {
+], function($, _, Backbone, sinon, Environment, EventLog, ViewBuilder, View, Field, DateField, Select, testViewTemplate) {
 
 //use Environment to mock ajax
   module('Router', _.extend(new Environment(), {
@@ -61,7 +61,7 @@ define([
         selector: '.field2',
         listValues: [{label: 'Yes', value: 'yes'}, {label: 'No', value: 'no'}]
       }, {
-        viewCls: DatePicker,
+        viewCls: DateField,
         selector: '.field2',
         valueAttr: 'date'
       }]

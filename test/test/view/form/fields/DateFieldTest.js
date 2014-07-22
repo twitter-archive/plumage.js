@@ -11,11 +11,11 @@ define([
   'test/EventLog',
   'example/ExampleData',
   'example/model/Post',
-  'view/form/fields/DatePicker'
-], function($, _, Backbone, moment, sinon, Environment, EventLog, ExampleData, Post, DatePicker) {
+  'view/form/fields/DateField'
+], function($, _, Backbone, moment, sinon, Environment, EventLog, ExampleData, Post, DateField) {
 
   //use Environment to mock ajax
-  module('DatePicker', _.extend(new Environment(), {
+  module('DateField', _.extend(new Environment(), {
     setup: function() {
       Environment.prototype.setup.apply(this, arguments);
     }
@@ -27,7 +27,7 @@ define([
 
   function createView(options) {
     options = _.extend({}, defaultOptions, options || {});
-    return new DatePicker(options);
+    return new DateField(options);
   }
 
   test('empty render', function(){
@@ -56,7 +56,7 @@ define([
     field.update();
 
     equal(field.getValue(), getDate(0));
-    equal(field.getSubView('calendar').getValue(), getDate(0));
+    equal(field.getCalendar().getValue(), getDate(0));
 
     model.set('post_date', getDate(1));
     equal(field.getValue(), getDate(1));
@@ -93,5 +93,17 @@ define([
     equal(field.$('input:first').val(), validText);
 
     equal(moment(field.getValue()).format(field.format), 'Mar 1, 2014', 'should not update on invalid');
+  });
+
+  test('keep time', function() {
+    var field = createView({pickerOptions: {applyOnChange: true}});
+    field.setValue(moment([2014, 1, 1, 12]).valueOf());
+    field.getPicker().setValue(moment([2014, 1, 1]).valueOf());
+    equal(field.getValue(), moment([2014, 1, 1]).valueOf(), 'use full value chosen by picker including hour');
+
+    field.keepTime = true;
+    field.setValue(moment([2014, 1, 1, 12]).valueOf());
+    field.getPicker().setValue(moment([2014, 1, 1]).valueOf());
+    equal(field.getValue(), moment([2014, 1, 1, 12]).valueOf(), 'ignore hour from picker value');
   });
 });

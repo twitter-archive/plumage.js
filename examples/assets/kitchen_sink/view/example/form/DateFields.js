@@ -20,16 +20,38 @@ define([
 
     subViews: [
       {
-        viewCls: Plumage.view.form.fields.DatePicker,
-        selector: '.date-picker1',
+        viewCls: Plumage.view.form.fields.DateField,
+        selector: '.date-field1',
         label: 'From Date',
         valueAttr: 'fromDate',
+        maxDateAttr: 'toDate'
       },
       {
-        viewCls: Plumage.view.form.fields.DatePicker,
-        selector: '.date-picker2',
+        viewCls: Plumage.view.form.fields.DateField,
+        selector: '.date-field2',
         label: 'To Date',
-        valueAttr: 'toDate'
+        valueAttr: 'toDate',
+        minDateAttr: 'fromDate'
+      },
+      {
+        viewCls: Plumage.view.form.fields.HourSelect,
+        selector: '.hour-field1',
+        label: 'From Hour',
+        valueAttr: 'fromDate'
+      },
+      {
+        viewCls: Plumage.view.form.fields.HourSelect,
+        selector: '.hour-field2',
+        valueAttr: 'fromDate',
+        replaceEl: true
+      },
+      {
+        viewCls: Plumage.view.form.fields.DateField,
+        selector: '.date-field3',
+        valueAttr: 'fromDate',
+        maxDateAttr: 'toDate',
+        keepTime: true,
+        replaceEl: true
       },
       {
         viewCls: Plumage.view.form.fields.DateRangeField,
@@ -40,9 +62,11 @@ define([
       {
         viewCls: Plumage.view.form.fields.DateRangeField,
         selector: '.date-range-field-hour',
-        showHourSelect: true,
         fromAttr: 'fromDate',
-        toAttr: 'toDate'
+        toAttr: 'toDate',
+        pickerOptions: {
+          showHourSelect: true
+        }
       }
     ],
 

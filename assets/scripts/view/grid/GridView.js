@@ -4,7 +4,7 @@ define([
   'backbone',
   'PlumageRoot',
   'view/ModelView',
-  'collection/GridData',
+  'view/grid/GridData',
   'collection/BufferedCollection',
   'collection/GridSelection',
   'slickgrid-all'
@@ -17,6 +17,8 @@ define([
     columns: undefined,
 
     gridOptions: {},
+
+    gridDataCls: GridData,
 
     defaultGridOptions: {
       editable: false,
@@ -108,7 +110,7 @@ define([
           model = new BufferedCollection(model);
           model.on('pageLoad', this.onPageLoad.bind(this));
         }
-        return new GridData(model);
+        return new this.gridDataCls(model);
       }
       return [];
     },

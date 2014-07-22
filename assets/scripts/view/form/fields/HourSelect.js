@@ -10,7 +10,7 @@ define([
 ], function($, _, Backbone, Handlebars, moment, Plumage, DropdownSelect, template) {
 
   return Plumage.view.form.fields.HourSelect = DropdownSelect.extend({
-    className: 'hour-picker',
+    className: 'hour-select',
 
     maxDate: undefined,
     minDate: undefined,

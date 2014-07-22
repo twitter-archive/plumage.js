@@ -47,7 +47,7 @@ require.config({
     handlebars: '../bower_components/handlebars/handlebars',
     jquery: '../bower_components/jquery/jquery',
     moment: '../bower_components/moment/moment',
-    spinjs: '../bower_components/spinjs/dist/spin',
+    spinjs: '../bower_components/spinjs/spin',
     underscore: '../bower_components/underscore/underscore',
     text: '../bower_components/text/text',
     bootstrap: '../bower_components/bootstrap/docs/assets/js/bootstrap'

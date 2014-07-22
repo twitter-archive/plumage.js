@@ -33,7 +33,7 @@
   }
 }
 
-.date-range-picker .dropdown-menu {
+.date-range-field .dropdown-menu {
   max-width: none;
   width: 636px;
 
@@ -113,7 +113,7 @@
 
 /** dropdown-menu positioning */
 
-.date-range-picker .date-picker-dropdown {
+.date-range-field .date-picker-dropdown {
   float: left;
 
   .dropdown-menu {
@@ -163,11 +163,11 @@
 }
 
 
-.date-range-picker .date-field > label {
+.date-range-field .date-field > label {
   text-align: left;
 }
 
-.date-range-picker .show-hour-select {
+.date-range-field .show-hour-select {
   .date-field > label {
     width: 36px;
     text-align: left;
@@ -177,13 +177,13 @@
     width: 100px;
   }
 
-  .hour-picker .dropdown-toggle {
+  .hour-select .dropdown-toggle {
     width: 48px;
     padding: 4px 9px;
   }
 }
 
-.hour-picker {
+.hour-select {
 
   .dropdown-menu {
     width: 324px;

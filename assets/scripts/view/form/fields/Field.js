@@ -189,6 +189,12 @@ define([
       return value;
     },
 
+    /**
+     * updates the field value, and triggers change (both plumage and dom events)
+     *
+     * Note: This is not the only path to change the field value. The field value can also be changed by
+     * updateValueFromModel, so do not update non-model view state here. Do that in valueChanged.
+     */
     setValue: function(newValue, options) {
       options = options || {};
       if (this.getValue() === newValue) {

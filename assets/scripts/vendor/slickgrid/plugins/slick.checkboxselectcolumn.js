@@ -15,6 +15,7 @@
     var _defaults = {
       columnId: "_checkbox_selector",
       cssClass: null,
+      selectAll: true,
       toolTip: "Select/Deselect All",
       width: 30
     };
@@ -51,10 +52,12 @@
       _selectedRowsLookup = lookup;
       _grid.render();
 
-      if (selectedRows.length && selectedRows.length == _grid.getDataLength()) {
-        _grid.updateColumnHeader(_options.columnId, "<input type='checkbox' checked='checked'>", _options.toolTip);
-      } else {
-        _grid.updateColumnHeader(_options.columnId, "<input type='checkbox'>", _options.toolTip);
+      if (_options.selectAll) {
+        if (selectedRows.length && selectedRows.length == _grid.getDataLength()) {
+          _grid.updateColumnHeader(_options.columnId, "<input type='checkbox' checked='checked'>", _options.toolTip);
+        } else {
+          _grid.updateColumnHeader(_options.columnId, "<input type='checkbox'>", _options.toolTip);
+        }
       }
     }
 
@@ -123,7 +126,7 @@
     function getColumnDefinition() {
       return {
         id: _options.columnId,
-        name: "<input type='checkbox'>",
+        name: _options.selectAll ? "<input type='checkbox'>" : "",
         toolTip: _options.toolTip,
         field: "sel",
         width: _options.width,

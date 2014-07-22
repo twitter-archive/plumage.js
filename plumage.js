@@ -2524,88 +2524,6 @@ define('collection/DataCollection',[
     urlRoot: '/'
   });
 });
-define('collection/GridData',[
-  'jquery',
-  'underscore',
-  'backbone',
-  'PlumageRoot'
-],
-
-function($, _, Backbone, Plumage) {
-
-
-  /**
-   * Adapts a backbone Collection to the  dataview interface.
-   * @constructs Plumage.collection.GridData
-   */
-  var GridData = function() {
-    this.initialize.apply(this, arguments);
-  };
-
-  _.extend(GridData.prototype, Backbone.Events,
-  /** @lends Plumage.collection.GridData.prototype */
-  {
-
-    /** List of events to forward from the Collection */
-    relayEventNames: ['reset'],
-
-    /** The wrapped collection */
-    collection: undefined,
-
-    /** Initializtion logic */
-    initialize: function(collection, options) {
-      _.extend(this, options);
-      this.collection = collection;
-      this.collection.on('all', this.relayEvent, this);
-    },
-
-    ensureData: function(from, to) {
-      if (this.collection.ensureData) {
-        this.collection.ensureData(from, to);
-      }
-    },
-
-    /** calls setSort on Collection */
-    setSort: function(sortField, sortDir){
-      this.collection.setSort(sortField, sortDir, true);
-    },
-
-    /** gets size of collection  */
-    getLength: function() {
-      return this.collection.size();
-    },
-
-    /** get the model at the given index. */
-    getItem: function(index) {
-      return this.collection.at(index);
-    },
-
-    /** Can be overridden to provide row specific options for slickgrid */
-    getItemMetadata: function(index) {
-      return null;
-    },
-
-    /** Get the indes of the model with the given id. */
-    getIndexForId: function (id) {
-      var model = this.collection.getById(id);
-      return this.collection.indexOf(model);
-    },
-
-    /**
-     * Forwards events from Collection as if they were triggered on GridData
-     * @private
-     */
-    relayEvent: function(eventName) {
-      if (_.contains(this.relayEventNames, eventName)) {
-        this.trigger.apply(this, arguments);
-      }
-    }
-  });
-
-  GridData.extend = Backbone.Model.extend;
-
-  return Plumage.collection.GridData = GridData;
-});
 define('collection/Selection',['jquery', 'underscore', 'backbone',
         'PlumageRoot', 'collection/Collection'],
 function($, _, Backbone, Plumage, Collection) {
@@ -7532,6 +7450,7 @@ define("slickgrid/plugins/slick.rowselectionmodel", function(){});
     var _defaults = {
       columnId: "_checkbox_selector",
       cssClass: null,
+      selectAll: true,
       toolTip: "Select/Deselect All",
       width: 30
     };
@@ -7568,10 +7487,12 @@ define("slickgrid/plugins/slick.rowselectionmodel", function(){});
       _selectedRowsLookup = lookup;
       _grid.render();
 
-      if (selectedRows.length && selectedRows.length == _grid.getDataLength()) {
-        _grid.updateColumnHeader(_options.columnId, "<input type='checkbox' checked='checked'>", _options.toolTip);
-      } else {
-        _grid.updateColumnHeader(_options.columnId, "<input type='checkbox'>", _options.toolTip);
+      if (_options.selectAll) {
+        if (selectedRows.length && selectedRows.length == _grid.getDataLength()) {
+          _grid.updateColumnHeader(_options.columnId, "<input type='checkbox' checked='checked'>", _options.toolTip);
+        } else {
+          _grid.updateColumnHeader(_options.columnId, "<input type='checkbox'>", _options.toolTip);
+        }
       }
     }
 
@@ -7640,7 +7561,7 @@ define("slickgrid/plugins/slick.rowselectionmodel", function(){});
     function getColumnDefinition() {
       return {
         id: _options.columnId,
-        name: "<input type='checkbox'>",
+        name: _options.selectAll ? "<input type='checkbox'>" : "",
         toolTip: _options.toolTip,
         field: "sel",
         width: _options.width,
@@ -10021,6 +9942,12 @@ define('view/form/fields/Field',[
       return value;
     },
 
+    /**
+     * updates the field value, and triggers change (both plumage and dom events)
+     *
+     * Note: This is not the only path to change the field value. The field value can also be changed by
+     * updateValueFromModel, so do not update non-model view state here. Do that in valueChanged.
+     */
     setValue: function(newValue, options) {
       options = options || {};
       if (this.getValue() === newValue) {
@@ -11000,8 +10927,8 @@ define('view/form/fields/Calendar',[
     /**
      * View that renders a selectable calendar.
      *
-     * Useful when incoporated in fields like [DatePicker]{@link Plumage.view.form.fields.DatePicker}
-     * and [DateRangePicker]{@link Plumage.view.form.fields.DateRangePicker}.
+     * Useful when incoporated in fields like [DateField]{@link Plumage.view.form.fields.DateField}
+     * and [DateRangeField]{@link Plumage.view.form.fields.DateRangeField}.
      *
      * Not a [ModelView]{@link Plumage.view.ModelView}, but keeps and updates its own view state
      * ([selectedDate]{@link Plumage.view.calendar.Calendar#selectedDate}, [month]{@link Plumage.view.calendar.Calendar#month},
@@ -11087,13 +11014,16 @@ define('view/form/fields/Calendar',[
         return;
       }
       Field.prototype.setValue.apply(this, arguments);
-      value = this.getValue();
+      this.update();
+    },
+
+    valueChanged: function() {
+      var value = this.getValue();
       if (value) {
         var m = this.utc ? moment.utc(value) : moment(value);
         this.month = m.month();
         this.year = m.year();
       }
-      this.update();
     },
 
     /**
@@ -11404,10 +11334,104 @@ define('view/form/fields/Checkbox',[
   });
 });
 
+define('view/form/fields/picker/Picker',[
+  'jquery',
+  'underscore',
+  'backbone',
+  'PlumageRoot',
+  'view/ModelView',
+], function($, _, Backbone, Plumage, ModelView) {
 
-define('text!view/form/fields/templates/DatePicker.html',[],function () { return '<div class="dropdown">\n\t<div class="input-prepend">\n\t  <button class="btn" data-toggle="dropdown" data-target="#"><i class="icon-calendar"></i></button>\n\t  {{> field}}\n\t</div>\n\n\t<div class="date-picker dropdown-menu form-inline">\n    <div class="calendar"></div>\n\t</div>\n</div>';});
+  return  Plumage.view.form.fields.picker.Picker = ModelView.extend(
+  /** @lends Plumage.view.form.fields.picker.Picker.prototype */
+  {
 
-define('view/form/fields/DatePicker',[
+
+    modelCls: false, //never bind via setModel
+
+    className: 'dropdown-menu',
+
+    pickerModelAttr: 'value',
+
+    opens: 'right',
+
+    applyOnChange: false,
+
+    events: {
+      'mousedown': 'onMouseDown'
+    },
+
+    defaultSubViewOptions: {
+      updateModelOnChange: true,
+    },
+
+    /**
+     * @constructs
+     * @extends Plumage.view.ModelView
+     */
+    initialize: function(options) {
+      this.defaultSubViewOptions = {
+        updateModelOnChange: true,
+        valueAttr: options.pickerModelAttr || this.pickerModelAttr
+      };
+      ModelView.prototype.initialize.apply(this, arguments);
+      this.setModel(new Plumage.model.Model({}, {urlRoot: '/'}), null, true);
+    },
+
+    onModelChange: function() {
+      ModelView.prototype.onModelChange.apply(this, arguments);
+      if (this.applyOnChange) {
+        this.trigger('apply', this, this.model);
+      }
+    },
+
+    getValue: function() {
+      return this.model.get(this.pickerModelAttr);
+    },
+
+    setValue: function(value) {
+      this.model.set(this.pickerModelAttr, value);
+    },
+
+    onRender: function() {
+      ModelView.prototype.onRender.apply(this, arguments);
+      this.$el.addClass('opens' + this.opens);
+    },
+
+    getTemplateData: function() {
+      return ModelView.prototype.getTemplateData.apply(this, arguments);
+    },
+
+    update: function() {
+      ModelView.prototype.update.apply(this, arguments);
+    },
+
+    //
+    // Events
+    //
+
+    onMouseDown: function(e) {
+      //do nothing so input doesn't lose focus
+      e.preventDefault();
+      e.stopPropagation();
+    },
+
+    onKeyDown: function(e) {
+      if (e.keyCode === 13) { //on enter
+        e.preventDefault();
+        this.close();
+        this.updateValueFromDom();
+      } else if(e.keyCode === 27) {
+        this.close();
+        this.update();
+      }
+    }
+  });
+});
+
+define('text!view/form/fields/templates/FieldWithPicker.html',[],function () { return '{{#if label}}\n<div class="control-group">\n  <label class="control-label" for="{{valueAttr}}">{{label}}</label>\n  <div class="controls">\n    <span class="dropdown">\n      {{> field}}\n      <div class="picker"></div>\n    </span>\n  </div>\n</div>\n{{else}}\n<span class="dropdown picker-dropdown">\n  {{> field}}\n  <div class="picker"></div>\n</span>\n{{/if}}\n';});
+
+define('view/form/fields/FieldWithPicker',[
   'jquery',
   'underscore',
   'backbone',
@@ -11415,57 +11439,56 @@ define('view/form/fields/DatePicker',[
   'moment',
   'PlumageRoot',
   'view/form/fields/Field',
-  'view/form/fields/Calendar',
+  'view/form/fields/picker/Picker',
+  'text!view/form/fields/templates/FieldWithPicker.html',
+], function($, _, Backbone, Handlebars, moment, Plumage, Field, Picker, template) {
 
-  'text!view/form/fields/templates/DatePicker.html',
-], function($, _, Backbone, Handlebars, moment, Plumage, Field, Calendar, template) {
-
-  return Plumage.view.form.fields.DatePicker = Field.extend(
-  /** @lends Plumage.view.form.fields.DatePicker.prototype */
+  return  Plumage.view.form.fields.FieldWithPicker = Field.extend(
+  /** @lends Plumage.view.form.fields.FieldWithPicker.prototype */
   {
 
     template: template,
 
-    className: 'date-picker-field',
+    /** Options to instantiate the Picker with. You can even pass in subViews, so you don't have to subclass Picker. */
+    pickerCls: Picker,
 
-    /** format string for showing the selected date. See moment.js */
-    format: 'MMM D, YYYY',
-
-    /** Options to pass on to contained [Calendar]{@link Plumage.view.calendar.Calendar} object. */
-    calendarOptions: undefined,
+    /** Options to instantiate the Picker with. You can even pass in subViews, so you don't have to subclass Picker. */
+    pickerOptions: undefined,
 
     events: {
-      'focus input': 'onFocus',
-      'blur input': 'onBlur',
-      'click input': 'onInputClick',
-      'click button': 'onButtonClick',
-      'mousedown .dropdown-menu': 'onDropdownMouseDown'
+      'focus input:first': 'onFocus',
+      'blur input:first': 'onBlur',
+      'click input:first': 'onInputClick',
+      'click button:first': 'onButtonClick',
+      'keydown input:first': 'onKeyDown'
     },
 
-    minDate: undefined,
-    maxDate: undefined,
-
     /**
-     * Field with a popover calendar for selecting a date.
+     * Base class for fields that show a picker (eg date picker, color picker etc.) when focused.
      *
-     * The value can also be set by editing the text field directly, as long as it can be parsed back into a date.
-     *
-     * See a live demo in the [Kitchen Sink example]{@link /examples/kitchen_sink/form/FieldsAndForms}.
+     * Pass your Picker subclass as pickerCls, or customize the base Picker class by passing in pickerOptions (or do both).
      *
      * @constructs
      * @extends Plumage.view.form.fields.Field
      */
-    initialize: function(options) {
+    initialize:function(options) {
+      this.subViews = [_.extend({
+        viewCls: this.pickerCls,
+        name: 'picker',
+        selector: '.picker',
+        replaceEl: true
+      }, this.pickerOptions)];
+
       Field.prototype.initialize.apply(this, arguments);
-      this.subViews = [
-        new Calendar(_.extend({name: 'calendar', selector: '.calendar'}, this.calendarOptions))
-      ].concat(options.subViews || []);
-      var calendar = this.getSubView('calendar');
 
-      calendar.setMinDate(this.minDate);
-      calendar.setMaxDate(this.maxDate);
+      var picker = this.getSubView('picker');
 
-      calendar.on('change', this.onCalendarChange, this);
+      picker.on('apply', this.onPickerApply, this);
+      picker.on('close', this.onPickerClose, this);
+    },
+
+    getPicker: function() {
+      return this.getSubView('picker');
     },
 
     getInputSelector: function() {
@@ -11473,28 +11496,9 @@ define('view/form/fields/DatePicker',[
       return 'input:first';
     },
 
-    getValueString: function(value) {
-      if (value) {
-        return moment(value).format(this.format);
-      }
-      return '';
-    },
-
-    isDomValueValid: function(value) {
-      value = moment(value);
-      return !value || value.isValid && value.isValid() && this.getSubView('calendar').isDateInMinMax(value);
-    },
-
-    processDomValue: function(value) {
-      if (value) {
-        return moment(value).valueOf();
-      }
-      return null;
-    },
-
-    update: function() {
-      this.getSubView('calendar').setValue(this.getValue());
-      Field.prototype.update.apply(this, arguments);
+    //update the picker model
+    valueChanged: function() {
+      var picker = this.getSubView('picker').setValue(this.getValue());
     },
 
     //
@@ -11508,11 +11512,15 @@ define('view/form/fields/DatePicker',[
 
     /** Toggle dropdown open/closed */
     toggle: function() {
-      this.$('.dropdown').toggleClass('open');
+      if (this.isOpen()) {
+        this.close();
+      } else {
+        this.open();
+      }
     },
 
-    /** Open the dropdown */
     open: function() {
+      this.update();
       this.$('.dropdown').addClass('open');
     },
 
@@ -11521,30 +11529,32 @@ define('view/form/fields/DatePicker',[
       this.$('.dropdown').removeClass('open');
     },
 
+    /** hook */
+    processPickerValue: function(value) {
+      return value;
+    },
+
     //
-    // Event Handlers
+    // overrides
     //
 
+    updateValueFromModel: function (model) {
+      Field.prototype.updateValueFromModel.apply(this, arguments);
+    },
+
+    //
+    // Events
+    //
     onChange: function(e) {
       //disable automatic updating from Field
     },
 
-    onDropdownMouseDown: function(e) {
-      //do nothing so input doesn't lose focus
-      e.preventDefault();
-      e.stopPropagation();
+    onModelChange: function (e) {
+      Field.prototype.onModelChange.apply(this, arguments);
     },
 
-
-    onKeyDown: function(e) {
-      if (e.keyCode === 13) { //on enter
-        e.preventDefault();
-        this.close();
-        this.updateValueFromDom();
-      } else if(e.keyCode === 27) { //on escape
-        this.close();
-        this.update();
-      }
+    onModelLoad: function (e) {
+      this.updateValueFromModel();
     },
 
     onSubmit: function(e) {
@@ -11556,6 +11566,12 @@ define('view/form/fields/DatePicker',[
       this.open();
     },
 
+    onButtonClick: function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      this.getInputEl().focus();
+    },
+
     onFocus: function(e) {
       this.open();
     },
@@ -11563,17 +11579,157 @@ define('view/form/fields/DatePicker',[
     onBlur: function(e) {
       this.close();
       this.updateValueFromDom();
+      this.trigger('blur', this);
     },
 
-    onButtonClick: function(e) {
-      e.preventDefault();
-      e.stopPropagation();
-      this.getInputEl().focus();
-    },
-
-    onCalendarChange: function(calendar, value) {
-      this.setValue(value);
+    onPickerApply: function(picker, model) {
+      this.setValue(this.processPickerValue(picker.getValue()));
       this.close();
+    },
+
+    onPickerClose: function() {
+      this.close();
+    }
+  });
+});
+define('view/form/fields/DateField',[
+  'jquery',
+  'underscore',
+  'backbone',
+  'handlebars',
+  'moment',
+  'PlumageRoot',
+  'view/form/fields/FieldWithPicker',
+  'view/form/fields/Calendar',
+], function($, _, Backbone, Handlebars, moment, Plumage, FieldWithPicker, Calendar) {
+
+  return Plumage.view.form.fields.DateField = FieldWithPicker.extend(
+  /** @lends Plumage.view.form.fields.DateField.prototype */
+  {
+
+    fieldTemplate: '<div class="input-prepend"><button class="btn" data-toggle="dropdown" data-target="#"><i class="icon-calendar"></i></button>'+FieldWithPicker.prototype.fieldTemplate+'</div>',
+
+    className: 'date-field',
+
+    /** format string for showing the selected date. See moment.js */
+    format: 'MMM D, YYYY',
+
+    events: {
+      'focus input': 'onFocus',
+      'blur input': 'onBlur',
+      'click input': 'onInputClick',
+      'click button': 'onButtonClick',
+    },
+
+    pickerOptions: {
+      applyOnChange: true,
+      subViews: [{
+        viewCls: Calendar,
+        name: 'calendar',
+        minDateAttr: 'minDate',
+        maxDateAttr: 'maxDate'
+      }]
+    },
+
+    keepTime: false,
+
+    minDate: undefined,
+    maxDate: undefined,
+
+    minDateAttr: undefined,
+    maxDateAttr: undefined,
+
+    /**
+     * Field with a popover calendar for selecting a date.
+     *
+     * The value can also be set by editing the text field directly, as long as it can be parsed back into a date.
+     *
+     * See a live demo in the [Kitchen Sink example]{@link /examples/kitchen_sink/form/FieldsAndForms}.
+     *
+     * @constructs
+     * @extends Plumage.view.form.fields.Field
+     */
+    initialize: function(options) {
+      FieldWithPicker.prototype.initialize.apply(this, arguments);
+      var calendar = this.getCalendar();
+
+      if (this.minDate) {
+        this.getPicker().model.set('minDate', this.minDate);
+      }
+      if (this.maxDate) {
+        this.getPicker().model.set('minDate', this.maxDate);
+      }
+    },
+
+    getCalendar: function() {
+      return this.getPicker().getSubView('calendar');
+    },
+
+    setMinDate: function(minDate) {
+      this.getPicker().model.set('minDate', minDate);
+    },
+
+    setMaxDate: function(maxDate) {
+      this.getPicker().model.set('maxDate', maxDate);
+    },
+
+
+    //
+    // Overrides
+    //
+
+    onInput: function(e) {
+      //do nothing on typing. Wait for blur
+    },
+
+    getValueString: function(value) {
+      if (value) {
+        return moment(value).format(this.format);
+      }
+      return '';
+    },
+
+    isDomValueValid: function(value) {
+      value = moment(value);
+      return !value || value.isValid && value.isValid() && this.getCalendar().isDateInMinMax(value);
+    },
+
+    processDomValue: function(value) {
+      if (value) {
+        var m = moment(value);
+        var oldValue = this.getValue();
+        if (oldValue && this.keepTime) {
+          var oldM = moment(oldValue);
+          m.hour(oldM.hour()).minute(oldM.minute()).second(oldM.second()).millisecond(oldM.millisecond());
+        }
+        return m.valueOf();
+      }
+      return null;
+    },
+
+    processPickerValue: function(value) {
+      return this.processDomValue(value);
+    },
+
+    onModelChange: function(e) {
+      FieldWithPicker.prototype.onModelChange.apply(this, arguments);
+      this.updateValueFromModel();
+    },
+
+
+    onKeyDown: function(e) {
+      if (e.keyCode === 13) { //on enter
+        e.preventDefault();
+        this.updateValueFromDom();
+      } else if(e.keyCode === 27) {
+        this.update();
+      }
+    },
+
+    updateValueFromModel: function() {
+      FieldWithPicker.prototype.updateValueFromModel.apply(this, arguments);
+      this.setMinDate(this.model.get(this.minDateAttr));
+      this.setMaxDate(this.model.get(this.maxDateAttr));
     }
   });
 });
@@ -11661,7 +11817,7 @@ define('view/form/fields/HourSelect',[
 ], function($, _, Backbone, Handlebars, moment, Plumage, DropdownSelect, template) {
 
   return Plumage.view.form.fields.HourSelect = DropdownSelect.extend({
-    className: 'hour-picker',
+    className: 'hour-select',
 
     maxDate: undefined,
     minDate: undefined,
@@ -11768,19 +11924,17 @@ define('view/form/fields/picker/DateRangePicker',[
   'handlebars',
   'moment',
   'PlumageRoot',
-  'view/ModelView',
+  'view/form/fields/picker/Picker',
   'view/form/fields/Field',
   'view/form/fields/HourSelect',
   'view/form/fields/Calendar',
   'text!view/form/fields/picker/templates/DateRangePicker.html',
-], function($, _, Backbone, Handlebars, moment, Plumage, ModelView, Field, HourSelect, Calendar, template) {
+], function($, _, Backbone, Handlebars, moment, Plumage, Picker, Field, HourSelect, Calendar, template) {
 
-  return  Plumage.view.form.fields.picker.DateRangePicker = ModelView.extend(
+  return  Plumage.view.form.fields.picker.DateRangePicker = Picker.extend(
   /** @lends Plumage.view.form.fields.picker.DateRangePicker.prototype */
   {
     template: template,
-
-    modelCls: false, //never bind via setModel
 
     className: 'date-range-picker dropdown-menu form-inline',
 
@@ -11791,9 +11945,6 @@ define('view/form/fields/picker/DateRangePicker',[
 
     /** min selectable date, inclusive. */
     maxDate: undefined,
-
-    /** Which side to open the picker on*/
-    opens: 'right',
 
     /**
      * Date format for text fields. Other formats can be typed into the main field, as long it can be
@@ -11836,7 +11987,6 @@ define('view/form/fields/picker/DateRangePicker',[
       toAttr: 'toDate',
       minDateAttr: 'minDate',
       maxDateAttr: 'toDate',
-      updateModelOnChange: true
     }, {
       viewCls: Calendar,
       name: 'toCal',
@@ -11846,7 +11996,6 @@ define('view/form/fields/picker/DateRangePicker',[
       toAttr: 'toDate',
       minDateAttr: 'fromDate',
       maxDateAttr: 'maxDate',
-      updateModelOnChange: true,
     }, {
       viewCls: Field,
       selector: '.from-date',
@@ -11868,7 +12017,6 @@ define('view/form/fields/picker/DateRangePicker',[
       valueAttr: 'fromDate',
       minDateAttr: 'minDate',
       maxDateAttr: 'toDate',
-      updateModelOnChange: true,
       preventFocus: true,
       replaceEl: true
     }, {
@@ -11878,7 +12026,6 @@ define('view/form/fields/picker/DateRangePicker',[
       valueAttr: 'toDate',
       minDateAttr: 'fromDate',
       maxDateAttr: 'maxDate',
-      updateModelOnChange: true,
       preventFocus: true,
       replaceEl: true
     }],
@@ -11888,13 +12035,12 @@ define('view/form/fields/picker/DateRangePicker',[
      * @extends Plumage.view.ModelView
      */
     initialize: function(options) {
-
       if (this.utc) {
         this.subViews = _.map(this.subViews, _.clone);
         _.each(this.subViews, function(x){x.utc = true;});
       }
 
-      ModelView.prototype.initialize.apply(this, arguments);
+      Picker.prototype.initialize.apply(this, arguments);
 
       var formatDate = function(date) {
         var m = this.utc ? moment.utc(date) : moment(date);
@@ -11903,18 +12049,15 @@ define('view/form/fields/picker/DateRangePicker',[
 
       this.getSubView('fromDate').getValueString = formatDate;
       this.getSubView('toDate').getValueString = formatDate;
-
-      this.setModel(new Plumage.model.Model({}, {urlRoot: '/'}), null, true);
     },
 
     onRender: function() {
-      ModelView.prototype.onRender.apply(this, arguments);
-      this.$el.addClass('opens' + this.opens);
+      Picker.prototype.onRender.apply(this, arguments);
       this.$el.toggleClass('show-hour-select', this.showHourSelect);
     },
 
     getTemplateData: function() {
-      var data = ModelView.prototype.getTemplateData.apply(this, arguments);
+      var data = Picker.prototype.getTemplateData.apply(this, arguments);
 
       return _.extend(data, {
         ranges: this.ranges,
@@ -11923,17 +12066,23 @@ define('view/form/fields/picker/DateRangePicker',[
       });
     },
 
-    update: function() {
-      var fromCal = this.getSubView('fromCal'),
-        toCal = this.getSubView('toCal');
-      ModelView.prototype.update.apply(this, arguments);
-    },
-
     setShowHourSelect: function(showHourSelect) {
       this.showHourSelect = showHourSelect;
       if(this.isRendered) {
         this.render();
       }
+    },
+
+    //
+    // override Picker
+    //
+
+    getValue: function() {
+      return [this.model.get('fromDate'), this.model.get('toDate')];
+    },
+
+    setValue: function(value) {
+      this.model.set({fromDate: value[0], toDate: value[1]});
     },
 
     //
@@ -11951,36 +12100,13 @@ define('view/form/fields/picker/DateRangePicker',[
           value[i] = today.clone().add(value[i]);
         }
       }
-      this.model.set({
-        fromDate: value[0].valueOf(),
-        toDate: value[1].valueOf()
-      });
+      this.setValue([value[0].valueOf(), value[1].valueOf()]);
       this.update();
     },
 
     //
     // Events
     //
-    onChange: function(e) {
-      //disable automatic updating from Field
-    },
-
-    onMouseDown: function(e) {
-      //do nothing so input doesn't lose focus
-      e.preventDefault();
-      e.stopPropagation();
-    },
-
-    onKeyDown: function(e) {
-      if (e.keyCode === 13) { //on enter
-        e.preventDefault();
-        this.close();
-        this.updateValueFromDom();
-      } else if(e.keyCode === 27) {
-        this.close();
-        this.update();
-      }
-    },
 
     onRangeClick: function(e) {
       e.preventDefault();
@@ -12002,9 +12128,6 @@ define('view/form/fields/picker/DateRangePicker',[
     },
   });
 });
-
-define('text!view/form/fields/templates/DateRangeField.html',[],function () { return '<div class="dropdown {{#if showHourPicker}}show-hour-picker{{/if}}">\n\t<div class="input-prepend">\n\t  <button class="btn" data-toggle="dropdown" data-target="#"><i class="icon-calendar"></i></button>\n\t  {{> field}}\n\t</div>\n\t<div class="picker"></div>\n</div>\n<div class="clear"></div>';});
-
 define('view/form/fields/DateRangeField',[
   'jquery',
   'underscore',
@@ -12012,18 +12135,17 @@ define('view/form/fields/DateRangeField',[
   'handlebars',
   'moment',
   'PlumageRoot',
-  'view/form/fields/Field',
+  'view/form/fields/FieldWithPicker',
   'view/form/fields/picker/DateRangePicker',
-  'text!view/form/fields/templates/DateRangeField.html',
-], function($, _, Backbone, Handlebars, moment, Plumage, Field, DateRangePicker, template) {
+], function($, _, Backbone, Handlebars, moment, Plumage, FieldWithPicker, DateRangePicker) {
 
-  return  Plumage.view.form.fields.DateRangeField = Field.extend(
+  return  Plumage.view.form.fields.DateRangeField = FieldWithPicker.extend(
   /** @lends Plumage.view.form.fields.DateRangeField.prototype */
   {
 
-    template: template,
+    fieldTemplate: '<div class="input-prepend"><button class="btn" data-toggle="dropdown" data-target="#"><i class="icon-calendar"></i></button>'+FieldWithPicker.prototype.fieldTemplate+'</div>',
 
-    className: 'date-range-picker',
+    className: 'date-range-field',
 
     /** model attribute used as the start of the selected date range. */
     fromAttr: undefined,
@@ -12031,17 +12153,16 @@ define('view/form/fields/DateRangeField',[
     /** model attribute used as the end of the selected date range. */
     toAttr: undefined,
 
-    /** show hour select */
-    showHourSelect: false,
-
     /** min selectable date, inclusive. */
     minDate: undefined,
 
     /** min selectable date, inclusive. */
     maxDate: undefined,
 
-    /** Options to pass on to contained [Calendar]{@link Plumage.view.calendar.Calendar} object. */
-    calendarOptions: undefined,
+    pickerCls: DateRangePicker,
+
+    /** Options to pass on to contained [DateRangePicker]{@link Plumage.view.form.fields.picker.DateRangePicker} object. */
+    pickerOptions: undefined,
 
     /** Which side to open the picker on*/
     opens: 'right',
@@ -12053,22 +12174,6 @@ define('view/form/fields/DateRangeField',[
     format: 'MMM D, YYYY',
 
     formatWithHour: 'MMM D ha, YYYY',
-
-    utc: false,
-
-    events: {
-      'focus input:first': 'onFocus',
-      'blur input:first': 'onBlur',
-      'click input:first': 'onInputClick',
-      'click button:first': 'onButtonClick',
-    },
-
-    subViews: [{
-      viewCls: DateRangePicker,
-      name: 'picker',
-      selector: '.picker',
-      replaceEl: true
-    }],
 
     /**
      * Field for selecting a date range.
@@ -12089,27 +12194,11 @@ define('view/form/fields/DateRangeField',[
      * @extends Plumage.view.form.fields.Field
      */
     initialize:function(options) {
-      if (this.utc) {
-        _.each(this.subViews, function(x){x.utc = true;});
-      }
-
-      Field.prototype.initialize.apply(this, arguments);
-
-      var picker = this.getSubView('picker');
-      picker.showHourSelect = this.showHourSelect;
-
-      picker.on('apply', this.onPickerApply, this);
-      picker.on('close', this.onPickerClose, this);
-    },
-
-    getInputSelector: function() {
-      // skip the button
-      return 'input:first';
+      FieldWithPicker.prototype.initialize.apply(this, arguments);
     },
 
     setShowHourSelect: function(showHourSelect) {
-      this.showHourSelect = showHourSelect;
-      this.getSubView('picker').setShowHourSelect(showHourSelect);
+      this.getPicker().setShowHourSelect(showHourSelect);
     },
 
     //
@@ -12118,9 +12207,10 @@ define('view/form/fields/DateRangeField',[
 
     getValueString: function(value) {
       if (value && value.length) {
-        var format = this.showHourSelect ? this.formatWithHour : this.format;
-        var m0 = this.utc ? moment.utc(value[0]) : moment(value[0]);
-        var m1 = this.utc ? moment.utc(value[1]) : moment(value[1]);
+        var picker = this.getPicker();
+        var format = picker.showHourSelect ? this.formatWithHour : this.format;
+        var m0 = picker.utc ? moment.utc(value[0]) : moment(value[0]);
+        var m1 = picker.utc ? moment.utc(value[1]) : moment(value[1]);
         return m0.format(format) + ' - ' + m1.format(format);
       }
       return '';
@@ -12188,130 +12278,22 @@ define('view/form/fields/DateRangeField',[
       model.set(newValues);
     },
 
-    //update the picker model
     valueChanged: function() {
-      var pickerModel = this.getSubView('picker').model;
-      var value = this.getValue();
-      pickerModel.set({
+      FieldWithPicker.prototype.valueChanged.apply(this, arguments);
+      this.getPicker().model.set({
         minDate: this.minDate,
-        maxDate: this.maxDate,
-        fromDate: value[0],
-        toDate: value[1]
+        maxDate: this.maxDate
       });
-    },
-
-    //
-    // Helpers
-    //
-
-    /** Helper: select the specified preset (value from [ranges]{@link Plumage.view.form.fields.DateRangePicker#ranges}) */
-    selectPresetRange: function(range) {
-      var value = [range.from, range.to];
-      var today = moment({hour: 12});
-      for (var i=0; i<value.length; i++) {
-        if (value[i] === 'today') {
-          value[i] = today;
-        } else if (value[i] === 'yesterday') {
-          value[i] = moment(today).subtract('day', 1);
-        }
-      }
-      this.fromDate = value[0].valueOf();
-      this.toDate = value[1].valueOf();
-      this.update();
-    },
-
-    /** Helper: Update the field value with the current selection. */
-    applySelection: function() {
-      if (this.fromDate && this.toDate) {
-        this.setValue([this.fromDate, this.toDate]);
-      } else {
-        this.setValue(null);
-      }
-    },
-
-    //
-    // Dropdown
-    //
-
-    /** Is the dropdown open? */
-    isOpen: function() {
-      return this.$('> .dropdown').hasClass('open');
-    },
-
-    /** Toggle dropdown open/closed */
-    toggle: function() {
-      if (this.isOpen()) {
-        this.close();
-      } else {
-        this.open();
-      }
-    },
-
-    open: function() {
-      this.update();
-      this.$('> .dropdown').addClass('open');
-    },
-
-    /** Close the dropdown */
-    close: function() {
-      this.$('> .dropdown').removeClass('open');
     },
 
     //
     // Events
     //
-    onChange: function(e) {
-      //disable automatic updating from Field
-    },
 
     onModelChange: function (e) {
       if (e.changed[this.fromAttr] !== undefined || e.changed[this.toAttr] !== undefined) {
         this.updateValueFromModel();
       }
-    },
-
-    onModelLoad: function (e) {
-      this.updateValueFromModel();
-    },
-
-    onDropdownMouseDown: function(e) {
-      //do nothing so input doesn't lose focus
-      e.preventDefault();
-      e.stopPropagation();
-    },
-
-    onSubmit: function(e) {
-      this.updateValueFromDom();
-      Field.prototype.onSubmit.apply(this, arguments);
-    },
-
-    onInputClick: function(e) {
-      this.open();
-    },
-
-    onFocus: function(e) {
-      this.open();
-    },
-
-    onBlur: function(e) {
-      this.close();
-      this.updateValueFromDom();
-    },
-
-    onButtonClick: function(e) {
-      e.preventDefault();
-      e.stopPropagation();
-      this.getInputEl().focus();
-    },
-
-    onPickerApply: function(picker, value) {
-      var pickerModel = picker.model;
-      this.setValue([pickerModel.get('fromDate'), pickerModel.get('toDate')]);
-      this.close();
-    },
-
-    onPickerClose: function() {
-      this.close();
     }
   });
 });
@@ -13451,13 +13433,95 @@ define('view/grid/Formatters',[
     }
   };
 });
+define('view/grid/GridData',[
+  'jquery',
+  'underscore',
+  'backbone',
+  'PlumageRoot'
+],
+
+function($, _, Backbone, Plumage) {
+
+
+  /**
+   * Adapts a backbone Collection to the slickgrid data interface.
+   * @constructs Plumage.collection.GridData
+   */
+  var GridData = function() {
+    this.initialize.apply(this, arguments);
+  };
+
+  _.extend(GridData.prototype, Backbone.Events,
+  /** @lends Plumage.collection.GridData.prototype */
+  {
+
+    /** List of events to forward from the Collection */
+    relayEventNames: ['reset'],
+
+    /** The wrapped collection */
+    collection: undefined,
+
+    /** Initializtion logic */
+    initialize: function(collection, options) {
+      _.extend(this, options);
+      this.collection = collection;
+      this.collection.on('all', this.relayEvent, this);
+    },
+
+    ensureData: function(from, to) {
+      if (this.collection.ensureData) {
+        this.collection.ensureData(from, to);
+      }
+    },
+
+    /** calls setSort on Collection */
+    setSort: function(sortField, sortDir){
+      this.collection.setSort(sortField, sortDir, true);
+    },
+
+    /** gets size of collection  */
+    getLength: function() {
+      return this.collection.size();
+    },
+
+    /** get the model at the given index. */
+    getItem: function(index) {
+      return this.collection.at(index);
+    },
+
+    /** Can be overridden to provide row specific options for slickgrid */
+    getItemMetadata: function(index) {
+      return null;
+    },
+
+    /** Get the indes of the model with the given id. */
+    getIndexForId: function (id) {
+      var model = this.collection.getById(id);
+      return this.collection.indexOf(model);
+    },
+
+    /**
+     * Forwards events from Collection as if they were triggered on GridData
+     * @private
+     */
+    relayEvent: function(eventName) {
+      if (_.contains(this.relayEventNames, eventName)) {
+        this.trigger.apply(this, arguments);
+      }
+    }
+  });
+
+  GridData.extend = Backbone.Model.extend;
+
+  return Plumage.view.grid.GridData = GridData;
+});
 define('view/grid/GridView',[
   'jquery',
   'underscore',
   'backbone',
   'PlumageRoot',
   'view/ModelView',
-  'collection/GridData',
+  'view/grid/GridData',
   'collection/BufferedCollection',
   'collection/GridSelection',
   'slickgrid-all'
@@ -13470,6 +13534,8 @@ define('view/grid/GridView',[
     columns: undefined,
 
     gridOptions: {},
+
+    gridDataCls: GridData,
 
     defaultGridOptions: {
       editable: false,
@@ -13561,7 +13627,7 @@ define('view/grid/GridView',[
           model = new BufferedCollection(model);
           model.on('pageLoad', this.onPageLoad.bind(this));
         }
-        return new GridData(model);
+        return new this.gridDataCls(model);
       }
       return [];
     },
@@ -14871,7 +14937,6 @@ define('plumage',[
   'collection/Collection',
   'collection/CommentCollection',
   'collection/DataCollection',
-  'collection/GridData',
   'collection/Selection',
   'collection/GridSelection',
   'collection/UserCollection',
@@ -14904,11 +14969,12 @@ define('plumage',[
   'view/form/fields/Calendar',
   'view/form/fields/CategorySelect',
   'view/form/fields/Checkbox',
-  'view/form/fields/DatePicker',
+  'view/form/fields/DateField',
   'view/form/fields/DateRangeField',
   'view/form/fields/DropdownMultiSelect',
   'view/form/fields/DropdownSelect',
   'view/form/fields/Field',
+  'view/form/fields/FieldWithPicker',
   'view/form/fields/FilterTypeAhead',
   'view/form/fields/HourSelect',
   'view/form/fields/InPlaceTextField',
@@ -14920,11 +14986,13 @@ define('plumage',[
   'view/form/fields/TextArea',
   'view/form/fields/TypeAhead',
   'view/form/fields/picker/DateRangePicker',
+  'view/form/fields/picker/Picker',
   'view/form/Form',
   'view/form/SelectField',
   'view/grid/FilterView',
   'view/grid/Formatters',
   'view/grid/GridView',
+  'view/grid/GridData',
   'view/ListAndDetailView',
   'view/ListItemView',
   'view/ListView',

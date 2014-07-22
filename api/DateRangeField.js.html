@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Source: view/form/fields/DateRangeField.js</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+    <link type="text/css" rel="stylesheet" href="../styles/docs.css">
+</head>
+
+<body>
+
+<div class="navbar navbar-fixed-top">
+  <div class="navbar-inner">
+    <div class="container">
+      <button type="button" class="btn btn-navbar" data-toggle="collapse" data-target=".nav-collapse">
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+      </button>
+      <a class="brand" href="../">PlumageJS</a>
+      <div class="nav-collapse collapse">
+        <ul class="nav">
+          <li>
+            <a href="../">Home</a>
+          </li>
+          <li class="active">
+            <a href="index.html">API</a>
+          </li>
+          <li>
+            <a href="../examples.html">Examples</a>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="container">
+  <div class="row">
+<div id="main" class="span8">
+    <h1 class="page-title">Source: view/form/fields/DateRangeField.js</h1>
+    
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source"><code>define([
+  'jquery',
+  'underscore',
+  'backbone',
+  'handlebars',
+  'moment',
+  'PlumageRoot',
+  'view/form/fields/FieldWithPicker',
+  'view/form/fields/picker/DateRangePicker',
+], function($, _, Backbone, Handlebars, moment, Plumage, FieldWithPicker, DateRangePicker) {
+
+  return  Plumage.view.form.fields.DateRangeField = FieldWithPicker.extend(
+  /** @lends Plumage.view.form.fields.DateRangeField.prototype */
+  {
+
+    fieldTemplate: '&lt;div class="input-prepend">&lt;button class="btn" data-toggle="dropdown" data-target="#">&lt;i class="icon-calendar">&lt;/i>&lt;/button>'+FieldWithPicker.prototype.fieldTemplate+'&lt;/div>',
+
+    className: 'date-range-field',
+
+    /** model attribute used as the start of the selected date range. */
+    fromAttr: undefined,
+
+    /** model attribute used as the end of the selected date range. */
+    toAttr: undefined,
+
+    /** min selectable date, inclusive. */
+    minDate: undefined,
+
+    /** min selectable date, inclusive. */
+    maxDate: undefined,
+
+    pickerCls: DateRangePicker,
+
+    /** Options to pass on to contained [DateRangePicker]{@link Plumage.view.form.fields.picker.DateRangePicker} object. */
+    pickerOptions: undefined,
+
+    /** Which side to open the picker on*/
+    opens: 'right',
+
+    /**
+     * Date format for text fields. Other formats can be typed into the main field, as long it can be
+     * parsed by moment.js
+     */
+    format: 'MMM D, YYYY',
+
+    formatWithHour: 'MMM D ha, YYYY',
+
+    /**
+     * Field for selecting a date range.
+     *
+     * DateRangeField uses two model attributes to get and store its selection, unlike a normal
+     * field that only uses one. The two attribute names are specified by [fromAttr]{@link Plumage.view.form.fields.DateRangeField#fromAttr}
+     * and [toAttr]{@link Plumage.view.form.fields.DateRangeField#toAttr}, for the start
+     * and end of the range respectively.
+     *
+     * The user can either select from and to dates from the left and right calendars respectively, or they
+     * can choose from a list of presets. In either 'apply' must be clicked before the field's value is set.
+     *
+     * The value can also be set by editing the text field directly, as long as it can be parsed back into dates.
+     *
+     * See a live demo in the [Kitchen Sink example]{@link /examples/kitchen_sink/form/FieldsAndForms}
+     *
+     * @constructs
+     * @extends Plumage.view.form.fields.Field
+     */
+    initialize:function(options) {
+      FieldWithPicker.prototype.initialize.apply(this, arguments);
+    },
+
+    setShowHourSelect: function(showHourSelect) {
+      this.getPicker().setShowHourSelect(showHourSelect);
+    },
+
+    //
+    // Value
+    //
+
+    getValueString: function(value) {
+      if (value && value.length) {
+        var picker = this.getPicker();
+        var format = picker.showHourSelect ? this.formatWithHour : this.format;
+        var m0 = picker.utc ? moment.utc(value[0]) : moment(value[0]);
+        var m1 = picker.utc ? moment.utc(value[1]) : moment(value[1]);
+        return m0.format(format) + ' - ' + m1.format(format);
+      }
+      return '';
+    },
+
+    //
+    // View value &lt;--> DOM
+    //
+
+    isDomValueValid: function(value) {
+      if (!value) {
+        return true;
+      }
+      var values = value.split('-');
+      if (values.length !== 2) {
+        return false;
+      }
+      var fromDate = moment(values[0].trim()),
+        toDate = moment(values[1].trim());
+
+      if (!fromDate.isValid() || !toDate.isValid()) {
+        return false;
+      }
+
+      if (fromDate > toDate) {
+        return false;
+      }
+
+      return Plumage.util.DateTimeUtil.isDateInRange(fromDate, this.minDate, this.maxDate) &&
+        Plumage.util.DateTimeUtil.isDateInRange(toDate, this.minDate, this.maxDate);
+    },
+
+    processDomValue: function(value) {
+      if (!value) {
+        return null;
+      }
+      var values = value.split('-'),
+        fromDate = moment(values[0].trim()).valueOf(),
+        toDate = moment(values[1].trim()).valueOf();
+      return [fromDate, toDate];
+    },
+
+    //
+    // View value &lt;--> Model
+    //
+
+    getValueFromModel: function() {
+      if (this.model) {
+        var from = this.model.get(this.fromAttr),
+          to = this.model.get(this.toAttr);
+        if (!from || !to) {
+          return null;
+        }
+        return [from, to];
+      }
+    },
+
+    updateModel: function(rootModel, parentModel) {
+      var model = this.getModelFromRoot(this.relationship, rootModel, parentModel),
+        value = this.getValue();
+
+      var newValues = {};
+      newValues[this.fromAttr] = value[0];
+      newValues[this.toAttr] = value[1];
+      model.set(newValues);
+    },
+
+    valueChanged: function() {
+      FieldWithPicker.prototype.valueChanged.apply(this, arguments);
+      this.getPicker().model.set({
+        minDate: this.minDate,
+        maxDate: this.maxDate
+      });
+    },
+
+    //
+    // Events
+    //
+
+    onModelChange: function (e) {
+      if (e.changed[this.fromAttr] !== undefined || e.changed[this.toAttr] !== undefined) {
+        this.updateValueFromModel();
+      }
+    }
+  });
+});</code></pre>
+        </article>
+    </section>
+
+
+
+
+</div>
+
+<nav class="span4">
+    <h2><a href="index.html">Index</a></h2><h3>Classes</h3><ul><li><a href="Plumage.App.html">App</a></li><li><a href="Plumage.collection.BufferedCollection.html">BufferedCollection</a></li><li><a href="Plumage.collection.Collection.html">Collection</a></li><li><a href="Plumage.collection.GridData.html">GridData</a></li><li><a href="Plumage.controller.BaseController.html">BaseController</a></li><li><a href="Plumage.controller.ModelController.html">ModelController</a></li><li><a href="Plumage.ControllerManager.html">ControllerManager</a></li><li><a href="Plumage.History.html">History</a></li><li><a href="Plumage.model.Filter.html">Filter</a></li><li><a href="Plumage.model.Model.html">Model</a></li><li><a href="Plumage.RequestManager.html">RequestManager</a></li><li><a href="Plumage.Router.html">Router</a></li><li><a href="Plumage.util.Logger.html">Logger</a></li><li><a href="Plumage.view.CollectionView.html">CollectionView</a></li><li><a href="Plumage.view.ContainerView.html">ContainerView</a></li><li><a href="Plumage.view.form.fields.DateField.html">DateField</a></li><li><a href="Plumage.view.form.fields.DateRangeField.html">DateRangeField</a></li><li><a href="Plumage.view.form.fields.Field.html">Field</a></li><li><a href="Plumage.view.ModelView.html">ModelView</a></li><li><a href="Plumage.view.View.html">View</a></li></ul><h3>Namespaces</h3><ul><li><a href="Plumage.html">Plumage</a></li><li><a href="Plumage.collection.html">collection</a></li><li><a href="Plumage.controller.html">controller</a></li><li><a href="Plumage.model.html">model</a></li><li><a href="Plumage.util.html">util</a></li><li><a href="Plumage.vendor.html">vendor</a></li><li><a href="Plumage.view.html">view</a></li><li><a href="Plumage.view.comment.html">comment</a></li><li><a href="Plumage.view.controller.html">controller</a></li><li><a href="Plumage.view.form.html">form</a></li><li><a href="Plumage.view.form.fields.html">fields</a></li><li><a href="Plumage.view.form.fields.picker.html">picker</a></li><li><a href="Plumage.view.grid.html">grid</a></li><li><a href="Plumage.view.menu.html">menu</a></li></ul>
+</nav>
+</div>
+</div>
+
+<br clear="both">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.2.2</a>
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>

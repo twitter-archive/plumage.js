@@ -9,13 +9,13 @@ define([
   'view/form/fields/Calendar',
 
   'text!view/form/fields/templates/DatePicker.html',
-], function($, _, Backbone, Handlebars, moment, Plumage, Field, Calendar, template) {
+], function($, _, Backbone, Handlebars, moment, Plumage, Field, Calendar, fieldTemplate) {
 
   return Plumage.view.form.fields.DatePicker = Field.extend(
   /** @lends Plumage.view.form.fields.DatePicker.prototype */
   {
 
-    template: template,
+    fieldTemplate: fieldTemplate,
 
     className: 'date-picker-field',
 

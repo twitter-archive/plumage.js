@@ -9,7 +9,7 @@ define([
   return Plumage.view.NavView.extend({
 
     title: 'PlumageJS',
-    subtitle: 'Kitchen Sink Example',
+    subtitle: 'Kitchen Sink Example - note: slow load due to unconcatenated source',
 
     userMenuItems: undefined,
 

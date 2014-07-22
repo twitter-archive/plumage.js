@@ -5,19 +5,17 @@ define([
   'handlebars',
   'moment',
   'PlumageRoot',
-  'view/ModelView',
+  'view/form/fields/picker/Picker',
   'view/form/fields/Field',
   'view/form/fields/HourSelect',
   'view/form/fields/Calendar',
   'text!view/form/fields/picker/templates/DateRangePicker.html',
-], function($, _, Backbone, Handlebars, moment, Plumage, ModelView, Field, HourSelect, Calendar, template) {
+], function($, _, Backbone, Handlebars, moment, Plumage, Picker, Field, HourSelect, Calendar, template) {
 
-  return  Plumage.view.form.fields.picker.DateRangePicker = ModelView.extend(
+  return  Plumage.view.form.fields.picker.DateRangePicker = Picker.extend(
   /** @lends Plumage.view.form.fields.picker.DateRangePicker.prototype */
   {
     template: template,
-
-    modelCls: false, //never bind via setModel
 
     className: 'date-range-picker dropdown-menu form-inline',
 
@@ -28,9 +26,6 @@ define([
 
     /** min selectable date, inclusive. */
     maxDate: undefined,
-
-    /** Which side to open the picker on*/
-    opens: 'right',
 
     /**
      * Date format for text fields. Other formats can be typed into the main field, as long it can be
@@ -73,7 +68,6 @@ define([
       toAttr: 'toDate',
       minDateAttr: 'minDate',
       maxDateAttr: 'toDate',
-      updateModelOnChange: true
     }, {
       viewCls: Calendar,
       name: 'toCal',
@@ -83,7 +77,6 @@ define([
       toAttr: 'toDate',
       minDateAttr: 'fromDate',
       maxDateAttr: 'maxDate',
-      updateModelOnChange: true,
     }, {
       viewCls: Field,
       selector: '.from-date',
@@ -105,7 +98,6 @@ define([
       valueAttr: 'fromDate',
       minDateAttr: 'minDate',
       maxDateAttr: 'toDate',
-      updateModelOnChange: true,
       preventFocus: true,
       replaceEl: true
     }, {
@@ -115,7 +107,6 @@ define([
       valueAttr: 'toDate',
       minDateAttr: 'fromDate',
       maxDateAttr: 'maxDate',
-      updateModelOnChange: true,
       preventFocus: true,
       replaceEl: true
     }],
@@ -125,13 +116,12 @@ define([
      * @extends Plumage.view.ModelView
      */
     initialize: function(options) {
-
       if (this.utc) {
         this.subViews = _.map(this.subViews, _.clone);
         _.each(this.subViews, function(x){x.utc = true;});
       }
 
-      ModelView.prototype.initialize.apply(this, arguments);
+      Picker.prototype.initialize.apply(this, arguments);
 
       var formatDate = function(date) {
         var m = this.utc ? moment.utc(date) : moment(date);
@@ -140,18 +130,15 @@ define([
 
       this.getSubView('fromDate').getValueString = formatDate;
       this.getSubView('toDate').getValueString = formatDate;
-
-      this.setModel(new Plumage.model.Model({}, {urlRoot: '/'}), null, true);
     },
 
     onRender: function() {
-      ModelView.prototype.onRender.apply(this, arguments);
-      this.$el.addClass('opens' + this.opens);
+      Picker.prototype.onRender.apply(this, arguments);
       this.$el.toggleClass('show-hour-select', this.showHourSelect);
     },
 
     getTemplateData: function() {
-      var data = ModelView.prototype.getTemplateData.apply(this, arguments);
+      var data = Picker.prototype.getTemplateData.apply(this, arguments);
 
       return _.extend(data, {
         ranges: this.ranges,
@@ -160,17 +147,23 @@ define([
       });
     },
 
-    update: function() {
-      var fromCal = this.getSubView('fromCal'),
-        toCal = this.getSubView('toCal');
-      ModelView.prototype.update.apply(this, arguments);
-    },
-
     setShowHourSelect: function(showHourSelect) {
       this.showHourSelect = showHourSelect;
       if(this.isRendered) {
         this.render();
       }
+    },
+
+    //
+    // override Picker
+    //
+
+    getValue: function() {
+      return [this.model.get('fromDate'), this.model.get('toDate')];
+    },
+
+    setValue: function(value) {
+      this.model.set({fromDate: value[0], toDate: value[1]});
     },
 
     //
@@ -188,36 +181,13 @@ define([
           value[i] = today.clone().add(value[i]);
         }
       }
-      this.model.set({
-        fromDate: value[0].valueOf(),
-        toDate: value[1].valueOf()
-      });
+      this.setValue([value[0].valueOf(), value[1].valueOf()]);
       this.update();
     },
 
     //
     // Events
     //
-    onChange: function(e) {
-      //disable automatic updating from Field
-    },
-
-    onMouseDown: function(e) {
-      //do nothing so input doesn't lose focus
-      e.preventDefault();
-      e.stopPropagation();
-    },
-
-    onKeyDown: function(e) {
-      if (e.keyCode === 13) { //on enter
-        e.preventDefault();
-        this.close();
-        this.updateValueFromDom();
-      } else if(e.keyCode === 27) {
-        this.close();
-        this.update();
-      }
-    },
 
     onRangeClick: function(e) {
       e.preventDefault();

@@ -2730,6 +2730,77 @@ Triggers render events, calls onRender, and recurses to subviews.</p>
         
             
 <dt>
+    <h4 class="name" id="setValue"><span class="type-signature"></span>setValue<span class="signature">()</span><span class="type-signature"></span></h4>
+    
+    
+</dt>
+<dd>
+    
+    
+    <div class="description">
+        <p>updates the field value, and triggers change (both plumage and dom events)</p>
+<p>Note: This is not the only path to change the field value. The field value can also be changed by
+updateValueFromModel, so do not update non-model view state here. Do that in valueChanged.</p>
+    </div>
+    
+
+    
+    
+    
+    
+    
+    
+    
+<dl class="details">
+    
+        
+    
+    
+    
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="Field.js.html">view/form/fields/Field.js</a>, <a href="Field.js.html#line198">line 198</a>
+    </li></ul></dd>
+    
+    
+    
+    
+    
+    
+    
+</dl>
+
+    
+    
+
+    
+
+    
+    
+    
+    
+    
+    
+    
+</dd>
+
+        
+            
+<dt>
     <h4 class="name" id="showLoadingAnimation"><span class="type-signature"></span>showLoadingAnimation<span class="signature">()</span><span class="type-signature"></span></h4>
     
     
@@ -3164,7 +3235,7 @@ Default to just render again, but can be made more efficient by only updating wh
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="Field.js.html">view/form/fields/Field.js</a>, <a href="Field.js.html#line313">line 313</a>
+        <a href="Field.js.html">view/form/fields/Field.js</a>, <a href="Field.js.html#line319">line 319</a>
     </li></ul></dd>
     
     
@@ -3205,7 +3276,7 @@ Default to just render again, but can be made more efficient by only updating wh
 </div>
 
 <nav class="span4">
-    <h2><a href="index.html">Index</a></h2><h3>Classes</h3><ul><li><a href="Plumage.App.html">App</a></li><li><a href="Plumage.collection.BufferedCollection.html">BufferedCollection</a></li><li><a href="Plumage.collection.Collection.html">Collection</a></li><li><a href="Plumage.collection.GridData.html">GridData</a></li><li><a href="Plumage.controller.BaseController.html">BaseController</a></li><li><a href="Plumage.controller.ModelController.html">ModelController</a></li><li><a href="Plumage.ControllerManager.html">ControllerManager</a></li><li><a href="Plumage.History.html">History</a></li><li><a href="Plumage.model.Filter.html">Filter</a></li><li><a href="Plumage.model.Model.html">Model</a></li><li><a href="Plumage.RequestManager.html">RequestManager</a></li><li><a href="Plumage.Router.html">Router</a></li><li><a href="Plumage.util.Logger.html">Logger</a></li><li><a href="Plumage.view.CollectionView.html">CollectionView</a></li><li><a href="Plumage.view.ContainerView.html">ContainerView</a></li><li><a href="Plumage.view.form.fields.DatePicker.html">DatePicker</a></li><li><a href="Plumage.view.form.fields.Field.html">Field</a></li><li><a href="Plumage.view.ModelView.html">ModelView</a></li><li><a href="Plumage.view.View.html">View</a></li></ul><h3>Namespaces</h3><ul><li><a href="Plumage.html">Plumage</a></li><li><a href="Plumage.collection.html">collection</a></li><li><a href="Plumage.controller.html">controller</a></li><li><a href="Plumage.model.html">model</a></li><li><a href="Plumage.util.html">util</a></li><li><a href="Plumage.vendor.html">vendor</a></li><li><a href="Plumage.view.html">view</a></li><li><a href="Plumage.view.comment.html">comment</a></li><li><a href="Plumage.view.controller.html">controller</a></li><li><a href="Plumage.view.form.html">form</a></li><li><a href="Plumage.view.form.fields.html">fields</a></li><li><a href="Plumage.view.form.fields.picker.html">picker</a></li><li><a href="Plumage.view.grid.html">grid</a></li><li><a href="Plumage.view.menu.html">menu</a></li></ul>
+    <h2><a href="index.html">Index</a></h2><h3>Classes</h3><ul><li><a href="Plumage.App.html">App</a></li><li><a href="Plumage.collection.BufferedCollection.html">BufferedCollection</a></li><li><a href="Plumage.collection.Collection.html">Collection</a></li><li><a href="Plumage.collection.GridData.html">GridData</a></li><li><a href="Plumage.controller.BaseController.html">BaseController</a></li><li><a href="Plumage.controller.ModelController.html">ModelController</a></li><li><a href="Plumage.ControllerManager.html">ControllerManager</a></li><li><a href="Plumage.History.html">History</a></li><li><a href="Plumage.model.Filter.html">Filter</a></li><li><a href="Plumage.model.Model.html">Model</a></li><li><a href="Plumage.RequestManager.html">RequestManager</a></li><li><a href="Plumage.Router.html">Router</a></li><li><a href="Plumage.util.Logger.html">Logger</a></li><li><a href="Plumage.view.CollectionView.html">CollectionView</a></li><li><a href="Plumage.view.ContainerView.html">ContainerView</a></li><li><a href="Plumage.view.form.fields.DateField.html">DateField</a></li><li><a href="Plumage.view.form.fields.DateRangeField.html">DateRangeField</a></li><li><a href="Plumage.view.form.fields.Field.html">Field</a></li><li><a href="Plumage.view.ModelView.html">ModelView</a></li><li><a href="Plumage.view.View.html">View</a></li></ul><h3>Namespaces</h3><ul><li><a href="Plumage.html">Plumage</a></li><li><a href="Plumage.collection.html">collection</a></li><li><a href="Plumage.controller.html">controller</a></li><li><a href="Plumage.model.html">model</a></li><li><a href="Plumage.util.html">util</a></li><li><a href="Plumage.vendor.html">vendor</a></li><li><a href="Plumage.view.html">view</a></li><li><a href="Plumage.view.comment.html">comment</a></li><li><a href="Plumage.view.controller.html">controller</a></li><li><a href="Plumage.view.form.html">form</a></li><li><a href="Plumage.view.form.fields.html">fields</a></li><li><a href="Plumage.view.form.fields.picker.html">picker</a></li><li><a href="Plumage.view.grid.html">grid</a></li><li><a href="Plumage.view.menu.html">menu</a></li></ul>
 </nav>
 </div>
 </div>

@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Source: view/calendar/Calendar.js</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+    <link type="text/css" rel="stylesheet" href="../styles/docs.css">
+</head>
+
+<body>
+
+<div class="navbar navbar-fixed-top">
+  <div class="navbar-inner">
+    <div class="container">
+      <button type="button" class="btn btn-navbar" data-toggle="collapse" data-target=".nav-collapse">
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+      </button>
+      <a class="brand" href="../">PlumageJS</a>
+      <div class="nav-collapse collapse">
+        <ul class="nav">
+          <li>
+            <a href="../">Home</a>
+          </li>
+          <li class="active">
+            <a href="index.html">API</a>
+          </li>
+          <li>
+            <a href="../examples.html">Examples</a>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="container">
+  <div class="row">
+<div id="main" class="span8">
+    <h1 class="page-title">Source: view/calendar/Calendar.js</h1>
+    
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source"><code>define([
+  'jquery',
+  'underscore',
+  'backbone',
+  'handlebars',
+  'moment',
+  'PlumageRoot',
+  'view/View',
+  'text!view/calendar/templates/Calendar.html'
+], function($, _, Backbone, Handlebars, moment, Plumage, View, template) {
+
+  return Plumage.view.calendar.Calendar = View.extend(
+  /** @lends Plumage.view.calendar.Calendar.prototype */
+  {
+    template: template,
+
+    className: 'calendar-view',
+
+    /** Which month to show. 0 indexed number */
+    month: undefined,
+
+    /** Which year to show. eg 2014 */
+    year: undefined,
+
+    /** min selectable date, inclusive. Set minDate with setMinDate */
+    minDate: false,
+
+    /** max selectable date, inclusive. Set maxDate with setMaxDate */
+    maxDate: false,
+
+    /** Currently selected date, as moment */
+    selectedDate: undefined,
+
+    /** for showing selected range */
+    fromDate: undefined,
+
+    /** for showing selected range */
+    toDate: undefined,
+
+    /** Show week index in a column on the left? */
+    showWeekNumbers: false,
+
+    locale: {
+      weekLabel: 'W',
+      customRangeLabel: 'Custom Range',
+      daysOfWeek: moment()._lang._weekdaysMin.slice(),
+      monthNames: moment()._lang._monthsShort.slice(),
+      firstDay: 0
+    },
+
+    events: {
+      'click .prev': 'onPrevClick',
+      'click .next': 'onNextClick',
+      'click .day': 'onDayClick'
+    },
+
+    /**
+     * View that renders a selectable calendar.
+     *
+     * Useful when incoporated in fields like [DatePicker]{@link Plumage.view.form.fields.DatePicker}
+     * and [DateRangePicker]{@link Plumage.view.form.fields.DateRangePicker}.
+     *
+     * Not a [ModelView]{@link Plumage.view.ModelView}, but keeps and updates its own view state
+     * ([selectedDate]{@link Plumage.view.calendar.Calendar#selectedDate}, [month]{@link Plumage.view.calendar.Calendar#month},
+     * [year]{@link Plumage.view.calendar.Calendar#year},
+     *
+     * Calendar can also limit selectable dates with [minDate]{@link Plumage.view.calendar.Calendar#minDate} and
+     * [maxDate]{@link Plumage.view.calendar.Calendar#maxDate}, and highlight a selected range (useful in a date range picker)
+     * with [fromDate]{@link Plumage.view.calendar.Calendar#fromDate} and
+     * [toDate]{@link Plumage.view.calendar.Calendar#toDate}.
+     *
+     * Emitted events: prevclick, nextclick, dayclick
+     *
+     * @constructs
+     * @extends Plumage.view.View
+     */
+    initialize: function() {
+      View.prototype.initialize.apply(this, arguments);
+
+      this.month = this.month !== undefined ? this.month : moment().month();
+      this.year = this.year ? this.year : moment().year();
+      this.fromDate = this.fromDate && moment(this.fromDate);
+      this.toDate = this.toDate && moment(this.toDate);
+    },
+
+    getTemplateData: function() {
+      var data = _.clone(this.locale);
+
+      var calendar = this.getCalendarDates(this.month, this.year);
+
+      for(var i=0;i&lt;calendar.length;i++) {
+        var week = calendar[i];
+        for(var j=0;j&lt;week.length;j++) {
+          var day = week[j];
+          _.extend(day, {
+            number: day.date.date(),
+            cls: this.getClassesForDate(day.date, i, j).join(' ')
+          });
+        }
+      }
+      return {
+        locale: this.locale,
+        month: this.locale.monthNames[this.month],
+        year: this.year,
+        prevAvailable: this.isPrevMonthAvailable(),
+        nextAvailable: this.isNextMonthAvailable(),
+        showWeekNumbers: this.showWeekNumbers,
+        calendar: calendar
+      };
+    },
+
+    /**
+     * Set the month to display (view state), and update.
+     * Either pass month and year, or a moment object.
+     */
+    setMonth: function(month, year) {
+      if (!$.isNumeric(month)) {
+        year = month.year();
+        month = month.month();
+      }
+      this.month = month;
+      this.year = year;
+      this.update();
+    },
+
+    setSelectedDate: function(selectedDate, options) {
+      var oldDate = this.selectedDate;
+
+      if (selectedDate) {
+        this.selectedDate = moment(selectedDate);
+        this.month = this.selectedDate.month();
+        this.year = this.selectedDate.year();
+        this.update();
+
+      } else {
+        this.selectedDate = null;
+        this.update();
+      }
+
+      if (selectedDate !== oldDate && !(options && options.silent)) {
+        this.trigger('dateselected', this, this.selectedDate);
+      }
+    },
+
+    /**
+     * Set the range of days to highlight as selected.
+     */
+    setSelectedRange: function(fromDate, toDate) {
+      this.fromDate = moment(fromDate);
+      this.toDate = moment(toDate);
+    },
+
+    /**
+     * Set the minimum selectable date (inclusive)
+     */
+    setMinDate: function(minDate) {
+      if (minDate) {
+        minDate = moment(minDate);
+      }
+      this.minDate = minDate;
+    },
+
+    /**
+     * Set the maximum selectable date (inclusive)
+     */
+    setMaxDate: function(maxDate) {
+      if(maxDate) {
+        maxDate = moment(maxDate);
+      }
+      this.maxDate = moment(maxDate);
+    },
+
+    //
+    // Helpers
+    //
+
+    /**
+     * Helper: Get 2d array of days
+     */
+    getCalendarDates: function (month, year) {
+      var calendar = [];
+      var curDate = this.getFirstDate(month, year);
+      for(var i=0;i&lt;6;i++) {
+        var week = [];
+        for(var j=0;j&lt;7;j++) {
+          week.push({
+            date: moment(curDate),
+          });
+          curDate = curDate.add('hour', 24);
+        }
+        calendar.push(week);
+      }
+      return calendar;
+    },
+
+    /**
+     * Helper: Get first day on calendar page for month, year
+     */
+    getFirstDate: function(month, year) {
+      var firstDay = moment([year, month, 1]),
+        monthAgo = moment(firstDay).subtract('month', 1);
+
+      var daysInLastMonth = monthAgo.daysInMonth(),
+        dayOfWeek = firstDay.day(),
+        firstDate = daysInLastMonth - dayOfWeek + this.locale.firstDay + 1;
+
+      if (firstDate > daysInLastMonth) {
+        firstDate -= 7;
+      }
+      if (dayOfWeek === this.locale.firstDay) {
+        firstDate = daysInLastMonth - 6;
+      }
+      return new moment([monthAgo.year(), monthAgo.month(), firstDate, 12]);
+    },
+
+    /**
+     * Helper: Get CSS classes for a day element.
+     */
+    getClassesForDate: function(date, row, col) {
+      var inMonth = this.isDateInMonth(date);
+      var classes = [
+        this.isDateInMinMax(date) ? 'active' : 'disabled',
+        inMonth ? null : 'off',
+        this.isSameDay(date, this.selectedDate) ? 'selected' : null,
+        inMonth && this.isSameDay(date, this.fromDate) ? 'start-date' : null,
+        inMonth && this.isSameDay(date, this.toDate) ? 'end-date' : null,
+        this.isDateInSelectedRange(date) ? 'in-range' : null,
+        this.getShadowClass(date, row, col)
+      ];
+
+      return _.compact(classes);
+    },
+
+    /**
+     * Helper: Get box shadow class for dates off the current month.
+     */
+    getShadowClass: function(date, row, col) {
+      if (!this.isDateInMonth(date)) {
+        if (row &lt; 2) {
+          var nextWeek = moment(date).add('day', 7),
+            tomorrow = moment(date).add('day', 1);
+          if (this.isDateInMonth(nextWeek)) {
+            if (col &lt; 6 && this.isDateInMonth(tomorrow)) {
+              return 'shadow-bottom-right';
+            } else {
+              return 'shadow-bottom';
+            }
+          }
+        } else {
+          var lastWeek = moment(date).subtract('day', 7),
+            yesterday = moment(date).subtract('day', 1);
+          if (this.isDateInMonth(lastWeek)) {
+            if (col > 0 && this.isDateInMonth(yesterday)) {
+              return 'shadow-top-left';
+            } else {
+              return 'shadow-top';
+            }
+          }
+        }
+      }
+      return null;
+    },
+
+    isSameDay: function(date1, date2) {
+      if (!date1 || !date2) {
+        return false;
+      }
+      return date1.format('YYYY-MM-DD') === date2.format('YYYY-MM-DD');
+    },
+
+    isDateInSelectedRange: function(date) {
+      if (!this.fromDate || !this.toDate) {
+        return false;
+      }
+      return this.isDateInRange(date, this.fromDate, this.toDate);
+    },
+
+    isDateInMinMax: function(date) {
+      return this.isDateInRange(date, this.minDate, this.maxDate);
+    },
+
+    isDateInRange: function(date, minDate, maxDate) {
+      return !((minDate && !this.isSameDay(date, minDate) && date.isBefore(minDate)) || (
+          maxDate && !this.isSameDay(date, maxDate) && date.isAfter(maxDate)));
+    },
+
+    isDateInMonth: function(date) {
+      return date.month() === this.month;
+    },
+
+    isPrevMonthAvailable: function() {
+      return this.isDateInMinMax(moment([this.year, this.month, 1]).subtract('day', 1));
+    },
+
+    isNextMonthAvailable: function() {
+      var firstDate = moment([this.year, this.month, 1]);
+      return this.isDateInMinMax(moment([this.year, this.month, firstDate.daysInMonth()]).add('day', 1));
+    },
+
+    getDateFromDayEl: function(el) {
+      el = $(el);
+      var td = el.parent();
+      var dateNumber = Number(el.text());
+
+      if (td.hasClass('off')) {
+        var offMonth =  moment([this.year, this.month, 1]);
+        if (td.data('row') &lt; 3) {
+          offMonth = offMonth.subtract('month', 1);
+        } else {
+          offMonth = offMonth.add('month', 1);
+        }
+        return offMonth.date(dateNumber);
+      }
+      return moment([this.year, this.month, dateNumber]);
+    },
+
+    //
+    // EventHandlers
+    //
+
+    onPrevClick: function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      var lastMonth = moment([this.year, this.month, 1]).subtract('month', 1);
+      this.setMonth(lastMonth);
+
+      this.trigger('prevclick', this);
+    },
+
+    onNextClick: function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      var lastMonth = moment([this.year, this.month, 1]).add('month', 1);
+      this.setMonth(lastMonth);
+
+      this.trigger('nextclick', this);
+    },
+
+    onDayClick: function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      var td = $(e.target).parent();
+      if (!td.hasClass('disabled')) {
+        var date = this.getDateFromDayEl(e.target);
+        this.setSelectedDate(date);
+        this.trigger('dayclick', this, date);
+      }
+    }
+  });
+});</code></pre>
+        </article>
+    </section>
+
+
+
+
+</div>
+
+<nav class="span4">
+    <h2><a href="index.html">Index</a></h2><h3>Classes</h3><ul><li><a href="Plumage.App.html">App</a></li><li><a href="Plumage.collection.BufferedGridData.html">BufferedGridData</a></li><li><a href="Plumage.collection.Collection.html">Collection</a></li><li><a href="Plumage.collection.GridData.html">GridData</a></li><li><a href="Plumage.controller.BaseController.html">BaseController</a></li><li><a href="Plumage.controller.ModelController.html">ModelController</a></li><li><a href="Plumage.ControllerManager.html">ControllerManager</a></li><li><a href="Plumage.History.html">History</a></li><li><a href="Plumage.model.Filter.html">Filter</a></li><li><a href="Plumage.model.Model.html">Model</a></li><li><a href="Plumage.RequestManager.html">RequestManager</a></li><li><a href="Plumage.Router.html">Router</a></li><li><a href="Plumage.util.Logger.html">Logger</a></li><li><a href="Plumage.view.calendar.Calendar.html">Calendar</a></li><li><a href="Plumage.view.CollectionView.html">CollectionView</a></li><li><a href="Plumage.view.ContainerView.html">ContainerView</a></li><li><a href="Plumage.view.form.fields.DatePicker.html">DatePicker</a></li><li><a href="Plumage.view.form.fields.DateRangePicker.html">DateRangePicker</a></li><li><a href="Plumage.view.form.fields.Field.html">Field</a></li><li><a href="Plumage.view.ModelView.html">ModelView</a></li><li><a href="Plumage.view.View.html">View</a></li></ul><h3>Namespaces</h3><ul><li><a href="Plumage.html">Plumage</a></li><li><a href="Plumage.collection.html">collection</a></li><li><a href="Plumage.controller.html">controller</a></li><li><a href="Plumage.model.html">model</a></li><li><a href="Plumage.util.html">util</a></li><li><a href="Plumage.vendor.html">vendor</a></li><li><a href="Plumage.view.html">view</a></li><li><a href="Plumage.view.calendar.html">calendar</a></li><li><a href="Plumage.view.comment.html">comment</a></li><li><a href="Plumage.view.controller.html">controller</a></li><li><a href="Plumage.view.form.html">form</a></li><li><a href="Plumage.view.form.fields.html">fields</a></li><li><a href="Plumage.view.grid.html">grid</a></li><li><a href="Plumage.view.menu.html">menu</a></li></ul>
+</nav>
+</div>
+</div>
+
+<br clear="both">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.2.2</a>
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>

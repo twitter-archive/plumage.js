@@ -1187,7 +1187,12 @@ function($, _, Backbone, Plumage, requestManager, ModelUtil, BufferedCollection)
         model.fetched = true;
         model.latestLoadParams = undefined;
         if (resp.meta && resp.meta.success === false) {
-          model.trigger('error', model, resp, options);
+          if (resp.meta.validationError) {
+            model.validationError = resp.meta.validationError;
+            model.trigger('invalid', model, model.validationError);
+          } else {
+            model.trigger('error', model, resp, options);
+          }
         }
         model.onLoad(options);
         if (success) {
@@ -8530,6 +8535,16 @@ define('util/DateTimeUtil',[
 
   return Plumage.util.DateTimeUtil = {
 
+    parseRelativeDate: function(date, utc) {
+      var today = utc ? moment.utc({hour: 0}) : moment({hour: 0});
+      if (date === 'today') {
+        date = today;
+      } else if ($.isPlainObject(date)) {
+        date = today.clone().add(date);
+      }
+      return date;
+    },
+
     isSameDay: function(date1, date2, isUtc) {
       if (!date1 || !date2) {
         return false;
@@ -9302,6 +9317,7 @@ define('view/ModelView',[
         this.model.on('change', this.onModelChange, this);
         this.model.on('load', this.onModelLoad, this);
         this.model.on('destroy', this.onModelDestroy, this);
+        this.model.on('invalid', this.onModelInvalid, this);
         this.model.on('error', this.onModelError, this);
       }
 
@@ -9395,6 +9411,9 @@ define('view/ModelView',[
     },
 
     onModelDestroy: function(event, model) {
+    },
+
+    onModelInvalid: function(model, validationErrors) {
     },
 
     onModelError: function(model, response, options) {
@@ -9679,11 +9698,11 @@ define('view/CollectionView',[
 define('view/form/Form',[
   'jquery',
   'backbone',
-  'handlebars',
+  'underscore',
   'PlumageRoot',
   'view/ModelView',
   'util/ModelUtil'
-], function($, Backbone, Handlebars, Plumage, ModelView, ModelUtil) {
+], function($, Backbone, _, Plumage, ModelView, ModelUtil) {
 
   /**
    * Container for a field subviews.
@@ -9711,9 +9730,10 @@ define('view/form/Form',[
     },
 
     getTemplateData: function() {
-      return {
+      var data = ModelView.prototype.getTemplateData.apply(this, arguments);
+      return _.extend(data, {
         actionLabel: this.getActionLabel()
-      };
+      });
     },
 
     getActionLabel: function() {
@@ -9729,6 +9749,10 @@ define('view/form/Form',[
 
     onSubmit: function(e) {
       e.preventDefault();
+      this.submit();
+    },
+
+    submit: function() {
       if (!this.model) {
         var ModelCls = ModelUtil.loadClass(this.modelCls);
         this.model = new ModelCls();
@@ -9749,7 +9773,7 @@ define('view/form/Form',[
   });
 });
 
-define('text!view/form/fields/templates/Field.html',[],function () { return '{{#if label}}\n<div class="control-group">\n  <label class="control-label" for="{{valueAttr}}">{{label}}</label>\n  <div class="controls">\n    {{> field}}\n  </div>\n</div>\n{{else}}\n  {{> field}}\n{{/if}}';});
+define('text!view/form/fields/templates/Field.html',[],function () { return '{{#if label}}\n<div class="control-group {{#if validationState}}{{validationState}}{{/if}}">\n  <label class="control-label" for="{{valueAttr}}">{{label}}</label>\n  <div class="controls">\n    {{> field}}\n    {{#if message}}<span class="help-inline">{{message}}</span>{{/if}}\n  </div>\n</div>\n{{else}}\n  {{> field}}\n{{/if}}';});
 
 
 define('view/form/fields/Field',[
@@ -9810,6 +9834,20 @@ define('view/form/fields/Field',[
 
     /** Text to show when blank */
     placeholder: undefined,
+
+    /** required, minLength, maxLength, email, cc etc.*/
+    validationRules: undefined,
+
+    /** Template to show when validation fails */
+    validationMessages: {
+      required: 'required'
+    },
+
+    /** error, warning, success. Cleared on model load */
+    validationState: undefined,
+
+    /** message to display next to field, eg error message */
+    message: undefined,
 
 
     /**
@@ -9920,7 +9958,9 @@ define('view/form/fields/Field',[
         value: this.getValueString(this.getValue()),
         hasValue: this.getValue() !== null && this.getValue() !== undefined,
         placeholder: this.placeholder,
-        readonly: this.readonly
+        readonly: this.readonly,
+        validationState: this.validationState,
+        message: this.message
       };
       return data;
     },
@@ -9984,6 +10024,66 @@ define('view/form/fields/Field',[
       this.$el.blur();
     },
 
+    //
+    // Validation
+    //
+
+    setValidationState: function(state, message) {
+      this.validationState = state;
+      this.message = message;
+      this.update();
+    },
+
+    validators: {
+      required: function(value, params) {
+        return value !== undefined && value !== '';
+      },
+      minLength: function(value, params) {
+        return value.length >= params[0];
+      },
+      maxLength: function(value, params) {
+        return value.length <= params[0];
+      },
+      email: function(value) {
+        return (/^([a-zA-Z0-9_.+-])+\@(([a-zA-Z0-9-])+\.)+([a-zA-Z0-9]{2,4})+$/).test(value);
+      }
+    },
+
+    validate: function() {
+      var value = this.getValue();
+      var rules = this.validationRules;
+      if (!$.isPlainObject(rules)) {
+        //eg 'required'
+        var newRules = {};
+        newRules[rules] = true;
+        rules = newRules;
+      }
+      if (rules) {
+        var didError;
+        //check required first
+        if (rules.required) {
+          didError = this.applyValidator(value, rules.required, 'required');
+        }
+        if (!didError) {
+          _.keys(rules).every(function(k) {
+            if (k !== 'required') {
+              return this.applyValidator(value, rules[k], k);
+            }
+          }.bind(this));
+        }
+      }
+    },
+
+    applyValidator: function(value, params, name) {
+      var validator = this.validators[name];
+      if (!validator(value, params)) {
+        var message = this.validationMessages[name];
+        this.setValidationState('error', message);
+        return false;
+      }
+      return true;
+    },
+
     ////
     //
     // Helpers
@@ -10018,6 +10118,8 @@ define('view/form/fields/Field',[
         return result === undefined ? '' : result;
       }
     },
+
+
 
     //
     // View value <--> DOM value
@@ -10067,7 +10169,6 @@ define('view/form/fields/Field',[
       }
     },
 
-
     /** Hook called when value changes. Useful for keeping view state in sync */
     valueChanged: function() {
       return;
@@ -10090,6 +10191,7 @@ define('view/form/fields/Field',[
     },
 
     onBlur: function(e) {
+      this.validate();
       this.trigger('blur', this);
     },
 
@@ -10108,10 +10210,16 @@ define('view/form/fields/Field',[
     },
 
     onModelLoad: function () {
+      this.validationState = undefined;
+      this.message = undefined;
       this.updateValueFromModel();
     },
 
-    onModelError: function() {
+    onModelInvalid: function(model, validationError) {
+      var message = validationError[this.valueAttr];
+      if (message) {
+        this.setValidationState('error', message);
+      }
     }
   });
 });
@@ -11040,11 +11148,11 @@ define('view/form/fields/Calendar',[
     },
 
     setMinDate: function(minDate) {
-      this.minDate = this.toDateTuple(minDate);
+      this.minDate = this.toDateTuple();
     },
 
     setMaxDate: function(maxDate) {
-      this.maxDate = this.toDateTuple(maxDate);
+      this.maxDate = this.toDateTuple();
     },
 
     /**
@@ -11068,6 +11176,7 @@ define('view/form/fields/Calendar',[
       if (!date) {
         return null;
       }
+      date = DateTimeUtil.parseRelativeDate(date);
       if ($.isArray(date)) {
         return date;
       }
@@ -11599,9 +11708,10 @@ define('view/form/fields/DateField',[
   'handlebars',
   'moment',
   'PlumageRoot',
+  'util/DateTimeUtil',
   'view/form/fields/FieldWithPicker',
   'view/form/fields/Calendar',
-], function($, _, Backbone, Handlebars, moment, Plumage, FieldWithPicker, Calendar) {
+], function($, _, Backbone, Handlebars, moment, Plumage, DateTimeUtil, FieldWithPicker, Calendar) {
 
   return Plumage.view.form.fields.DateField = FieldWithPicker.extend(
   /** @lends Plumage.view.form.fields.DateField.prototype */
@@ -11654,10 +11764,10 @@ define('view/form/fields/DateField',[
       var calendar = this.getCalendar();
 
       if (this.minDate) {
-        this.getPicker().model.set('minDate', this.minDate);
+        this.setMinDate(this.minDate);
       }
       if (this.maxDate) {
-        this.getPicker().model.set('minDate', this.maxDate);
+        this.setMaxDate(this.maxDate);
       }
     },
 
@@ -11666,10 +11776,12 @@ define('view/form/fields/DateField',[
     },
 
     setMinDate: function(minDate) {
+      minDate = DateTimeUtil.parseRelativeDate(minDate);
       this.getPicker().model.set('minDate', minDate);
     },
 
     setMaxDate: function(maxDate) {
+      maxDate = DateTimeUtil.parseRelativeDate(maxDate);
       this.getPicker().model.set('maxDate', maxDate);
     },
 
@@ -11728,14 +11840,18 @@ define('view/form/fields/DateField',[
 
     updateValueFromModel: function() {
       FieldWithPicker.prototype.updateValueFromModel.apply(this, arguments);
-      this.setMinDate(this.model.get(this.minDateAttr));
-      this.setMaxDate(this.model.get(this.maxDateAttr));
+      if (this.minDateAttr) {
+        this.setMinDate(this.model.get(this.minDateAttr));
+      }
+      if (this.maxDateAttr) {
+        this.setMaxDate(this.model.get(this.maxDateAttr));
+      }
     }
   });
 });
 
 
-define('text!view/form/fields/templates/DropdownSelect.html',[],function () { return '\n{{#if label}}\n<div class="control-group">\n  <label class="control-label" for="{{valueAttr}}">{{label}}</label>\n  <div class="controls">\n{{/if}}\n\n<span class="dropdown-select dropdown">\n<input type="hidden" {{#if fieldName}}name="{{fieldName}}"{{/if}} value="{{value}}"/>\n<a class="btn dropdown-toggle {{buttonCls}}" data-toggle="dropdown" href="#">\n  {{#iconCls}}\n    <i class="{{.}} icon-white"></i>\n  {{/iconCls}}\n  {{#if hasSelection}}\n    {{valueLabel}}\n  {{else}}\n    {{noSelectionText}}\n  {{/if}}\n  <span class="caret"></span>\n</a>\n<ul class="dropdown-menu">\n{{#listValues}}\n  <li data-value="{{value}}" class="{{value}}{{#selected}} active{{/selected}} {{#disabled}}disabled{{/disabled}}">\n    <a href="#">{{label}}</a>\n  </li>\n{{/listValues}}\n</ul>\n</span>\n\n{{#if label}}\n  </div>\n</div>\n{{/if}}';});
+define('text!view/form/fields/templates/DropdownSelect.html',[],function () { return '\n{{#if label}}\n<div class="control-group">\n  <label class="control-label" for="{{valueAttr}}">{{label}}</label>\n  <div class="controls">\n{{/if}}\n\n<span class="dropdown-select dropdown">\n<input type="hidden" {{#if fieldName}}name="{{fieldName}}"{{/if}} value="{{value}}"/>\n<a class="btn dropdown-toggle {{buttonCls}}" data-toggle="dropdown" href="#">\n  {{#iconCls}}\n    <i class="{{.}} icon-white"></i>\n  {{/iconCls}}\n  {{#if hasSelection}}\n    {{valueLabel}}\n  {{else}}\n    {{noSelectionText}}\n  {{/if}}\n  <span class="caret"></span>\n</a>\n<ul class="dropdown-menu opens{{opens}}">\n{{#listValues}}\n  <li data-value="{{value}}" class="{{value}}{{#selected}} active{{/selected}} {{#disabled}}disabled{{/disabled}}">\n    <a href="#">{{label}}</a>\n  </li>\n{{/listValues}}\n</ul>\n</span>\n\n{{#if label}}\n  </div>\n</div>\n{{/if}}';});
 
 define('view/form/fields/DropdownSelect',[
   'jquery',
@@ -11762,7 +11878,10 @@ define('view/form/fields/DropdownSelect',[
 
     iconCls: undefined,
 
+    opens: 'right',
+
     preventFocus: false,
+
 
     events:{
       'click li a': 'onItemClick',
@@ -11781,7 +11900,8 @@ define('view/form/fields/DropdownSelect',[
       var data = Select.prototype.getTemplateData.apply(this, arguments);
       data = _.extend(data, {
         buttonCls: this.buttonCls,
-        iconCls: this.iconCls
+        iconCls: this.iconCls,
+        opens: this.opens
       });
       return data;
     },
@@ -11819,8 +11939,11 @@ define('view/form/fields/HourSelect',[
   return Plumage.view.form.fields.HourSelect = DropdownSelect.extend({
     className: 'hour-select',
 
-    maxDate: undefined,
     minDate: undefined,
+    maxDate: undefined,
+
+    minDateAttr: undefined,
+    maxDateAttr: undefined,
 
     hourFormat: 'ha',
 
@@ -11840,9 +11963,6 @@ define('view/form/fields/HourSelect',[
 
     getTemplateData: function() {
       var data = DropdownSelect.prototype.getTemplateData.apply(this, arguments);
-      var modelValue = this.model.get(this.valueAttr);
-      var m = this.utc ? moment.utc(modelValue) : moment(modelValue);
-
       _.each(data.listValues, function(x) {
         x.disabled = !this.isHourInMinMax(x.value);
       }, this);
@@ -11875,7 +11995,12 @@ define('view/form/fields/HourSelect',[
       if (this.model && this.minDateAttr) {
         return this.model.get(this.minDateAttr);
       }
-      return null;
+      return this.minDate;
+    },
+
+    setMinDate: function(minDate) {
+      this.minDate = minDate;
+      this.update();
     },
 
     /**
@@ -11885,7 +12010,12 @@ define('view/form/fields/HourSelect',[
       if (this.model && this.maxDateAttr) {
         return this.model.get(this.maxDateAttr);
       }
-      return null;
+      return this.maxDate;
+    },
+
+    setMaxDate: function(maxDate) {
+      this.maxDate = maxDate;
+      this.update();
     },
 
     setValue: function(value) {
@@ -11896,6 +12026,10 @@ define('view/form/fields/HourSelect',[
     },
 
     isHourInMinMax: function(hour) {
+      if (!this.model) {
+        return true;
+      }
+
       var minDate = this.getMinDate(),
         maxDate = this.getMaxDate();
 
@@ -14011,7 +14145,7 @@ define('view/ListAndDetailView',[
   });
 });
 
-define('text!view/templates/ModalDialog.html',[],function () { return '<div class="modal hide fade" tabindex="-1" role="dialog" aria-hidden="true">\n  <div class="modal-header">\n    <button type="button" class="close" data-dismiss="modal" aria-hidden="true">x</button>\n    <h3 id="myModalLabel">{{header}}</h3>\n  </div>\n  <div class="modal-body">\n  </div>\n  <div class="modal-footer">\n    <button class="btn" data-dismiss="modal" aria-hidden="true">Close</button>\n  </div>\n</div>';});
+define('text!view/templates/ModalDialog.html',[],function () { return '<div class="modal hide fade" tabindex="-1" role="dialog" aria-hidden="true">\n  <div class="modal-header">\n    <button type="button" class="close" data-dismiss="modal" aria-hidden="true">x</button>\n    <h3 id="myModalLabel">{{header}}</h3>\n  </div>\n  <div class="modal-body">\n  </div>\n  <div class="modal-footer">\n    {{#if showCancel}}\n      <a class="cancel" data-dismiss="modal" aria-hidden="true">Cancel</a>\n    {{else}}\n      <button class="btn" data-dismiss="modal" aria-hidden="true">Close</button>\n    {{/if}}\n    {{#if showSubmit}}\n      <button class="btn submit">Submit</button>\n    {{/if}}\n  </div>\n</div>';});
 
 define('view/ModalDialog',[
   'jquery',
@@ -14030,8 +14164,16 @@ define('view/ModalDialog',[
 
     header: '',
 
+    showCancel: false,
+
+    showSubmit: false,
+
     modalOptions: {
       show:false
+    },
+
+    events: {
+      'click .submit': 'onSubmitClick'
     },
 
     initialize: function(options) {
@@ -14055,7 +14197,9 @@ define('view/ModalDialog',[
     getTemplateData: function() {
       var data = ModelView.prototype.getTemplateData.apply(this, arguments);
       return _.extend(data,{
-        header: this.header
+        header: this.header,
+        showCancel: this.showCancel,
+        showSubmit: this.showSubmit
       });
     },
 
@@ -14068,6 +14212,10 @@ define('view/ModalDialog',[
 
     hide: function() {
       this.$('.modal').modal('hide');
+    },
+
+    onSubmitClick: function() {
+      this.trigger('submit', this);
     }
   });
 });

@@ -613,7 +613,12 @@ function($, _, Backbone, Plumage, requestManager, ModelUtil, BufferedCollection)
         model.fetched = true;
         model.latestLoadParams = undefined;
         if (resp.meta && resp.meta.success === false) {
-          model.trigger('error', model, resp, options);
+          if (resp.meta.validationError) {
+            model.validationError = resp.meta.validationError;
+            model.trigger('invalid', model, model.validationError);
+          } else {
+            model.trigger('error', model, resp, options);
+          }
         }
         model.onLoad(options);
         if (success) {

@@ -174,11 +174,11 @@ define([
     },
 
     setMinDate: function(minDate) {
-      this.minDate = this.toDateTuple(minDate);
+      this.minDate = this.toDateTuple();
     },
 
     setMaxDate: function(maxDate) {
-      this.maxDate = this.toDateTuple(maxDate);
+      this.maxDate = this.toDateTuple();
     },
 
     /**
@@ -202,6 +202,7 @@ define([
       if (!date) {
         return null;
       }
+      date = DateTimeUtil.parseRelativeDate(date);
       if ($.isArray(date)) {
         return date;
       }

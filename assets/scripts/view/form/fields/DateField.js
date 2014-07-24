@@ -5,9 +5,10 @@ define([
   'handlebars',
   'moment',
   'PlumageRoot',
+  'util/DateTimeUtil',
   'view/form/fields/FieldWithPicker',
   'view/form/fields/Calendar',
-], function($, _, Backbone, Handlebars, moment, Plumage, FieldWithPicker, Calendar) {
+], function($, _, Backbone, Handlebars, moment, Plumage, DateTimeUtil, FieldWithPicker, Calendar) {
 
   return Plumage.view.form.fields.DateField = FieldWithPicker.extend(
   /** @lends Plumage.view.form.fields.DateField.prototype */
@@ -60,10 +61,10 @@ define([
       var calendar = this.getCalendar();
 
       if (this.minDate) {
-        this.getPicker().model.set('minDate', this.minDate);
+        this.setMinDate(this.minDate);
       }
       if (this.maxDate) {
-        this.getPicker().model.set('minDate', this.maxDate);
+        this.setMaxDate(this.maxDate);
       }
     },
 
@@ -72,10 +73,12 @@ define([
     },
 
     setMinDate: function(minDate) {
+      minDate = DateTimeUtil.parseRelativeDate(minDate);
       this.getPicker().model.set('minDate', minDate);
     },
 
     setMaxDate: function(maxDate) {
+      maxDate = DateTimeUtil.parseRelativeDate(maxDate);
       this.getPicker().model.set('maxDate', maxDate);
     },
 
@@ -134,8 +137,12 @@ define([
 
     updateValueFromModel: function() {
       FieldWithPicker.prototype.updateValueFromModel.apply(this, arguments);
-      this.setMinDate(this.model.get(this.minDateAttr));
-      this.setMaxDate(this.model.get(this.maxDateAttr));
+      if (this.minDateAttr) {
+        this.setMinDate(this.model.get(this.minDateAttr));
+      }
+      if (this.maxDateAttr) {
+        this.setMaxDate(this.model.get(this.maxDateAttr));
+      }
     }
   });
 });

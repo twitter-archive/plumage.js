@@ -12,8 +12,11 @@ define([
   return Plumage.view.form.fields.HourSelect = DropdownSelect.extend({
     className: 'hour-select',
 
-    maxDate: undefined,
     minDate: undefined,
+    maxDate: undefined,
+
+    minDateAttr: undefined,
+    maxDateAttr: undefined,
 
     hourFormat: 'ha',
 
@@ -33,9 +36,6 @@ define([
 
     getTemplateData: function() {
       var data = DropdownSelect.prototype.getTemplateData.apply(this, arguments);
-      var modelValue = this.model.get(this.valueAttr);
-      var m = this.utc ? moment.utc(modelValue) : moment(modelValue);
-
       _.each(data.listValues, function(x) {
         x.disabled = !this.isHourInMinMax(x.value);
       }, this);
@@ -68,7 +68,12 @@ define([
       if (this.model && this.minDateAttr) {
         return this.model.get(this.minDateAttr);
       }
-      return null;
+      return this.minDate;
+    },
+
+    setMinDate: function(minDate) {
+      this.minDate = minDate;
+      this.update();
     },
 
     /**
@@ -78,7 +83,12 @@ define([
       if (this.model && this.maxDateAttr) {
         return this.model.get(this.maxDateAttr);
       }
-      return null;
+      return this.maxDate;
+    },
+
+    setMaxDate: function(maxDate) {
+      this.maxDate = maxDate;
+      this.update();
     },
 
     setValue: function(value) {
@@ -89,6 +99,10 @@ define([
     },
 
     isHourInMinMax: function(hour) {
+      if (!this.model) {
+        return true;
+      }
+
       var minDate = this.getMinDate(),
         maxDate = this.getMaxDate();
 

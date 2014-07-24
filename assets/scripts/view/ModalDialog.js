@@ -15,8 +15,16 @@ define([
 
     header: '',
 
+    showCancel: false,
+
+    showSubmit: false,
+
     modalOptions: {
       show:false
+    },
+
+    events: {
+      'click .submit': 'onSubmitClick'
     },
 
     initialize: function(options) {
@@ -40,7 +48,9 @@ define([
     getTemplateData: function() {
       var data = ModelView.prototype.getTemplateData.apply(this, arguments);
       return _.extend(data,{
-        header: this.header
+        header: this.header,
+        showCancel: this.showCancel,
+        showSubmit: this.showSubmit
       });
     },
 
@@ -53,6 +63,10 @@ define([
 
     hide: function() {
       this.$('.modal').modal('hide');
+    },
+
+    onSubmitClick: function() {
+      this.trigger('submit', this);
     }
   });
 });

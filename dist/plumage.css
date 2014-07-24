@@ -300,13 +300,6 @@ h2.title .light {
 
 .display-field .control-group {
   margin-bottom: 10px; }
-.display-field .control-label {
-  text-align: left;
-  cursor: default;
-  color: #555;
-  width: 120px; }
-.display-field .controls {
-  margin-left: 120px; }
 .display-field .field-value {
   line-height: 20px;
   padding-top: 5px;
@@ -367,8 +360,14 @@ h2.title .light {
 .inplace-field.editing .field-value {
   display: none; }
 
+.dropdown-select .opensleft {
+  right: 0;
+  left: auto; }
 .dropdown-select .dropdown-toggle {
   margin-bottom: 10px; }
+
+.form-horizontal .dropdown-select .dropdown-toggle {
+  margin-bottom: 0; }
 
 .comments-count-icon {
   background: transparent url(comment-icon.png) no-repeat 50% 0;

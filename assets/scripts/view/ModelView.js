@@ -174,6 +174,7 @@ define([
         this.model.on('change', this.onModelChange, this);
         this.model.on('load', this.onModelLoad, this);
         this.model.on('destroy', this.onModelDestroy, this);
+        this.model.on('invalid', this.onModelInvalid, this);
         this.model.on('error', this.onModelError, this);
       }
 
@@ -267,6 +268,9 @@ define([
     },
 
     onModelDestroy: function(event, model) {
+    },
+
+    onModelInvalid: function(model, validationErrors) {
     },
 
     onModelError: function(model, response, options) {

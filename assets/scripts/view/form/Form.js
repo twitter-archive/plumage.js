@@ -1,11 +1,11 @@
 define([
   'jquery',
   'backbone',
-  'handlebars',
+  'underscore',
   'PlumageRoot',
   'view/ModelView',
   'util/ModelUtil'
-], function($, Backbone, Handlebars, Plumage, ModelView, ModelUtil) {
+], function($, Backbone, _, Plumage, ModelView, ModelUtil) {
 
   /**
    * Container for a field subviews.
@@ -33,9 +33,10 @@ define([
     },
 
     getTemplateData: function() {
-      return {
+      var data = ModelView.prototype.getTemplateData.apply(this, arguments);
+      return _.extend(data, {
         actionLabel: this.getActionLabel()
-      };
+      });
     },
 
     getActionLabel: function() {
@@ -51,6 +52,10 @@ define([
 
     onSubmit: function(e) {
       e.preventDefault();
+      this.submit();
+    },
+
+    submit: function() {
       if (!this.model) {
         var ModelCls = ModelUtil.loadClass(this.modelCls);
         this.model = new ModelCls();

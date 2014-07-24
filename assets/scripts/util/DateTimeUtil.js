@@ -8,6 +8,16 @@ define([
 
   return Plumage.util.DateTimeUtil = {
 
+    parseRelativeDate: function(date, utc) {
+      var today = utc ? moment.utc({hour: 0}) : moment({hour: 0});
+      if (date === 'today') {
+        date = today;
+      } else if ($.isPlainObject(date)) {
+        date = today.clone().add(date);
+      }
+      return date;
+    },
+
     isSameDay: function(date1, date2, isUtc) {
       if (!date1 || !date2) {
         return false;

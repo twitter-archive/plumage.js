@@ -1,4 +1,4 @@
-### Plumage.js [![build status](https://secure.travis-ci.org/twitter/plumage.js.png?branch=master)](http://travis-ci.org/twitter/plumage.js) [![Coverage Status](https://coveralls.io/repos/twitter/plumage.js/badge.png)](https://coveralls.io/r/twitter/plumage.js)
+### Plumage.js [![Build Status](https://travis-ci.org/twitter/plumage.js.svg?branch=master)](https://travis-ci.org/twitter/plumage.js) [![Coverage Status](https://coveralls.io/repos/twitter/plumage.js/badge.png)](https://coveralls.io/r/twitter/plumage.js)
 JS UI framework for complex UIs.
 
 ### Installation

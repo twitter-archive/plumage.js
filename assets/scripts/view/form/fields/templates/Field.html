@@ -3,7 +3,7 @@
   <label class="control-label" for="{{valueAttr}}">{{label}}</label>
   <div class="controls">
     {{> field}}
-    {{#if message}}<span class="help-inline">{{message}}</span>{{/if}}
+    <span class="help-inline">{{#if message}}{{message}}{{/if}}</span>
   </div>
 </div>
 {{else}}

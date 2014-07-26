@@ -112,6 +112,14 @@ define([
     equal(field.validationState, 'error', 'should fail validation');
     equal(field.message, field.validationMessages.required);
 
+    field = createView({label: 'field', valueAttr: 'body', validationRules: {required: true, minLength: 2}});
+    field.validate();
+    equal(field.validationState, 'error', 'should fail validation');
+    equal(field.message, field.validationMessages.required);
+
+    field.setValue('a');
+    field.validate();
+    equal(field.message, field.validationMessages.minLength.replace('{{param0}}', 2));
   });
 
 });

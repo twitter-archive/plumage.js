@@ -174,11 +174,11 @@ define([
     },
 
     setMinDate: function(minDate) {
-      this.minDate = this.toDateTuple();
+      this.minDate = this.toDateTuple(minDate);
     },
 
     setMaxDate: function(maxDate) {
-      this.maxDate = this.toDateTuple();
+      this.maxDate = this.toDateTuple(maxDate);
     },
 
     /**

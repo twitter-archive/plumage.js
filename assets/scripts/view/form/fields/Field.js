@@ -63,7 +63,10 @@ define([
 
     /** Template to show when validation fails */
     validationMessages: {
-      required: 'required'
+      required: 'required',
+      minLength: 'Must be at least {{param0}} chars',
+      maxLength: 'Must not be more than {{param0}} chars',
+      email: 'Not a valid email address'
     },
 
     /** error, warning, success. Cleared on model load */
@@ -251,60 +254,76 @@ define([
     // Validation
     //
 
-    setValidationState: function(state, message) {
-      this.validationState = state;
-      this.message = message;
-      this.update();
-    },
-
     validators: {
       required: function(value, params) {
         return value !== undefined && value !== '';
       },
       minLength: function(value, params) {
-        return value.length >= params[0];
+        return value.length >= params;
       },
       maxLength: function(value, params) {
-        return value.length <= params[0];
+        return value.length <= params;
       },
       email: function(value) {
         return (/^([a-zA-Z0-9_.+-])+\@(([a-zA-Z0-9-])+\.)+([a-zA-Z0-9]{2,4})+$/).test(value);
       }
     },
 
+    setValidationState: function(state, message) {
+      this.validationState = state;
+      this.message = message;
+      this.$('.control-group').attr('class', 'control-group');
+      if (this.validationState) {
+        this.$('.control-group').addClass(this.validationState);
+      }
+      this.$('.help-inline').html(this.message);
+    },
+
     validate: function() {
       var value = this.getValue();
       var rules = this.validationRules;
-      if (!$.isPlainObject(rules)) {
-        //eg 'required'
-        var newRules = {};
-        newRules[rules] = true;
-        rules = newRules;
-      }
+
       if (rules) {
-        var didError;
+        if (!$.isPlainObject(rules)) {
+          //eg 'required'
+          var newRules = {};
+          newRules[rules] = true;
+          rules = newRules;
+        }
+
+        var success;
         //check required first
         if (rules.required) {
-          didError = this.applyValidator(value, rules.required, 'required');
+          success = this.applyValidator(value, rules.required, 'required');
         }
-        if (!didError) {
+        if (success) {
           _.keys(rules).every(function(k) {
-            if (k !== 'required') {
-              return this.applyValidator(value, rules[k], k);
+            if (k === 'required') {
+              return true;
             }
+            return success = this.applyValidator(value, rules[k], k);
           }.bind(this));
+        }
+        if (success) {
+          this.setValidationState(null,null);
         }
       }
     },
 
     applyValidator: function(value, params, name) {
+      params = $.isArray(params) ? params : [params];
       var validator = this.validators[name];
       if (!validator(value, params)) {
-        var message = this.validationMessages[name];
+        var message = this.getValidationMessage(name, params);
         this.setValidationState('error', message);
         return false;
       }
       return true;
+    },
+
+    getValidationMessage: function(name, params) {
+      var message = this.validationMessages[name] || 'invalid';
+      return Handlebars.compile(message)(_.object(_.map(params, function(x, i) {return ['param' + i, x];})));
     },
 
     ////
@@ -433,8 +452,7 @@ define([
     },
 
     onModelLoad: function () {
-      this.validationState = undefined;
-      this.message = undefined;
+      this.setValidationState(null, null);
       this.updateValueFromModel();
     },
 

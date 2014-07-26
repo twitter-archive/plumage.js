@@ -1178,41 +1178,26 @@ function($, _, Backbone, Plumage, requestManager, ModelUtil, BufferedCollection)
       if (_.isEqual(this.latestLoadParams, options.data)) {
         return;
       }
+      //save params to prevent multiple identical requests
       this.latestLoadParams = options.data;
 
-      var success = options.success,
-        error = options.error;
-
-      options.success = function(model, resp, options) {
-        model.fetched = true;
-        model.latestLoadParams = undefined;
-        if (resp.meta && resp.meta.success === false) {
-          if (resp.meta.validationError) {
-            model.validationError = resp.meta.validationError;
-            model.trigger('invalid', model, model.validationError);
-          } else {
-            model.trigger('error', model, resp, options);
-          }
-        }
-        model.onLoad(options);
-        if (success) {
-          success(model, resp, options);
-        }
-      };
-
-      options.error = function(model, xhr, options) {
-        if (typeof theApp !== 'undefined' && theApp.logger) {
-          if (xhr.statusText !== 'abort') {
-            theApp.logger.error(xhr.statusText, 'Model load error');
-          }
-        }
-        if (error) {
-          error(model, xhr, options);
-        }
-      };
+      this._wrapHandlers(options);
 
       this.fireBeginLoad();
       return this.fetch(options);
+    },
+
+    save: function(key, val, options) {
+      var attrs;
+      // Handle both `"key", value` and `{key: value}` -style arguments.
+      if (key === null || typeof key === 'object') {
+        attrs = key;
+        options = val;
+      } else {
+        (attrs = {})[key] = val;
+      }
+      this._wrapHandlers(options);
+      Backbone.Model.prototype.save.apply(this, arguments);
     },
 
     /**
@@ -1309,6 +1294,44 @@ function($, _, Backbone, Plumage, requestManager, ModelUtil, BufferedCollection)
      */
     onRelationChange: function() {
       this.trigger('change', this);
+    },
+
+    //
+    // Helpers
+    //
+
+    _wrapHandlers: function(options) {
+      var success = options.success,
+        error = options.error;
+
+      options.success = function(model, resp, options) {
+        if (resp.meta && resp.meta.success === false) {
+          if (resp.meta.validationError) {
+            model.validationError = resp.meta.validationError;
+            model.trigger('invalid', model, model.validationError);
+          } else {
+            model.trigger('error', model, resp, options);
+          }
+        } else {
+          model.latestLoadParams = undefined;
+          model.onLoad(options);
+          if (success) {
+            success(model, resp, options);
+          }
+        }
+
+      };
+
+      options.error = function(model, xhr, options) {
+        if (typeof theApp !== 'undefined' && theApp.logger) {
+          if (xhr.statusText !== 'abort') {
+            theApp.logger.error(xhr.statusText, 'Model load error');
+          }
+        }
+        if (error) {
+          error(model, xhr, options);
+        }
+      };
     }
   });
 });
@@ -9759,11 +9782,12 @@ define('view/form/Form',[
       }
       this.updateModel(this.model);
 
+      var error;
       if (this.model.validate) {
-        var error = this.model.validate(this.model.attributes);
-        if(!error) {
-          this.model.save(null, {success: this.onSaveSuccess.bind(this)});
-        }
+        error = this.model.validate(this.model.attributes);
+      }
+      if(!error) {
+        this.model.save(null, {success: this.onSaveSuccess.bind(this)});
       }
     },
 
@@ -9773,7 +9797,7 @@ define('view/form/Form',[
   });
 });
 
-define('text!view/form/fields/templates/Field.html',[],function () { return '{{#if label}}\n<div class="control-group {{#if validationState}}{{validationState}}{{/if}}">\n  <label class="control-label" for="{{valueAttr}}">{{label}}</label>\n  <div class="controls">\n    {{> field}}\n    {{#if message}}<span class="help-inline">{{message}}</span>{{/if}}\n  </div>\n</div>\n{{else}}\n  {{> field}}\n{{/if}}';});
+define('text!view/form/fields/templates/Field.html',[],function () { return '{{#if label}}\n<div class="control-group {{#if validationState}}{{validationState}}{{/if}}">\n  <label class="control-label" for="{{valueAttr}}">{{label}}</label>\n  <div class="controls">\n    {{> field}}\n    <span class="help-inline">{{#if message}}{{message}}{{/if}}</span>\n  </div>\n</div>\n{{else}}\n  {{> field}}\n{{/if}}';});
 
 
 define('view/form/fields/Field',[
@@ -9840,7 +9864,10 @@ define('view/form/fields/Field',[
 
     /** Template to show when validation fails */
     validationMessages: {
-      required: 'required'
+      required: 'required',
+      minLength: 'Must be at least {{param0}} chars',
+      maxLength: 'Must not be more than {{param0}} chars',
+      email: 'Not a valid email address'
     },
 
     /** error, warning, success. Cleared on model load */
@@ -10028,60 +10055,76 @@ define('view/form/fields/Field',[
     // Validation
     //
 
-    setValidationState: function(state, message) {
-      this.validationState = state;
-      this.message = message;
-      this.update();
-    },
-
     validators: {
       required: function(value, params) {
         return value !== undefined && value !== '';
       },
       minLength: function(value, params) {
-        return value.length >= params[0];
+        return value.length >= params;
       },
       maxLength: function(value, params) {
-        return value.length <= params[0];
+        return value.length <= params;
       },
       email: function(value) {
         return (/^([a-zA-Z0-9_.+-])+\@(([a-zA-Z0-9-])+\.)+([a-zA-Z0-9]{2,4})+$/).test(value);
       }
     },
 
+    setValidationState: function(state, message) {
+      this.validationState = state;
+      this.message = message;
+      this.$('.control-group').attr('class', 'control-group');
+      if (this.validationState) {
+        this.$('.control-group').addClass(this.validationState);
+      }
+      this.$('.help-inline').html(this.message);
+    },
+
     validate: function() {
       var value = this.getValue();
       var rules = this.validationRules;
-      if (!$.isPlainObject(rules)) {
-        //eg 'required'
-        var newRules = {};
-        newRules[rules] = true;
-        rules = newRules;
-      }
+
       if (rules) {
-        var didError;
+        if (!$.isPlainObject(rules)) {
+          //eg 'required'
+          var newRules = {};
+          newRules[rules] = true;
+          rules = newRules;
+        }
+
+        var success;
         //check required first
         if (rules.required) {
-          didError = this.applyValidator(value, rules.required, 'required');
+          success = this.applyValidator(value, rules.required, 'required');
         }
-        if (!didError) {
+        if (success) {
           _.keys(rules).every(function(k) {
-            if (k !== 'required') {
-              return this.applyValidator(value, rules[k], k);
+            if (k === 'required') {
+              return true;
             }
+            return success = this.applyValidator(value, rules[k], k);
           }.bind(this));
+        }
+        if (success) {
+          this.setValidationState(null,null);
         }
       }
     },
 
     applyValidator: function(value, params, name) {
+      params = $.isArray(params) ? params : [params];
       var validator = this.validators[name];
       if (!validator(value, params)) {
-        var message = this.validationMessages[name];
+        var message = this.getValidationMessage(name, params);
         this.setValidationState('error', message);
         return false;
       }
       return true;
+    },
+
+    getValidationMessage: function(name, params) {
+      var message = this.validationMessages[name] || 'invalid';
+      return Handlebars.compile(message)(_.object(_.map(params, function(x, i) {return ['param' + i, x];})));
     },
 
     ////
@@ -10210,8 +10253,7 @@ define('view/form/fields/Field',[
     },
 
     onModelLoad: function () {
-      this.validationState = undefined;
-      this.message = undefined;
+      this.setValidationState(null, null);
       this.updateValueFromModel();
     },
 
@@ -11148,11 +11190,11 @@ define('view/form/fields/Calendar',[
     },
 
     setMinDate: function(minDate) {
-      this.minDate = this.toDateTuple();
+      this.minDate = this.toDateTuple(minDate);
     },
 
     setMaxDate: function(maxDate) {
-      this.maxDate = this.toDateTuple();
+      this.maxDate = this.toDateTuple(maxDate);
     },
 
     /**

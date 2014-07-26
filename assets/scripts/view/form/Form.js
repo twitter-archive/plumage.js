@@ -62,11 +62,12 @@ define([
       }
       this.updateModel(this.model);
 
+      var error;
       if (this.model.validate) {
-        var error = this.model.validate(this.model.attributes);
-        if(!error) {
-          this.model.save(null, {success: this.onSaveSuccess.bind(this)});
-        }
+        error = this.model.validate(this.model.attributes);
+      }
+      if(!error) {
+        this.model.save(null, {success: this.onSaveSuccess.bind(this)});
       }
     },
 

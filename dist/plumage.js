@@ -8866,8 +8866,9 @@ define('view/View',[
 
     callOrRecurse: function(methodName, params) {
       if (this[methodName]) {
-        this[methodName].apply(this, params);
+        return this[methodName].apply(this, params);
       }
+      return true;
     },
 
     /** Show the loading animation. Uses spin.js */
@@ -9103,11 +9104,13 @@ define('view/ContainerView',[
      */
     callOrRecurse: function(methodName, params) {
       if (this[methodName]) {
-        this[methodName].apply(this, params);
+        return this[methodName].apply(this, params);
       } else {
+        var success = true;
         this.eachSubView(function(subView) {
-          subView.callOrRecurse(methodName, params);
+          success = subView.callOrRecurse(methodName, params) && success;
         });
+        return success;
       }
     }
   });
@@ -9387,9 +9390,19 @@ define('view/ModelView',[
      * @param {Plumage.model.Model} model Model to update.
      */
     updateModel: function(rootModel, parentModel) {
+      var success = true;
       this.eachSubView(function(subView) {
-        subView.callOrRecurse('updateModel', [rootModel, this.model]);
+        success = subView.callOrRecurse('updateModel', [rootModel, this.model]) && success;
       });
+      return success;
+    },
+
+    isValid: function(rootModel, parentModel) {
+      var valid = true;
+      this.eachSubView(function(subView) {
+        valid = subView.callOrRecurse('isValid', [rootModel, this.model]) && valid;
+      });
+      return valid;
     },
 
     /** Hook to modify view state on model load */
@@ -9780,14 +9793,15 @@ define('view/form/Form',[
         var ModelCls = ModelUtil.loadClass(this.modelCls);
         this.model = new ModelCls();
       }
-      this.updateModel(this.model);
-
-      var error;
-      if (this.model.validate) {
-        error = this.model.validate(this.model.attributes);
-      }
-      if(!error) {
-        this.model.save(null, {success: this.onSaveSuccess.bind(this)});
+      if(this.isValid()) {
+        this.updateModel(this.model);
+        var error;
+        if (this.model.validate) {
+          error = this.model.validate(this.model.attributes);
+        }
+        if(!error) {
+          this.model.save(null, {success: this.onSaveSuccess.bind(this)});
+        }
       }
     },
 
@@ -10108,7 +10122,9 @@ define('view/form/fields/Field',[
         if (success) {
           this.setValidationState(null,null);
         }
+        return success;
       }
+      return true;
     },
 
     applyValidator: function(value, params, name) {
@@ -10138,10 +10154,14 @@ define('view/form/fields/Field',[
     // View value <--> Model
     //
 
+    isValid: function() {
+      return this.validate();
+    },
+
     updateModel: function(rootModel, parentModel) {
       var model = this.getModelFromRoot(this.relationship, rootModel, parentModel),
         value = this.getValue();
-      model.set(this.valueAttr, value);
+      return model.set(this.valueAttr, value) !== false;
     },
 
     updateValueFromModel: function() {
@@ -10161,8 +10181,6 @@ define('view/form/fields/Field',[
         return result === undefined ? '' : result;
       }
     },
-
-
 
     //
     // View value <--> DOM value
@@ -11097,8 +11115,9 @@ define('view/form/fields/Calendar',[
     initialize: function() {
       Field.prototype.initialize.apply(this, arguments);
 
-      this.month = this.month !== undefined ? this.month : moment().month();
-      this.year = this.year ? this.year : moment().year();
+      var now = this.utc ? moment.utc() : moment();
+      this.month = this.month !== undefined ? this.month : now.month();
+      this.year = this.year ? this.year : now.year();
     },
 
     getTemplateData: function() {
@@ -11147,7 +11166,7 @@ define('view/form/fields/Calendar',[
         m.date(date[2]);
         value = m.valueOf();
       }
-      model.set(this.valueAttr, value);
+      return model.set(this.valueAttr, value);
     },
 
     /**
@@ -11751,9 +11770,10 @@ define('view/form/fields/DateField',[
   'moment',
   'PlumageRoot',
   'util/DateTimeUtil',
+  'view/form/fields/Field',
   'view/form/fields/FieldWithPicker',
   'view/form/fields/Calendar',
-], function($, _, Backbone, Handlebars, moment, Plumage, DateTimeUtil, FieldWithPicker, Calendar) {
+], function($, _, Backbone, Handlebars, moment, Plumage, DateTimeUtil, Field, FieldWithPicker, Calendar) {
 
   return Plumage.view.form.fields.DateField = FieldWithPicker.extend(
   /** @lends Plumage.view.form.fields.DateField.prototype */
@@ -11783,6 +11803,8 @@ define('view/form/fields/DateField',[
       }]
     },
 
+    utc: false,
+
     keepTime: false,
 
     minDate: undefined,
@@ -11802,8 +11824,10 @@ define('view/form/fields/DateField',[
      * @extends Plumage.view.form.fields.Field
      */
     initialize: function(options) {
+
       FieldWithPicker.prototype.initialize.apply(this, arguments);
       var calendar = this.getCalendar();
+      calendar.utc = this.utc;
 
       if (this.minDate) {
         this.setMinDate(this.minDate);
@@ -11827,6 +11851,27 @@ define('view/form/fields/DateField',[
       this.getPicker().model.set('maxDate', maxDate);
     },
 
+    /**
+     * Override to turn model timestamp into millis timestamp
+     */
+    getValueFromModel: function() {
+      var result = Field.prototype.getValueFromModel.apply(this, arguments);
+      if ($.isNumeric(result)) {
+        return result * 1000;
+      }
+    },
+
+    /**
+     * Override to turn model timestamp into millis timestamp
+     */
+    updateModel: function(rootModel, parentModel) {
+      var model = this.getModelFromRoot(this.relationship, rootModel, parentModel),
+        value = this.getValue();
+      if ($.isNumeric(value)) {
+        value = value / 1000;
+      }
+      return model.set(this.valueAttr, value) !== false;
+    },
 
     //
     // Overrides
@@ -11838,14 +11883,15 @@ define('view/form/fields/DateField',[
 
     getValueString: function(value) {
       if (value) {
-        return moment(value).format(this.format);
+        var m = this.utc ? moment.utc(value) : moment(value);
+        return m.format(this.format);
       }
       return '';
     },
 
     isDomValueValid: function(value) {
-      value = moment(value);
-      return !value || value.isValid && value.isValid() && this.getCalendar().isDateInMinMax(value);
+      var m = this.utc ? moment.utc(value) : moment(value);
+      return !value || m.isValid && m.isValid() && this.getCalendar().isDateInMinMax(value);
     },
 
     processDomValue: function(value) {
@@ -12015,6 +12061,7 @@ define('view/form/fields/HourSelect',[
       if (this.model) {
         var result = this.model.get(this.valueAttr);
         if (result > 1000) {
+          result *= 1000;
           var m = this.utc ? moment.utc(result) : moment(result);
           result = m.hour();
         }
@@ -12026,11 +12073,11 @@ define('view/form/fields/HourSelect',[
       var model = this.getModelFromRoot(this.relationship, rootModel, parentModel),
         value = this.getValue();
 
-      var modelValue = model.get(this.valueAttr);
+      var modelValue = model.get(this.valueAttr) * 1000;
       var m = this.utc ? moment.utc(modelValue) : moment(modelValue);
-      value = m.hour(value).valueOf();
+      value = m.hour(value).valueOf()/1000;
 
-      model.set(this.valueAttr, value);
+      return model.set(this.valueAttr, value);
     },
 
     getMinDate: function() {
@@ -12076,6 +12123,10 @@ define('view/form/fields/HourSelect',[
         maxDate = this.getMaxDate();
 
       var modelValue = this.model.get(this.valueAttr);
+      if (!modelValue) {
+        return true;
+      }
+      modelValue *= 1000;
       var m = this.utc ? moment.utc(modelValue) : moment(modelValue);
       m.hour(hour);
 
@@ -12451,7 +12502,7 @@ define('view/form/fields/DateRangeField',[
       var newValues = {};
       newValues[this.fromAttr] = value[0];
       newValues[this.toAttr] = value[1];
-      model.set(newValues);
+      return model.set(newValues);
     },
 
     valueChanged: function() {
@@ -13082,6 +13133,7 @@ define('view/form/fields/FilterTypeAhead',[
           }
         }
       }
+      return true;
     }
   });
 });
@@ -13376,6 +13428,7 @@ define('view/form/fields/FilterField',[
           }
         }
       }
+      return true;
     }
   });
 });

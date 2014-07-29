@@ -182,11 +182,13 @@ define([
      */
     callOrRecurse: function(methodName, params) {
       if (this[methodName]) {
-        this[methodName].apply(this, params);
+        return this[methodName].apply(this, params);
       } else {
+        var success = true;
         this.eachSubView(function(subView) {
-          subView.callOrRecurse(methodName, params);
+          success = subView.callOrRecurse(methodName, params) && success;
         });
+        return success;
       }
     }
   });

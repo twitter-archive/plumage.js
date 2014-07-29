@@ -221,9 +221,19 @@ define([
      * @param {Plumage.model.Model} model Model to update.
      */
     updateModel: function(rootModel, parentModel) {
+      var success = true;
       this.eachSubView(function(subView) {
-        subView.callOrRecurse('updateModel', [rootModel, this.model]);
+        success = subView.callOrRecurse('updateModel', [rootModel, this.model]) && success;
       });
+      return success;
+    },
+
+    isValid: function(rootModel, parentModel) {
+      var valid = true;
+      this.eachSubView(function(subView) {
+        valid = subView.callOrRecurse('isValid', [rootModel, this.model]) && valid;
+      });
+      return valid;
     },
 
     /** Hook to modify view state on model load */

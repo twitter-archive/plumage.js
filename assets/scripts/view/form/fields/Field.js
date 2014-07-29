@@ -307,7 +307,9 @@ define([
         if (success) {
           this.setValidationState(null,null);
         }
+        return success;
       }
+      return true;
     },
 
     applyValidator: function(value, params, name) {
@@ -337,10 +339,14 @@ define([
     // View value <--> Model
     //
 
+    isValid: function() {
+      return this.validate();
+    },
+
     updateModel: function(rootModel, parentModel) {
       var model = this.getModelFromRoot(this.relationship, rootModel, parentModel),
         value = this.getValue();
-      model.set(this.valueAttr, value);
+      return model.set(this.valueAttr, value) !== false;
     },
 
     updateValueFromModel: function() {
@@ -360,8 +366,6 @@ define([
         return result === undefined ? '' : result;
       }
     },
-
-
 
     //
     // View value <--> DOM value

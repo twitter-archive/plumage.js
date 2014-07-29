@@ -145,7 +145,7 @@ define([
       var newValues = {};
       newValues[this.fromAttr] = value[0];
       newValues[this.toAttr] = value[1];
-      model.set(newValues);
+      return model.set(newValues);
     },
 
     valueChanged: function() {

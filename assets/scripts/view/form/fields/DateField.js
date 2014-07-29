@@ -6,9 +6,10 @@ define([
   'moment',
   'PlumageRoot',
   'util/DateTimeUtil',
+  'view/form/fields/Field',
   'view/form/fields/FieldWithPicker',
   'view/form/fields/Calendar',
-], function($, _, Backbone, Handlebars, moment, Plumage, DateTimeUtil, FieldWithPicker, Calendar) {
+], function($, _, Backbone, Handlebars, moment, Plumage, DateTimeUtil, Field, FieldWithPicker, Calendar) {
 
   return Plumage.view.form.fields.DateField = FieldWithPicker.extend(
   /** @lends Plumage.view.form.fields.DateField.prototype */
@@ -38,6 +39,8 @@ define([
       }]
     },
 
+    utc: false,
+
     keepTime: false,
 
     minDate: undefined,
@@ -57,8 +60,10 @@ define([
      * @extends Plumage.view.form.fields.Field
      */
     initialize: function(options) {
+
       FieldWithPicker.prototype.initialize.apply(this, arguments);
       var calendar = this.getCalendar();
+      calendar.utc = this.utc;
 
       if (this.minDate) {
         this.setMinDate(this.minDate);
@@ -82,6 +87,27 @@ define([
       this.getPicker().model.set('maxDate', maxDate);
     },
 
+    /**
+     * Override to turn model timestamp into millis timestamp
+     */
+    getValueFromModel: function() {
+      var result = Field.prototype.getValueFromModel.apply(this, arguments);
+      if ($.isNumeric(result)) {
+        return result * 1000;
+      }
+    },
+
+    /**
+     * Override to turn model timestamp into millis timestamp
+     */
+    updateModel: function(rootModel, parentModel) {
+      var model = this.getModelFromRoot(this.relationship, rootModel, parentModel),
+        value = this.getValue();
+      if ($.isNumeric(value)) {
+        value = value / 1000;
+      }
+      return model.set(this.valueAttr, value) !== false;
+    },
 
     //
     // Overrides
@@ -93,14 +119,15 @@ define([
 
     getValueString: function(value) {
       if (value) {
-        return moment(value).format(this.format);
+        var m = this.utc ? moment.utc(value) : moment(value);
+        return m.format(this.format);
       }
       return '';
     },
 
     isDomValueValid: function(value) {
-      value = moment(value);
-      return !value || value.isValid && value.isValid() && this.getCalendar().isDateInMinMax(value);
+      var m = this.utc ? moment.utc(value) : moment(value);
+      return !value || m.isValid && m.isValid() && this.getCalendar().isDateInMinMax(value);
     },
 
     processDomValue: function(value) {

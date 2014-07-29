@@ -46,6 +46,7 @@ define([
       if (this.model) {
         var result = this.model.get(this.valueAttr);
         if (result > 1000) {
+          result *= 1000;
           var m = this.utc ? moment.utc(result) : moment(result);
           result = m.hour();
         }
@@ -57,11 +58,11 @@ define([
       var model = this.getModelFromRoot(this.relationship, rootModel, parentModel),
         value = this.getValue();
 
-      var modelValue = model.get(this.valueAttr);
+      var modelValue = model.get(this.valueAttr) * 1000;
       var m = this.utc ? moment.utc(modelValue) : moment(modelValue);
-      value = m.hour(value).valueOf();
+      value = m.hour(value).valueOf()/1000;
 
-      model.set(this.valueAttr, value);
+      return model.set(this.valueAttr, value);
     },
 
     getMinDate: function() {
@@ -107,6 +108,10 @@ define([
         maxDate = this.getMaxDate();
 
       var modelValue = this.model.get(this.valueAttr);
+      if (!modelValue) {
+        return true;
+      }
+      modelValue *= 1000;
       var m = this.utc ? moment.utc(modelValue) : moment(modelValue);
       m.hour(hour);
 

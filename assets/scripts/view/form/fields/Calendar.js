@@ -81,8 +81,9 @@ define([
     initialize: function() {
       Field.prototype.initialize.apply(this, arguments);
 
-      this.month = this.month !== undefined ? this.month : moment().month();
-      this.year = this.year ? this.year : moment().year();
+      var now = this.utc ? moment.utc() : moment();
+      this.month = this.month !== undefined ? this.month : now.month();
+      this.year = this.year ? this.year : now.year();
     },
 
     getTemplateData: function() {
@@ -131,7 +132,7 @@ define([
         m.date(date[2]);
         value = m.valueOf();
       }
-      model.set(this.valueAttr, value);
+      return model.set(this.valueAttr, value);
     },
 
     /**

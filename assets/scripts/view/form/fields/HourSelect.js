@@ -46,7 +46,6 @@ define([
       if (this.model) {
         var result = this.model.get(this.valueAttr);
         if (result > 1000) {
-          result *= 1000;
           var m = this.utc ? moment.utc(result) : moment(result);
           result = m.hour();
         }
@@ -58,9 +57,9 @@ define([
       var model = this.getModelFromRoot(this.relationship, rootModel, parentModel),
         value = this.getValue();
 
-      var modelValue = model.get(this.valueAttr) * 1000;
+      var modelValue = model.get(this.valueAttr);
       var m = this.utc ? moment.utc(modelValue) : moment(modelValue);
-      value = m.hour(value).valueOf()/1000;
+      value = m.hour(value).valueOf();
 
       return model.set(this.valueAttr, value);
     },
@@ -111,7 +110,6 @@ define([
       if (!modelValue) {
         return true;
       }
-      modelValue *= 1000;
       var m = this.utc ? moment.utc(modelValue) : moment(modelValue);
       m.hour(hour);
 

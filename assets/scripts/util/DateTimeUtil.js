@@ -42,12 +42,12 @@ define([
 
     formatDate: function(timestamp, dateFormat) {
       dateFormat = dateFormat || Plumage.util.defaultDateFormat;
-      return new moment(Number(timestamp)*1000).format(dateFormat);
+      return new moment(Number(timestamp)).format(dateFormat);
     },
 
     formatDateUTC: function(timestamp, dateFormat) {
       dateFormat = dateFormat || Plumage.util.defaultDateFormat;
-      return new moment(Number(timestamp)*1000).utc().format(dateFormat);
+      return new moment(Number(timestamp)).utc().format(dateFormat);
     },
 
     formatDateFromNow: function(timestamp) {

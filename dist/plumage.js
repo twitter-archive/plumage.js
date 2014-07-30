@@ -8592,12 +8592,12 @@ define('util/DateTimeUtil',[
 
     formatDate: function(timestamp, dateFormat) {
       dateFormat = dateFormat || Plumage.util.defaultDateFormat;
-      return new moment(Number(timestamp)*1000).format(dateFormat);
+      return new moment(Number(timestamp)).format(dateFormat);
     },
 
     formatDateUTC: function(timestamp, dateFormat) {
       dateFormat = dateFormat || Plumage.util.defaultDateFormat;
-      return new moment(Number(timestamp)*1000).utc().format(dateFormat);
+      return new moment(Number(timestamp)).utc().format(dateFormat);
     },
 
     formatDateFromNow: function(timestamp) {
@@ -11152,6 +11152,13 @@ define('view/form/fields/Calendar',[
       }
     },
 
+    getValueFromModel: function() {
+      var result = Field.prototype.getValueFromModel.apply(this, arguments);
+      if ($.isNumeric(result)) {
+        return result;
+      }
+    },
+
     updateModel: function(rootModel, parentModel) {
       var model = this.getModelFromRoot(this.relationship, rootModel, parentModel),
         value = this.getValue();
@@ -11212,10 +11219,6 @@ define('view/form/fields/Calendar',[
       this.minDate = this.toDateTuple(minDate);
     },
 
-    setMaxDate: function(maxDate) {
-      this.maxDate = this.toDateTuple(maxDate);
-    },
-
     /**
      * Set the maximum selectable date (inclusive)
      */
@@ -11227,6 +11230,10 @@ define('view/form/fields/Calendar',[
         return this.toDateTuple(this.model.get(this.maxDateAttr));
       }
       return null;
+    },
+
+    setMaxDate: function(maxDate) {
+      this.maxDate = this.toDateTuple(maxDate);
     },
 
     //
@@ -11651,7 +11658,7 @@ define('view/form/fields/FieldWithPicker',[
 
       Field.prototype.initialize.apply(this, arguments);
 
-      var picker = this.getSubView('picker');
+      var picker = this.getPicker();
 
       picker.on('apply', this.onPickerApply, this);
       picker.on('close', this.onPickerClose, this);
@@ -11668,7 +11675,7 @@ define('view/form/fields/FieldWithPicker',[
 
     //update the picker model
     valueChanged: function() {
-      var picker = this.getSubView('picker').setValue(this.getValue());
+      this.getPicker().setValue(this.getValue());
     },
 
     //
@@ -11691,7 +11698,7 @@ define('view/form/fields/FieldWithPicker',[
 
     open: function() {
       this.update();
-      this.$('.dropdown').addClass('open');
+      this.$('.dropdown:first').addClass('open');
     },
 
     /** Close the dropdown */
@@ -11849,28 +11856,6 @@ define('view/form/fields/DateField',[
     setMaxDate: function(maxDate) {
       maxDate = DateTimeUtil.parseRelativeDate(maxDate);
       this.getPicker().model.set('maxDate', maxDate);
-    },
-
-    /**
-     * Override to turn model timestamp into millis timestamp
-     */
-    getValueFromModel: function() {
-      var result = Field.prototype.getValueFromModel.apply(this, arguments);
-      if ($.isNumeric(result)) {
-        return result * 1000;
-      }
-    },
-
-    /**
-     * Override to turn model timestamp into millis timestamp
-     */
-    updateModel: function(rootModel, parentModel) {
-      var model = this.getModelFromRoot(this.relationship, rootModel, parentModel),
-        value = this.getValue();
-      if ($.isNumeric(value)) {
-        value = value / 1000;
-      }
-      return model.set(this.valueAttr, value) !== false;
     },
 
     //
@@ -12061,7 +12046,6 @@ define('view/form/fields/HourSelect',[
       if (this.model) {
         var result = this.model.get(this.valueAttr);
         if (result > 1000) {
-          result *= 1000;
           var m = this.utc ? moment.utc(result) : moment(result);
           result = m.hour();
         }
@@ -12073,9 +12057,9 @@ define('view/form/fields/HourSelect',[
       var model = this.getModelFromRoot(this.relationship, rootModel, parentModel),
         value = this.getValue();
 
-      var modelValue = model.get(this.valueAttr) * 1000;
+      var modelValue = model.get(this.valueAttr);
       var m = this.utc ? moment.utc(modelValue) : moment(modelValue);
-      value = m.hour(value).valueOf()/1000;
+      value = m.hour(value).valueOf();
 
       return model.set(this.valueAttr, value);
     },
@@ -12126,7 +12110,6 @@ define('view/form/fields/HourSelect',[
       if (!modelValue) {
         return true;
       }
-      modelValue *= 1000;
       var m = this.utc ? moment.utc(modelValue) : moment(modelValue);
       m.hour(hour);
 

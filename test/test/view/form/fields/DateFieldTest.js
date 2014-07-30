@@ -96,7 +96,7 @@ define([
   });
 
   test('keep time', function() {
-    var field = createView({pickerOptions: {applyOnChange: true}});
+    var field = createView();
     field.setValue(moment([2014, 1, 1, 12]).valueOf());
     field.getPicker().setValue(moment([2014, 1, 1]).valueOf());
     equal(field.getValue(), moment([2014, 1, 1]).valueOf(), 'use full value chosen by picker including hour');

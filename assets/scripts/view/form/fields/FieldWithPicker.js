@@ -48,7 +48,7 @@ define([
 
       Field.prototype.initialize.apply(this, arguments);
 
-      var picker = this.getSubView('picker');
+      var picker = this.getPicker();
 
       picker.on('apply', this.onPickerApply, this);
       picker.on('close', this.onPickerClose, this);
@@ -65,7 +65,7 @@ define([
 
     //update the picker model
     valueChanged: function() {
-      var picker = this.getSubView('picker').setValue(this.getValue());
+      this.getPicker().setValue(this.getValue());
     },
 
     //
@@ -88,7 +88,7 @@ define([
 
     open: function() {
       this.update();
-      this.$('.dropdown').addClass('open');
+      this.$('.dropdown:first').addClass('open');
     },
 
     /** Close the dropdown */

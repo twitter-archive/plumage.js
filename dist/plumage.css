@@ -1104,7 +1104,8 @@ div.comment-wrapper .item-author-header {
   width: 100px; }
 .date-range-field .show-hour-select .hour-select .dropdown-toggle {
   width: 48px;
-  padding: 4px 9px; }
+  padding: 4px 9px;
+  margin-bottom: 0; }
 
 .hour-select .dropdown-menu {
   width: 324px;

@@ -87,28 +87,6 @@ define([
       this.getPicker().model.set('maxDate', maxDate);
     },
 
-    /**
-     * Override to turn model timestamp into millis timestamp
-     */
-    getValueFromModel: function() {
-      var result = Field.prototype.getValueFromModel.apply(this, arguments);
-      if ($.isNumeric(result)) {
-        return result * 1000;
-      }
-    },
-
-    /**
-     * Override to turn model timestamp into millis timestamp
-     */
-    updateModel: function(rootModel, parentModel) {
-      var model = this.getModelFromRoot(this.relationship, rootModel, parentModel),
-        value = this.getValue();
-      if ($.isNumeric(value)) {
-        value = value / 1000;
-      }
-      return model.set(this.valueAttr, value) !== false;
-    },
-
     //
     // Overrides
     //

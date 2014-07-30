@@ -26,6 +26,11 @@
   "form": {
     "name": "form",
     "examples": [
+      {"name": "FieldsAndForms", "title": "Fields and Forms"},
+      {"name": "SelectFields", "title": "Select Fields"},
+      {"name": "MultiSelectFields", "title": "MultiSelect Fields"},
+      {"name": "DateFields", "title": "Date Fields"},
+      {"name": "InPlaceFields", "title": "In Place Fields"},
       {"name": "Validation", "title": "Validation"}
     ]
   }

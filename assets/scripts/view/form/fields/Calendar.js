@@ -118,6 +118,13 @@ define([
       }
     },
 
+    getValueFromModel: function() {
+      var result = Field.prototype.getValueFromModel.apply(this, arguments);
+      if ($.isNumeric(result)) {
+        return result;
+      }
+    },
+
     updateModel: function(rootModel, parentModel) {
       var model = this.getModelFromRoot(this.relationship, rootModel, parentModel),
         value = this.getValue();
@@ -178,10 +185,6 @@ define([
       this.minDate = this.toDateTuple(minDate);
     },
 
-    setMaxDate: function(maxDate) {
-      this.maxDate = this.toDateTuple(maxDate);
-    },
-
     /**
      * Set the maximum selectable date (inclusive)
      */
@@ -193,6 +196,10 @@ define([
         return this.toDateTuple(this.model.get(this.maxDateAttr));
       }
       return null;
+    },
+
+    setMaxDate: function(maxDate) {
+      this.maxDate = this.toDateTuple(maxDate);
     },
 
     //

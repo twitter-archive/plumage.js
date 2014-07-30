@@ -19,46 +19,46 @@ define([
     },
 
     subViews: [
-      {
-        viewCls: Plumage.view.form.fields.DateField,
-        selector: '.date-field1',
-        label: 'From Date',
-        valueAttr: 'fromDate',
-        maxDateAttr: 'toDate'
-      },
-      {
-        viewCls: Plumage.view.form.fields.DateField,
-        selector: '.date-field2',
-        label: 'To Date',
-        valueAttr: 'toDate',
-        minDateAttr: 'fromDate'
-      },
-      {
-        viewCls: Plumage.view.form.fields.HourSelect,
-        selector: '.hour-field1',
-        label: 'From Hour',
-        valueAttr: 'fromDate'
-      },
-      {
-        viewCls: Plumage.view.form.fields.HourSelect,
-        selector: '.hour-field2',
-        valueAttr: 'fromDate',
-        replaceEl: true
-      },
-      {
-        viewCls: Plumage.view.form.fields.DateField,
-        selector: '.date-field3',
-        valueAttr: 'fromDate',
-        maxDateAttr: 'toDate',
-        keepTime: true,
-        replaceEl: true
-      },
-      {
-        viewCls: Plumage.view.form.fields.DateRangeField,
-        selector: '.date-range-field',
-        fromAttr: 'fromDate',
-        toAttr: 'toDate'
-      },
+//      {
+//        viewCls: Plumage.view.form.fields.DateField,
+//        selector: '.date-field1',
+//        label: 'From Date',
+//        valueAttr: 'fromDate',
+//        maxDateAttr: 'toDate'
+//      },
+//      {
+//        viewCls: Plumage.view.form.fields.DateField,
+//        selector: '.date-field2',
+//        label: 'To Date',
+//        valueAttr: 'toDate',
+//        minDateAttr: 'fromDate'
+//      },
+//      {
+//        viewCls: Plumage.view.form.fields.HourSelect,
+//        selector: '.hour-field1',
+//        label: 'From Hour',
+//        valueAttr: 'fromDate'
+//      },
+//      {
+//        viewCls: Plumage.view.form.fields.HourSelect,
+//        selector: '.hour-field2',
+//        valueAttr: 'fromDate',
+//        replaceEl: true
+//      },
+//      {
+//        viewCls: Plumage.view.form.fields.DateField,
+//        selector: '.date-field3',
+//        valueAttr: 'fromDate',
+//        maxDateAttr: 'toDate',
+//        keepTime: true,
+//        replaceEl: true
+//      },
+//      {
+//        viewCls: Plumage.view.form.fields.DateRangeField,
+//        selector: '.date-range-field',
+//        fromAttr: 'fromDate',
+//        toAttr: 'toDate'
+//      },
       {
         viewCls: Plumage.view.form.fields.DateRangeField,
         selector: '.date-range-field-hour',
@@ -73,7 +73,7 @@ define([
     initialize: function(options) {
       Plumage.view.form.fields.Field.prototype.initialize.apply(this, arguments);
 
-      var model = new Vacation({fromDate: moment().subtract('day', 7).valueOf(), toDate: moment().valueOf()});
+      var model = new Vacation({fromDate: moment().subtract('day', 7).valueOf()/1000, toDate: moment().valueOf()/1000});
       this.setModel(model);
     }
   });

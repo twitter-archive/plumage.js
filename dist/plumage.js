@@ -9806,12 +9806,13 @@ define('view/form/Form',[
     },
 
     onSaveSuccess: function(model, resp, xhr) {
+      this.hideLoadingAnimation();
       this.trigger('save', this, model);
     }
   });
 });
 
-define('text!view/form/fields/templates/Field.html',[],function () { return '{{#if label}}\n<div class="control-group {{#if validationState}}{{validationState}}{{/if}}">\n  <label class="control-label" for="{{valueAttr}}">{{label}}</label>\n  <div class="controls">\n    {{> field}}\n    <span class="help-inline">{{#if message}}{{message}}{{/if}}</span>\n  </div>\n</div>\n{{else}}\n  {{> field}}\n{{/if}}';});
+define('text!view/form/fields/templates/Field.html',[],function () { return '{{#if label}}\n<div class="control-group {{#if validationState}}{{validationState}}{{/if}}">\n  <label class="control-label" for="{{valueAttr}}">{{label}}</label>\n  <div class="controls">\n    <span class="field">{{> field}}</span>\n    <span class="help-inline">{{#if message}}{{message}}{{/if}}</span>\n  </div>\n</div>\n{{else}}\n  {{> field}}\n{{/if}}';});
 
 
 define('view/form/fields/Field',[
@@ -10008,6 +10009,7 @@ define('view/form/fields/Field',[
 
     setModel: function() {
       ModelView.prototype.setModel.apply(this, arguments);
+      this.setValidationState(null, null);
       this.updateValueFromModel();
     },
 
@@ -10278,6 +10280,9 @@ define('view/form/fields/Field',[
     onModelInvalid: function(model, validationError) {
       var message = validationError[this.valueAttr];
       if (message) {
+        if ($.isArray(message)) {
+          message = message[0];
+        }
         this.setValidationState('error', message);
       }
     }
@@ -11606,7 +11611,7 @@ define('view/form/fields/picker/Picker',[
   });
 });
 
-define('text!view/form/fields/templates/FieldWithPicker.html',[],function () { return '{{#if label}}\n<div class="control-group">\n  <label class="control-label" for="{{valueAttr}}">{{label}}</label>\n  <div class="controls">\n    <span class="dropdown">\n      {{> field}}\n      <div class="picker"></div>\n    </span>\n  </div>\n</div>\n{{else}}\n<span class="dropdown picker-dropdown">\n  {{> field}}\n  <div class="picker"></div>\n</span>\n{{/if}}\n';});
+define('text!view/form/fields/templates/FieldWithPicker.html',[],function () { return '{{#if label}}\n<div class="control-group">\n  <label class="control-label" for="{{valueAttr}}">{{label}}</label>\n  <div class="controls">\n    <span class="field">\n\t    <span class="dropdown">\n\t      {{> field}}\n\t      <div class="picker"></div>\n\t    </span>\n    </span>\n    <span class="help-inline">{{#if message}}{{message}}{{/if}}</span>\n  </div>\n</div>\n{{else}}\n<span class="dropdown picker-dropdown">\n  {{> field}}\n  <div class="picker"></div>\n</span>\n{{/if}}\n';});
 
 define('view/form/fields/FieldWithPicker',[
   'jquery',
@@ -11649,12 +11654,12 @@ define('view/form/fields/FieldWithPicker',[
      * @extends Plumage.view.form.fields.Field
      */
     initialize:function(options) {
-      this.subViews = [_.extend({
+      this.subViews = this.subViews.concat([_.extend({
         viewCls: this.pickerCls,
         name: 'picker',
         selector: '.picker',
         replaceEl: true
-      }, this.pickerOptions)];
+      }, this.pickerOptions)]);
 
       Field.prototype.initialize.apply(this, arguments);
 
@@ -11769,160 +11774,6 @@ define('view/form/fields/FieldWithPicker',[
     }
   });
 });
-define('view/form/fields/DateField',[
-  'jquery',
-  'underscore',
-  'backbone',
-  'handlebars',
-  'moment',
-  'PlumageRoot',
-  'util/DateTimeUtil',
-  'view/form/fields/Field',
-  'view/form/fields/FieldWithPicker',
-  'view/form/fields/Calendar',
-], function($, _, Backbone, Handlebars, moment, Plumage, DateTimeUtil, Field, FieldWithPicker, Calendar) {
-
-  return Plumage.view.form.fields.DateField = FieldWithPicker.extend(
-  /** @lends Plumage.view.form.fields.DateField.prototype */
-  {
-
-    fieldTemplate: '<div class="input-prepend"><button class="btn" data-toggle="dropdown" data-target="#"><i class="icon-calendar"></i></button>'+FieldWithPicker.prototype.fieldTemplate+'</div>',
-
-    className: 'date-field',
-
-    /** format string for showing the selected date. See moment.js */
-    format: 'MMM D, YYYY',
-
-    events: {
-      'focus input': 'onFocus',
-      'blur input': 'onBlur',
-      'click input': 'onInputClick',
-      'click button': 'onButtonClick',
-    },
-
-    pickerOptions: {
-      applyOnChange: true,
-      subViews: [{
-        viewCls: Calendar,
-        name: 'calendar',
-        minDateAttr: 'minDate',
-        maxDateAttr: 'maxDate'
-      }]
-    },
-
-    utc: false,
-
-    keepTime: false,
-
-    minDate: undefined,
-    maxDate: undefined,
-
-    minDateAttr: undefined,
-    maxDateAttr: undefined,
-
-    /**
-     * Field with a popover calendar for selecting a date.
-     *
-     * The value can also be set by editing the text field directly, as long as it can be parsed back into a date.
-     *
-     * See a live demo in the [Kitchen Sink example]{@link /examples/kitchen_sink/form/FieldsAndForms}.
-     *
-     * @constructs
-     * @extends Plumage.view.form.fields.Field
-     */
-    initialize: function(options) {
-
-      FieldWithPicker.prototype.initialize.apply(this, arguments);
-      var calendar = this.getCalendar();
-      calendar.utc = this.utc;
-
-      if (this.minDate) {
-        this.setMinDate(this.minDate);
-      }
-      if (this.maxDate) {
-        this.setMaxDate(this.maxDate);
-      }
-    },
-
-    getCalendar: function() {
-      return this.getPicker().getSubView('calendar');
-    },
-
-    setMinDate: function(minDate) {
-      minDate = DateTimeUtil.parseRelativeDate(minDate);
-      this.getPicker().model.set('minDate', minDate);
-    },
-
-    setMaxDate: function(maxDate) {
-      maxDate = DateTimeUtil.parseRelativeDate(maxDate);
-      this.getPicker().model.set('maxDate', maxDate);
-    },
-
-    //
-    // Overrides
-    //
-
-    onInput: function(e) {
-      //do nothing on typing. Wait for blur
-    },
-
-    getValueString: function(value) {
-      if (value) {
-        var m = this.utc ? moment.utc(value) : moment(value);
-        return m.format(this.format);
-      }
-      return '';
-    },
-
-    isDomValueValid: function(value) {
-      var m = this.utc ? moment.utc(value) : moment(value);
-      return !value || m.isValid && m.isValid() && this.getCalendar().isDateInMinMax(value);
-    },
-
-    processDomValue: function(value) {
-      if (value) {
-        var m = moment(value);
-        var oldValue = this.getValue();
-        if (oldValue && this.keepTime) {
-          var oldM = moment(oldValue);
-          m.hour(oldM.hour()).minute(oldM.minute()).second(oldM.second()).millisecond(oldM.millisecond());
-        }
-        return m.valueOf();
-      }
-      return null;
-    },
-
-    processPickerValue: function(value) {
-      return this.processDomValue(value);
-    },
-
-    onModelChange: function(e) {
-      FieldWithPicker.prototype.onModelChange.apply(this, arguments);
-      this.updateValueFromModel();
-    },
-
-
-    onKeyDown: function(e) {
-      if (e.keyCode === 13) { //on enter
-        e.preventDefault();
-        this.updateValueFromDom();
-      } else if(e.keyCode === 27) {
-        this.update();
-      }
-    },
-
-    updateValueFromModel: function() {
-      FieldWithPicker.prototype.updateValueFromModel.apply(this, arguments);
-      if (this.minDateAttr) {
-        this.setMinDate(this.model.get(this.minDateAttr));
-      }
-      if (this.maxDateAttr) {
-        this.setMaxDate(this.model.get(this.maxDateAttr));
-      }
-    }
-  });
-});
-
 
 define('text!view/form/fields/templates/DropdownSelect.html',[],function () { return '\n{{#if label}}\n<div class="control-group">\n  <label class="control-label" for="{{valueAttr}}">{{label}}</label>\n  <div class="controls">\n{{/if}}\n\n<span class="dropdown-select dropdown">\n<input type="hidden" {{#if fieldName}}name="{{fieldName}}"{{/if}} value="{{value}}"/>\n<a class="btn dropdown-toggle {{buttonCls}}" data-toggle="dropdown" href="#">\n  {{#iconCls}}\n    <i class="{{.}} icon-white"></i>\n  {{/iconCls}}\n  {{#if hasSelection}}\n    {{valueLabel}}\n  {{else}}\n    {{noSelectionText}}\n  {{/if}}\n  <span class="caret"></span>\n</a>\n<ul class="dropdown-menu opens{{opens}}">\n{{#listValues}}\n  <li data-value="{{value}}" class="{{value}}{{#selected}} active{{/selected}} {{#disabled}}disabled{{/disabled}}">\n    <a href="#">{{label}}</a>\n  </li>\n{{/listValues}}\n</ul>\n</span>\n\n{{#if label}}\n  </div>\n</div>\n{{/if}}';});
 
@@ -12124,6 +11975,188 @@ define('view/form/fields/HourSelect',[
     },
   });
 });
+define('view/form/fields/DateField',[
+  'jquery',
+  'underscore',
+  'backbone',
+  'handlebars',
+  'moment',
+  'PlumageRoot',
+  'util/DateTimeUtil',
+  'view/form/fields/Field',
+  'view/form/fields/FieldWithPicker',
+  'view/form/fields/Calendar',
+  'view/form/fields/HourSelect',
+], function($, _, Backbone, Handlebars, moment, Plumage, DateTimeUtil, Field, FieldWithPicker, Calendar, HourSelect) {
+
+  return Plumage.view.form.fields.DateField = FieldWithPicker.extend(
+  /** @lends Plumage.view.form.fields.DateField.prototype */
+  {
+
+    fieldTemplate: '<div class="input-prepend"><button class="btn" data-toggle="dropdown" data-target="#"><i class="icon-calendar"></i></button>'+FieldWithPicker.prototype.fieldTemplate+'</div>',
+
+    className: 'date-field',
+
+    /** format string for showing the selected date. See moment.js */
+    format: 'MMM D, YYYY',
+
+    events: {
+      'focus input': 'onFocus',
+      'blur input': 'onBlur',
+      'click input': 'onInputClick',
+      'click button': 'onButtonClick',
+    },
+
+    pickerOptions: {
+      applyOnChange: true,
+      subViews: [{
+        viewCls: Calendar,
+        name: 'calendar',
+        minDateAttr: 'minDate',
+        maxDateAttr: 'maxDate'
+      }]
+    },
+
+    subViews: [{
+      viewCls: HourSelect,
+      name: 'hourSelect',
+      selector: '.field',
+      opens: 'left',
+      tagName: 'span'
+    }],
+
+    utc: false,
+
+    keepTime: false,
+
+    minDate: undefined,
+    maxDate: undefined,
+
+    minDateAttr: undefined,
+    maxDateAttr: undefined,
+
+    showHourSelect: false,
+
+    /**
+     * Field with a popover calendar for selecting a date.
+     *
+     * The value can also be set by editing the text field directly, as long as it can be parsed back into a date.
+     *
+     * See a live demo in the [Kitchen Sink example]{@link /examples/kitchen_sink/form/FieldsAndForms}.
+     *
+     * @constructs
+     * @extends Plumage.view.form.fields.Field
+     */
+    initialize: function(options) {
+
+      FieldWithPicker.prototype.initialize.apply(this, arguments);
+      var calendar = this.getCalendar();
+      calendar.utc = this.utc;
+
+      var hourSelect = this.getSubView('hourSelect');
+      hourSelect.utc = this.utc;
+      hourSelect.valueAttr = this.valueAttr;
+      hourSelect.updateModelOnChange = this.updateModelOnChange;
+      this.setShowHourSelect(this.showHourSelect);
+
+      if (this.minDate) {
+        this.setMinDate(this.minDate);
+      }
+      if (this.maxDate) {
+        this.setMaxDate(this.maxDate);
+      }
+    },
+
+    getCalendar: function() {
+      return this.getPicker().getSubView('calendar');
+    },
+
+    setMinDate: function(minDate) {
+      minDate = DateTimeUtil.parseRelativeDate(minDate);
+      this.getPicker().model.set('minDate', minDate);
+      this.getSubView('hourSelect').setMinDate(minDate);
+    },
+
+    setMaxDate: function(maxDate) {
+      maxDate = DateTimeUtil.parseRelativeDate(maxDate);
+      this.getPicker().model.set('maxDate', maxDate);
+      this.getSubView('hourSelect').setMaxDate(maxDate);
+    },
+
+    setShowHourSelect: function(showHourSelect) {
+      this.showHourSelect = showHourSelect;
+      this.$el.toggleClass('show-hour-select', this.showHourSelect);
+      if(this.isRendered) {
+        this.render();
+      }
+    },
+
+
+    //
+    // Overrides
+    //
+
+    onInput: function(e) {
+      //do nothing on typing. Wait for blur
+    },
+
+    getValueString: function(value) {
+      if (value) {
+        var m = this.utc ? moment.utc(value) : moment(value);
+        return m.format(this.format);
+      }
+      return '';
+    },
+
+    isDomValueValid: function(value) {
+      var m = this.utc ? moment.utc(value) : moment(value);
+      return !value || m.isValid && m.isValid() && this.getCalendar().isDateInMinMax(value);
+    },
+
+    processDomValue: function(value) {
+      if (value) {
+        var m = moment(value);
+        var oldValue = this.getValue();
+        if (oldValue && this.keepTime) {
+          var oldM = moment(oldValue);
+          m.hour(oldM.hour()).minute(oldM.minute()).second(oldM.second()).millisecond(oldM.millisecond());
+        }
+        return m.valueOf();
+      }
+      return null;
+    },
+
+    processPickerValue: function(value) {
+      return this.processDomValue(value);
+    },
+
+    onModelChange: function(e) {
+      FieldWithPicker.prototype.onModelChange.apply(this, arguments);
+      this.updateValueFromModel();
+    },
+
+
+    onKeyDown: function(e) {
+      if (e.keyCode === 13) { //on enter
+        e.preventDefault();
+        this.updateValueFromDom();
+      } else if(e.keyCode === 27) {
+        this.update();
+      }
+    },
+
+    updateValueFromModel: function() {
+      FieldWithPicker.prototype.updateValueFromModel.apply(this, arguments);
+      if (this.minDateAttr) {
+        this.setMinDate(this.model.get(this.minDateAttr));
+      }
+      if (this.maxDateAttr) {
+        this.setMaxDate(this.model.get(this.maxDateAttr));
+      }
+    }
+  });
+});
+
 
 define('text!view/form/fields/picker/templates/DateRangePicker.html',[],function () { return '<div class="calendar-wrap">\n  <div class="date-field">\n    <label class="control-label" for="daterangepicker_from">From</label>\n    <span class="from-date"></span>\n    {{#if showHourSelect}}<span class="from-hour"></span>{{/if}}\n  </div>\n  <div class="from-calendar"></div>\n</div>\n\n<div class="calendar-wrap">\n  <div class="date-field">\n    <label class="control-label" for="daterangepicker_to">To</label>\n    <span class="to-date"></span>\n    {{#if showHourSelect}}<span class="to-hour"></span>{{/if}}\n  </div>\n  <div class="to-calendar"></div>\n</div>\n\n<div class="ranges-wrap">\n  <ul class="ranges">\n    {{#ranges}}\n      <li><a href="#">{{name}}</a></li>\n    {{/ranges}}\n  </ul>\n  <button class="btn btn-small apply">Apply</button>\n  <a href="#" class="cancel">cancel</a>\n</div>\n';});
 
@@ -14292,7 +14325,7 @@ define('view/ModalDialog',[
       this.$('.modal').modal('hide');
     },
 
-    onSubmitClick: function() {
+    onSubmitClick: function(e) {
       this.trigger('submit', this);
     }
   });

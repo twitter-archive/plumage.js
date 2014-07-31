@@ -39,12 +39,12 @@ define([
      * @extends Plumage.view.form.fields.Field
      */
     initialize:function(options) {
-      this.subViews = [_.extend({
+      this.subViews = this.subViews.concat([_.extend({
         viewCls: this.pickerCls,
         name: 'picker',
         selector: '.picker',
         replaceEl: true
-      }, this.pickerOptions)];
+      }, this.pickerOptions)]);
 
       Field.prototype.initialize.apply(this, arguments);
 

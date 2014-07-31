@@ -193,6 +193,7 @@ define([
 
     setModel: function() {
       ModelView.prototype.setModel.apply(this, arguments);
+      this.setValidationState(null, null);
       this.updateValueFromModel();
     },
 
@@ -463,6 +464,9 @@ define([
     onModelInvalid: function(model, validationError) {
       var message = validationError[this.valueAttr];
       if (message) {
+        if ($.isArray(message)) {
+          message = message[0];
+        }
         this.setValidationState('error', message);
       }
     }

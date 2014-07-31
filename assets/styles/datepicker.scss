@@ -212,3 +212,16 @@
     }
   }
 }
+
+.date-field {
+  &.show-hour-select {
+    input[type=text] {
+      width: 103px;
+    }
+
+    .hour-select a {
+      width: 48px
+    }
+  }
+
+}

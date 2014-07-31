@@ -9,7 +9,8 @@ define([
   'view/form/fields/Field',
   'view/form/fields/FieldWithPicker',
   'view/form/fields/Calendar',
-], function($, _, Backbone, Handlebars, moment, Plumage, DateTimeUtil, Field, FieldWithPicker, Calendar) {
+  'view/form/fields/HourSelect',
+], function($, _, Backbone, Handlebars, moment, Plumage, DateTimeUtil, Field, FieldWithPicker, Calendar, HourSelect) {
 
   return Plumage.view.form.fields.DateField = FieldWithPicker.extend(
   /** @lends Plumage.view.form.fields.DateField.prototype */
@@ -39,6 +40,14 @@ define([
       }]
     },
 
+    subViews: [{
+      viewCls: HourSelect,
+      name: 'hourSelect',
+      selector: '.field',
+      opens: 'left',
+      tagName: 'span'
+    }],
+
     utc: false,
 
     keepTime: false,
@@ -48,6 +57,8 @@ define([
 
     minDateAttr: undefined,
     maxDateAttr: undefined,
+
+    showHourSelect: false,
 
     /**
      * Field with a popover calendar for selecting a date.
@@ -65,6 +76,12 @@ define([
       var calendar = this.getCalendar();
       calendar.utc = this.utc;
 
+      var hourSelect = this.getSubView('hourSelect');
+      hourSelect.utc = this.utc;
+      hourSelect.valueAttr = this.valueAttr;
+      hourSelect.updateModelOnChange = this.updateModelOnChange;
+      this.setShowHourSelect(this.showHourSelect);
+
       if (this.minDate) {
         this.setMinDate(this.minDate);
       }
@@ -80,12 +97,23 @@ define([
     setMinDate: function(minDate) {
       minDate = DateTimeUtil.parseRelativeDate(minDate);
       this.getPicker().model.set('minDate', minDate);
+      this.getSubView('hourSelect').setMinDate(minDate);
     },
 
     setMaxDate: function(maxDate) {
       maxDate = DateTimeUtil.parseRelativeDate(maxDate);
       this.getPicker().model.set('maxDate', maxDate);
+      this.getSubView('hourSelect').setMaxDate(maxDate);
     },
+
+    setShowHourSelect: function(showHourSelect) {
+      this.showHourSelect = showHourSelect;
+      this.$el.toggleClass('show-hour-select', this.showHourSelect);
+      if(this.isRendered) {
+        this.render();
+      }
+    },
+
 
     //
     // Overrides

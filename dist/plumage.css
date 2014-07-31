@@ -1126,6 +1126,11 @@ div.comment-wrapper .item-author-header {
     .hour-select .dropdown-menu li:nth-child(-n+12) a:hover {
       background: #E3C205; }
 
+.date-field.show-hour-select input[type=text] {
+  width: 103px; }
+.date-field.show-hour-select .hour-select a {
+  width: 48px; }
+
 /*
 IMPORTANT:
 In order to preserve the uniform grid appearance, all cell styles need to have padding, margin and border sizes.

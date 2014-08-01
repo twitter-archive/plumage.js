@@ -98,6 +98,8 @@ define([
       valueAttr: 'fromDate',
       minDateAttr: 'minDate',
       maxDateAttr: 'toDate',
+      fromAttr: 'fromDate',
+      toAttr: 'toDate',
       preventFocus: true,
       replaceEl: true
     }, {
@@ -107,6 +109,8 @@ define([
       valueAttr: 'toDate',
       minDateAttr: 'fromDate',
       maxDateAttr: 'maxDate',
+      fromAttr: 'fromDate',
+      toAttr: 'toDate',
       preventFocus: true,
       replaceEl: true
     }],
@@ -163,7 +167,11 @@ define([
     },
 
     setValue: function(value) {
-      this.model.set({fromDate: value[0], toDate: value[1]});
+      var data = {fromDate: undefined, toDate: undefined};
+      if (value && value.length) {
+        data = {fromDate: value[0], toDate: value[1]};
+      }
+      this.model.set(data);
     },
 
     //
@@ -181,7 +189,7 @@ define([
           value[i] = today.clone().add(value[i]);
         }
       }
-      this.setValue([value[0].valueOf(), value[1].valueOf()]);
+      this.setValue([value[0].startOf('day').valueOf(), value[1].endOf('day').valueOf()]);
       this.update();
     },
 

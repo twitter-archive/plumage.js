@@ -51,7 +51,7 @@ define([
     },
 
     formatDateFromNow: function(timestamp) {
-      return moment(Number(timestamp)*1000).fromNow();
+      return moment(Number(timestamp)).fromNow();
     },
 
     formatDuration: function(millis) {

@@ -18,6 +18,12 @@ define([
     minDateAttr: undefined,
     maxDateAttr: undefined,
 
+    /** optional. For displaying a selected range. */
+    fromAttr: undefined,
+
+    /** optional. For displaying a selected range. */
+    toAttr: undefined,
+
     hourFormat: 'ha',
 
     utc: false,
@@ -37,7 +43,7 @@ define([
     getTemplateData: function() {
       var data = DropdownSelect.prototype.getTemplateData.apply(this, arguments);
       _.each(data.listValues, function(x) {
-        x.disabled = !this.isHourInMinMax(x.value);
+        x.classes = this.getClassesForHour(x.value).join(' ');
       }, this);
       return data;
     },
@@ -98,6 +104,21 @@ define([
       DropdownSelect.prototype.setValue.apply(this, arguments);
     },
 
+    //
+    // Helpers
+    //
+
+    getClassesForHour: function(hour) {
+      var m = this.getDate(hour);
+      var classes = [
+        this.isHourInMinMax(hour) ? null : 'disabled',
+        hour === this.getValue() ? 'selected' : null,
+        this.isHourInSelectedRange(hour) ? 'in-range' : null,
+        this.isHourOtherSelection(hour) ? 'other-selected' : null
+      ];
+      return _.compact(classes);
+    },
+
     isHourInMinMax: function(hour) {
       if (!this.model) {
         return true;
@@ -106,14 +127,48 @@ define([
       var minDate = this.getMinDate(),
         maxDate = this.getMaxDate();
 
-      var modelValue = this.model.get(this.valueAttr);
-      if (!modelValue) {
-        return true;
-      }
-      var m = this.utc ? moment.utc(modelValue) : moment(modelValue);
-      m.hour(hour);
+      var m = this.getDate(hour);
 
       return (!minDate || m >= moment(minDate)) && (!maxDate || m <= moment(maxDate));
+    },
+
+    isHourInSelectedRange: function(hour) {
+      if (!this.model || !this.fromAttr || !this.toAttr) {
+        return false;
+      }
+      var fromDate = this.model.get(this.fromAttr),
+        toDate = this.model.get(this.toAttr);
+
+      if (!fromDate || !toDate) {
+        return false;
+      }
+
+      var m = this.getDate(hour);
+      return m.valueOf() >= fromDate &&  m.valueOf() <= toDate;
+    },
+
+    isHourOtherSelection: function(hour) {
+      if (!this.model || !this.fromAttr || !this.toAttr || hour === this.getValue()) {
+        return false;
+      }
+      var fromDate = this.model.get(this.fromAttr),
+        toDate = this.model.get(this.toAttr);
+
+      if (!fromDate || !toDate) {
+        return false;
+      }
+      var m = this.getDate(hour);
+      return m.valueOf() === fromDate ||  m.valueOf() === toDate;
+    },
+
+    getDate: function(hour) {
+      var modelValue = this.model && this.model.get(this.valueAttr), m;
+      if (modelValue !== undefined) {
+        m = this.utc ? moment.utc(modelValue) : moment(modelValue);
+      } else {
+        m = this.utc ? moment.utc() : moment();
+      }
+      return m.hour(hour);
     },
 
 

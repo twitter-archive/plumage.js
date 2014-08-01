@@ -1121,10 +1121,20 @@ div.comment-wrapper .item-author-header {
       text-align: center; }
       .hour-select .dropdown-menu li a:hover {
         background: #49ABD1; }
+    .hour-select .dropdown-menu li.in-range a {
+      background: #A0D6EB; }
+    .hour-select .dropdown-menu li.selected a, .hour-select .dropdown-menu li.other-selected a {
+      background: #49ABD1;
+      color: white; }
   .hour-select .dropdown-menu li:nth-child(-n+12) a {
     background: #FAF2B4; }
     .hour-select .dropdown-menu li:nth-child(-n+12) a:hover {
-      background: #E3C205; }
+      background: #E3C205 !important; }
+  .hour-select .dropdown-menu li:nth-child(-n+12).in-range a {
+    background: #E8DC7D; }
+  .hour-select .dropdown-menu li:nth-child(-n+12).selected a, .hour-select .dropdown-menu li:nth-child(-n+12).other-selected a {
+    background: #E3C205;
+    color: white; }
 
 .date-field.show-hour-select input[type=text] {
   width: 103px; }

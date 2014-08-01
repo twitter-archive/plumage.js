@@ -662,6 +662,12 @@ function($, _, Backbone, Plumage, requestManager, ModelUtil, BufferedCollection)
      */
     fireBeginLoad: function() {
       this.trigger('beginLoad', this);
+      _.each(this.relationships, function(relationship, key) {
+        var rel = this.getRelated(key);
+        if (rel && relationship.remote && !rel.deferLoad) {
+          rel.fireBeginLoad();
+        }
+      }, this);
     },
 
     /**

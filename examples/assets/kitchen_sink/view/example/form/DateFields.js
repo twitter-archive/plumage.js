@@ -53,12 +53,12 @@ define([
 //        keepTime: true,
 //        replaceEl: true
 //      },
-//      {
-//        viewCls: Plumage.view.form.fields.DateRangeField,
-//        selector: '.date-range-field',
-//        fromAttr: 'fromDate',
-//        toAttr: 'toDate'
-//      },
+      {
+        viewCls: Plumage.view.form.fields.DateRangeField,
+        selector: '.date-range-field',
+        fromAttr: 'fromDate',
+        toAttr: 'toDate'
+      },
       {
         viewCls: Plumage.view.form.fields.DateRangeField,
         selector: '.date-range-field-hour',
@@ -73,7 +73,7 @@ define([
     initialize: function(options) {
       Plumage.view.form.fields.Field.prototype.initialize.apply(this, arguments);
 
-      var model = new Vacation({fromDate: moment().subtract('day', 7).valueOf()/1000, toDate: moment().valueOf()/1000});
+      var model = new Vacation({fromDate: moment().subtract('day', 7).valueOf(), toDate: moment().valueOf()});
       this.setModel(model);
     }
   });

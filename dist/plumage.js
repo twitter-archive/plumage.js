@@ -1236,6 +1236,12 @@ function($, _, Backbone, Plumage, requestManager, ModelUtil, BufferedCollection)
      */
     fireBeginLoad: function() {
       this.trigger('beginLoad', this);
+      _.each(this.relationships, function(relationship, key) {
+        var rel = this.getRelated(key);
+        if (rel && relationship.remote && !rel.deferLoad) {
+          rel.fireBeginLoad();
+        }
+      }, this);
     },
 
     /**
@@ -8601,7 +8607,7 @@ define('util/DateTimeUtil',[
     },
 
     formatDateFromNow: function(timestamp) {
-      return moment(Number(timestamp)*1000).fromNow();
+      return moment(Number(timestamp)).fromNow();
     },
 
     formatDuration: function(millis) {
@@ -9794,14 +9800,15 @@ define('view/form/Form',[
         this.model = new ModelCls();
       }
       if(this.isValid()) {
-        this.updateModel(this.model);
-        var error;
-        if (this.model.validate) {
-          error = this.model.validate(this.model.attributes);
-        }
-        if(!error) {
-          this.model.save(null, {success: this.onSaveSuccess.bind(this)});
-        }
+        this.showLoadingAnimation();
+//        this.updateModel(this.model);
+//        var error;
+//        if (this.model.validate) {
+//          error = this.model.validate(this.model.attributes);
+//        }
+//        if(!error) {
+//          this.model.save(null, {success: this.onSaveSuccess.bind(this)});
+//        }
       }
     },
 
@@ -11760,11 +11767,17 @@ define('view/form/fields/FieldWithPicker',[
 
     onBlur: function(e) {
       this.close();
-      this.updateValueFromDom();
+      //don't update value from DOM if picker apply was clicked
+      if(this.applying) {
+        this.applying = false;
+      } else {
+        this.updateValueFromDom();
+      }
       this.trigger('blur', this);
     },
 
     onPickerApply: function(picker, model) {
+      this.applying = true;
       this.setValue(this.processPickerValue(picker.getValue()));
       this.close();
     },
@@ -11775,7 +11788,7 @@ define('view/form/fields/FieldWithPicker',[
   });
 });
 
-define('text!view/form/fields/templates/DropdownSelect.html',[],function () { return '\n{{#if label}}\n<div class="control-group">\n  <label class="control-label" for="{{valueAttr}}">{{label}}</label>\n  <div class="controls">\n{{/if}}\n\n<span class="dropdown-select dropdown">\n<input type="hidden" {{#if fieldName}}name="{{fieldName}}"{{/if}} value="{{value}}"/>\n<a class="btn dropdown-toggle {{buttonCls}}" data-toggle="dropdown" href="#">\n  {{#iconCls}}\n    <i class="{{.}} icon-white"></i>\n  {{/iconCls}}\n  {{#if hasSelection}}\n    {{valueLabel}}\n  {{else}}\n    {{noSelectionText}}\n  {{/if}}\n  <span class="caret"></span>\n</a>\n<ul class="dropdown-menu opens{{opens}}">\n{{#listValues}}\n  <li data-value="{{value}}" class="{{value}}{{#selected}} active{{/selected}} {{#disabled}}disabled{{/disabled}}">\n    <a href="#">{{label}}</a>\n  </li>\n{{/listValues}}\n</ul>\n</span>\n\n{{#if label}}\n  </div>\n</div>\n{{/if}}';});
+define('text!view/form/fields/templates/DropdownSelect.html',[],function () { return '\n{{#if label}}\n<div class="control-group">\n  <label class="control-label" for="{{valueAttr}}">{{label}}</label>\n  <div class="controls">\n{{/if}}\n\n<span class="dropdown-select dropdown">\n<input type="hidden" {{#if fieldName}}name="{{fieldName}}"{{/if}} value="{{value}}"/>\n<a class="btn dropdown-toggle {{buttonCls}}" data-toggle="dropdown" href="#">\n  {{#iconCls}}\n    <i class="{{.}} icon-white"></i>\n  {{/iconCls}}\n  {{#if hasSelection}}\n    {{valueLabel}}\n  {{else}}\n    {{noSelectionText}}\n  {{/if}}\n  <span class="caret"></span>\n</a>\n<ul class="dropdown-menu opens{{opens}}">\n{{#listValues}}\n  <li data-value="{{value}}" class="{{value}}{{#selected}} active{{/selected}} {{#disabled}}disabled{{/disabled}} {{classes}}">\n    <a href="#">{{label}}</a>\n  </li>\n{{/listValues}}\n</ul>\n</span>\n\n{{#if label}}\n  </div>\n</div>\n{{/if}}';});
 
 define('view/form/fields/DropdownSelect',[
   'jquery',
@@ -11869,6 +11882,12 @@ define('view/form/fields/HourSelect',[
     minDateAttr: undefined,
     maxDateAttr: undefined,
 
+    /** optional. For displaying a selected range. */
+    fromAttr: undefined,
+
+    /** optional. For displaying a selected range. */
+    toAttr: undefined,
+
     hourFormat: 'ha',
 
     utc: false,
@@ -11888,7 +11907,7 @@ define('view/form/fields/HourSelect',[
     getTemplateData: function() {
       var data = DropdownSelect.prototype.getTemplateData.apply(this, arguments);
       _.each(data.listValues, function(x) {
-        x.disabled = !this.isHourInMinMax(x.value);
+        x.classes = this.getClassesForHour(x.value).join(' ');
       }, this);
       return data;
     },
@@ -11949,6 +11968,21 @@ define('view/form/fields/HourSelect',[
       DropdownSelect.prototype.setValue.apply(this, arguments);
     },
 
+    //
+    // Helpers
+    //
+
+    getClassesForHour: function(hour) {
+      var m = this.getDate(hour);
+      var classes = [
+        this.isHourInMinMax(hour) ? null : 'disabled',
+        hour === this.getValue() ? 'selected' : null,
+        this.isHourInSelectedRange(hour) ? 'in-range' : null,
+        this.isHourOtherSelection(hour) ? 'other-selected' : null
+      ];
+      return _.compact(classes);
+    },
+
     isHourInMinMax: function(hour) {
       if (!this.model) {
         return true;
@@ -11957,14 +11991,48 @@ define('view/form/fields/HourSelect',[
       var minDate = this.getMinDate(),
         maxDate = this.getMaxDate();
 
-      var modelValue = this.model.get(this.valueAttr);
-      if (!modelValue) {
-        return true;
-      }
-      var m = this.utc ? moment.utc(modelValue) : moment(modelValue);
-      m.hour(hour);
+      var m = this.getDate(hour);
 
       return (!minDate || m >= moment(minDate)) && (!maxDate || m <= moment(maxDate));
+    },
+
+    isHourInSelectedRange: function(hour) {
+      if (!this.model || !this.fromAttr || !this.toAttr) {
+        return false;
+      }
+      var fromDate = this.model.get(this.fromAttr),
+        toDate = this.model.get(this.toAttr);
+
+      if (!fromDate || !toDate) {
+        return false;
+      }
+
+      var m = this.getDate(hour);
+      return m.valueOf() >= fromDate &&  m.valueOf() <= toDate;
+    },
+
+    isHourOtherSelection: function(hour) {
+      if (!this.model || !this.fromAttr || !this.toAttr || hour === this.getValue()) {
+        return false;
+      }
+      var fromDate = this.model.get(this.fromAttr),
+        toDate = this.model.get(this.toAttr);
+
+      if (!fromDate || !toDate) {
+        return false;
+      }
+      var m = this.getDate(hour);
+      return m.valueOf() === fromDate ||  m.valueOf() === toDate;
+    },
+
+    getDate: function(hour) {
+      var modelValue = this.model && this.model.get(this.valueAttr), m;
+      if (modelValue !== undefined) {
+        m = this.utc ? moment.utc(modelValue) : moment(modelValue);
+      } else {
+        m = this.utc ? moment.utc() : moment();
+      }
+      return m.hour(hour);
     },
 
 
@@ -12260,6 +12328,8 @@ define('view/form/fields/picker/DateRangePicker',[
       valueAttr: 'fromDate',
       minDateAttr: 'minDate',
       maxDateAttr: 'toDate',
+      fromAttr: 'fromDate',
+      toAttr: 'toDate',
       preventFocus: true,
       replaceEl: true
     }, {
@@ -12269,6 +12339,8 @@ define('view/form/fields/picker/DateRangePicker',[
       valueAttr: 'toDate',
       minDateAttr: 'fromDate',
       maxDateAttr: 'maxDate',
+      fromAttr: 'fromDate',
+      toAttr: 'toDate',
       preventFocus: true,
       replaceEl: true
     }],
@@ -12325,7 +12397,11 @@ define('view/form/fields/picker/DateRangePicker',[
     },
 
     setValue: function(value) {
-      this.model.set({fromDate: value[0], toDate: value[1]});
+      var data = {fromDate: undefined, toDate: undefined};
+      if (value && value.length) {
+        data = {fromDate: value[0], toDate: value[1]};
+      }
+      this.model.set(data);
     },
 
     //
@@ -12343,7 +12419,7 @@ define('view/form/fields/picker/DateRangePicker',[
           value[i] = today.clone().add(value[i]);
         }
       }
-      this.setValue([value[0].valueOf(), value[1].valueOf()]);
+      this.setValue([value[0].startOf('day').valueOf(), value[1].endOf('day').valueOf()]);
       this.update();
     },
 
@@ -12444,6 +12520,14 @@ define('view/form/fields/DateRangeField',[
       this.getPicker().setShowHourSelect(showHourSelect);
     },
 
+    setMaxDate: function(maxDate) {
+      this.getPicker().model.set('maxDate', maxDate);
+    },
+
+    setMinDate: function(minDate) {
+      this.getPicker().model.set('minDate', minDate);
+    },
+
     //
     // Value
     //
@@ -12471,8 +12555,9 @@ define('view/form/fields/DateRangeField',[
       if (values.length !== 2) {
         return false;
       }
-      var fromDate = moment(values[0].trim()),
-        toDate = moment(values[1].trim());
+      var utc = this.getPicker().utc,
+        fromDate = utc ? moment.utc(values[0].trim()) : moment(values[0].trim()),
+        toDate = utc ? moment.utc(values[1].trim()) : moment(values[1].trim());
 
       if (!fromDate.isValid() || !toDate.isValid()) {
         return false;
@@ -12490,9 +12575,13 @@ define('view/form/fields/DateRangeField',[
       if (!value) {
         return null;
       }
+      var format = this.getPicker().showHourSelect ? this.formatWithHour : this.format;
       var values = value.split('-'),
-        fromDate = moment(values[0].trim()).valueOf(),
-        toDate = moment(values[1].trim()).valueOf();
+        utc = this.getPicker().utc,
+        m0 = utc ? moment.utc(values[0].trim(), format) : moment(values[0].trim()),
+        m1 = utc ? moment.utc(values[1].trim(), format) : moment(values[1].trim()),
+        fromDate = m0.valueOf(),
+        toDate = m1.valueOf();
       return [fromDate, toDate];
     },
 
@@ -14325,7 +14414,7 @@ define('view/ModalDialog',[
       this.$('.modal').modal('hide');
     },
 
-    onSubmitClick: function(e) {
+    onSubmitClick: function() {
       this.trigger('submit', this);
     }
   });

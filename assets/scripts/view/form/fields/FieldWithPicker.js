@@ -145,11 +145,17 @@ define([
 
     onBlur: function(e) {
       this.close();
-      this.updateValueFromDom();
+      //don't update value from DOM if picker apply was clicked
+      if(this.applying) {
+        this.applying = false;
+      } else {
+        this.updateValueFromDom();
+      }
       this.trigger('blur', this);
     },
 
     onPickerApply: function(picker, model) {
+      this.applying = true;
       this.setValue(this.processPickerValue(picker.getValue()));
       this.close();
     },

@@ -11,8 +11,8 @@ define([
   'test/EventLog',
   'example/ExampleData',
   'example/model/Post',
-  'view/form/fields/DateField'
-], function($, _, Backbone, moment, sinon, Environment, EventLog, ExampleData, Post, DateField) {
+  'view/form/fields/DateRangeField'
+], function($, _, Backbone, moment, sinon, Environment, EventLog, ExampleData, Post, DateRangeField) {
 
   //use Environment to mock ajax
   module('DateField', _.extend(new Environment(), {
@@ -22,12 +22,13 @@ define([
   }));
 
   var defaultOptions = {
-    valueAttr: 'post_date'
+    fromAttr: 'fromDate',
+    toAttr: 'toDate'
   };
 
   function createView(options) {
     options = _.extend({}, defaultOptions, options || {});
-    return new DateField(options);
+    return new DateRangeField(options);
   }
 
   test('empty render', function(){
@@ -42,61 +43,59 @@ define([
   }
 
   test('field with model', function() {
-    var model = new Post({body: 'initial', post_date: getDate(0)});
+    var model = new Post({body: 'initial'});
     var field = createView();
 
     field.setModel(model);
     field.update();
 
-    equal(field.getValue(), getDate(0));
-    equal(field.getCalendar().getValue(), getDate(0));
+    deepEqual(field.getValue(), [undefined, undefined], '');
 
-    model.set('post_date', getDate(1));
-    equal(field.getValue(), getDate(1));
+    model.set({fromDate: getDate(0), toDate: getDate(1)});
+
+    deepEqual(field.getValue(), [getDate(0), getDate(1)]);
+
+    var picker = field.getPicker();
+    equal(picker.getSubView('fromCal').getValue(), getDate(0));
+    equal(picker.getSubView('toCal').getValue(), getDate(1));
+
+    model.set('toDate', getDate(2));
+    deepEqual(field.getValue(), [getDate(0), getDate(2)]);
 
     this.ajaxResponse = {results: {
       id: 1,
       body: 'my body',
-      post_date: getDate(2)
+      fromDate: getDate(2),
+      toDate: getDate(3),
     }};
     model.load();
 
-    equal(field.getValue(), model.get('post_date'));
+    deepEqual(field.getValue(), [model.get('fromDate'), model.get('toDate')]);
   });
 
   test('edit text field', function() {
-    var model = new Post({body: 'initial', post_date: getDate(0)});
+    var model = new Post({body: 'initial', fromDate: getDate(0), toDate: getDate(1)});
     var field = createView();
 
     field.setModel(model);
     field.update();
 
     //valid
-    var validText = 'Mar 1, 2014';
+    var validText = 'Mar 3, 2014 - Mar 4, 2014';
     var enterEvent = {keyCode: 13, preventDefault: function(){}};
     field.$('input:first').val(validText);
     field.onKeyDown(enterEvent);
     equal(field.$('input:first').val(), validText);
 
-    equal(moment(field.getValue()).format(field.format), 'Mar 1, 2014', 'should update value on enter');
+    equal(moment(field.getValue()[0]).format(field.format), 'Mar 3, 2014', 'should update value on enter');
+    equal(moment(field.getValue()[1]).format(field.format), 'Mar 4, 2014', 'should update value on enter');
 
     //invalid
     field.$('input:first').val('fjfjoerjjsd');
     field.onKeyDown(enterEvent);
     equal(field.$('input:first').val(), validText);
 
-    equal(moment(field.getValue()).format(field.format), 'Mar 1, 2014', 'should not update on invalid');
+    equal(moment(field.getValue()[0]).format(field.format), 'Mar 3, 2014', 'should not update on invalid');
   });
 
-  test('keep time', function() {
-    var field = createView();
-    field.setValue(moment([2014, 1, 1, 12]).valueOf());
-    field.getPicker().setValue(moment([2014, 1, 1]).valueOf());
-    equal(field.getValue(), moment([2014, 1, 1]).valueOf(), 'use full value chosen by picker including hour');
-
-    field.keepTime = true;
-    field.setValue(moment([2014, 1, 1, 12]).valueOf());
-    field.getPicker().setValue(moment([2014, 1, 1]).valueOf());
-    equal(field.getValue(), moment([2014, 1, 1, 12]).valueOf(), 'ignore hour from picker value');
-  });
 });

@@ -144,9 +144,6 @@ define([
       if (this.model) {
         var from = this.model.get(this.fromAttr),
           to = this.model.get(this.toAttr);
-        if (!from || !to) {
-          return null;
-        }
         return [from, to];
       }
     },
@@ -177,6 +174,15 @@ define([
       if (e.changed[this.fromAttr] !== undefined || e.changed[this.toAttr] !== undefined) {
         this.updateValueFromModel();
       }
-    }
+    },
+
+    onKeyDown: function(e) {
+      if (e.keyCode === 13) { //on enter
+        e.preventDefault();
+        this.updateValueFromDom();
+      } else if(e.keyCode === 27) {
+        this.update();
+      }
+    },
   });
 });

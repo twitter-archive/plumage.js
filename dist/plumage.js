@@ -9800,20 +9800,18 @@ define('view/form/Form',[
         this.model = new ModelCls();
       }
       if(this.isValid()) {
-        this.showLoadingAnimation();
-//        this.updateModel(this.model);
-//        var error;
-//        if (this.model.validate) {
-//          error = this.model.validate(this.model.attributes);
-//        }
-//        if(!error) {
-//          this.model.save(null, {success: this.onSaveSuccess.bind(this)});
-//        }
+        this.updateModel(this.model);
+        var error;
+        if (this.model.validate) {
+          error = this.model.validate(this.model.attributes);
+        }
+        if(!error) {
+          this.model.save(null, {success: this.onSaveSuccess.bind(this)});
+        }
       }
     },
 
     onSaveSuccess: function(model, resp, xhr) {
-      this.hideLoadingAnimation();
       this.trigger('save', this, model);
     }
   });
@@ -12593,9 +12591,6 @@ define('view/form/fields/DateRangeField',[
       if (this.model) {
         var from = this.model.get(this.fromAttr),
           to = this.model.get(this.toAttr);
-        if (!from || !to) {
-          return null;
-        }
         return [from, to];
       }
     },
@@ -12626,7 +12621,16 @@ define('view/form/fields/DateRangeField',[
       if (e.changed[this.fromAttr] !== undefined || e.changed[this.toAttr] !== undefined) {
         this.updateValueFromModel();
       }
-    }
+    },
+
+    onKeyDown: function(e) {
+      if (e.keyCode === 13) { //on enter
+        e.preventDefault();
+        this.updateValueFromDom();
+      } else if(e.keyCode === 27) {
+        this.update();
+      }
+    },
   });
 });
 

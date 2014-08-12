@@ -8641,6 +8641,9 @@ define('util/DateTimeUtil',[
         minutes = d.minutes(),
         started = false;
 
+      if (millis < 60000) {
+        return d.seconds() + ' seconds';
+      }
       if(days > 0) {
         started = true;
         result += days + (days === 1 ? ' day ' : ' days ');
@@ -8655,6 +8658,7 @@ define('util/DateTimeUtil',[
         started = true;
         result += minutes + (minutes === 1 ? ' minute' : ' minutes');
       }
+
       return result;
     },
 
@@ -8667,6 +8671,10 @@ define('util/DateTimeUtil',[
         hours = d.hours(),
         minutes = d.minutes(),
         started = false;
+
+      if (millis < 60000) {
+        return d.seconds() + 's';
+      }
 
       if(days > 0) {
         started = true;
@@ -13765,7 +13773,6 @@ define('view/grid/Formatters',[
     },
 
     DateFromNowFormatter: function(row, cell, value, columnDef, dataContext) {
-      //return new Date(Number(value)*1000).toString(columnDef.dateFormat);
       return DateTimeUtil.formatDateFromNow(value);
     },
 
@@ -13778,11 +13785,10 @@ define('view/grid/Formatters',[
     },
 
     DurationFormatter: function(row, cell, value, columnDef, dataContext) {
-      return DateTimeUtil.formatDurationShort(Number(value)*1000);
+      return DateTimeUtil.formatDurationShort(Number(value));
     },
 
     NameWithCommentsFormatter: function(row, cell, value, columnDef, dataContext) {
-      //return new Date(Number(value)*1000).toString(columnDef.dateFormat);
       var count = dataContext.get('comments_count');
       if (count > 0) {
         return value + '<span class="comments-count-icon">' + count + '</span>';

@@ -64,6 +64,9 @@ define([
         minutes = d.minutes(),
         started = false;
 
+      if (millis < 60000) {
+        return d.seconds() + ' seconds';
+      }
       if(days > 0) {
         started = true;
         result += days + (days === 1 ? ' day ' : ' days ');
@@ -78,6 +81,7 @@ define([
         started = true;
         result += minutes + (minutes === 1 ? ' minute' : ' minutes');
       }
+
       return result;
     },
 
@@ -90,6 +94,10 @@ define([
         hours = d.hours(),
         minutes = d.minutes(),
         started = false;
+
+      if (millis < 60000) {
+        return d.seconds() + 's';
+      }
 
       if(days > 0) {
         started = true;

@@ -165,6 +165,11 @@ define([
       return selector ? this.$(selector).first() : this.$el;
     },
 
+    hasValue: function() {
+      var value = this.getValue();
+      return value !== null && value !== undefined && value !== '';
+    },
+
     //
     // Modifiers
     //
@@ -182,7 +187,7 @@ define([
         label: this.getLabel(),
         valueAttr: this.valueAttr,
         value: this.getValueString(this.getValue()),
-        hasValue: this.getValue() !== null && this.getValue() !== undefined,
+        hasValue: this.hasValue(),
         placeholder: this.placeholder,
         readonly: this.readonly,
         validationState: this.validationState,

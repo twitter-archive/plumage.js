@@ -38,11 +38,13 @@ define([
     return view;
   }
 
-  test('empty render', function(){
+  test('unbound field', function(){
     var field = createView();
 
     field.render();
     equal(field.getValue(), '', 'field with no model should have empty string value');
+
+    ok(!field.hasValue(), 'unbound field should not hasValue');
   });
 
   test('field with model', function() {

@@ -6,7 +6,6 @@
   border: 1px solid #eee;
   border-top: none;
   height: 100%;
-
   @include box-sizing(border-box);
 }
 
@@ -151,6 +150,18 @@
 
   .dropdown-menu i {
     margin: 0 6px 0 -10px;
+  }
+}
+
+ul.pager {
+  margin: 0;
+  .disabled a {
+    color: #aaa;
+    &:hover {
+      background: #fff;
+      color: #aaa;
+      cursor: arrow;
+    }
   }
 }
 

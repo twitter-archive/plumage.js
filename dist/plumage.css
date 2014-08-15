@@ -673,6 +673,15 @@ div.comment-wrapper .item-author-header {
   .filter-view .more-menu .dropdown-menu i {
     margin: 0 6px 0 -10px; }
 
+ul.pager {
+  margin: 0; }
+  ul.pager .disabled a {
+    color: #aaa; }
+    ul.pager .disabled a:hover {
+      background: #fff;
+      color: #aaa;
+      cursor: arrow; }
+
 /* fix OS X Lion's hiding scroll bars */
 ::-webkit-scrollbar {
   width: 8px;

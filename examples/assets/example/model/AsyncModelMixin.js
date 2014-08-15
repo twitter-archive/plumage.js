@@ -1,21 +1,8 @@
 define(['jquery', 'underscore', 'backbone', 'model/Model'],
 function($, _, Backbone, Model) {
 
-  return Model.extend({
-
-    modelName: 'TestAsyncModel',
-
+  return {
     urlRoot: '/',
-
-    ajaxResponse: undefined,
-
-    initialize: function(attributes, options) {
-      options = options || {};
-      if (options.ajaxResponse) {
-        this.ajaxResponse = options.ajaxResponse;
-      }
-      Model.prototype.initialize.apply(this, arguments);
-    },
 
     sync: function(method, model, options) {
       var response = this.ajaxResponse;
@@ -26,7 +13,7 @@ function($, _, Backbone, Model) {
           response = response[0];
         }
       } else if ($.isFunction(response)) {
-        response = response();
+        response = response(method, model, options);
       }
       if ($.isPlainObject(response.meta)) {
         options.success(response);
@@ -34,5 +21,5 @@ function($, _, Backbone, Model) {
         options.error(response);
       }
     }
-  });
+  };
 });

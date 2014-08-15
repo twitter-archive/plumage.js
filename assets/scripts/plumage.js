@@ -62,6 +62,7 @@ define([
   'view/grid/Formatters',
   'view/grid/GridView',
   'view/grid/GridData',
+  'view/grid/Pager',
   'view/ListAndDetailView',
   'view/ListItemView',
   'view/ListView',

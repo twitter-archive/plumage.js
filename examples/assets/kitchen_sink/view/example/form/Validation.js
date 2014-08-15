@@ -5,10 +5,10 @@ define([
   'moment',
   'plumage',
   'example/model/User',
-  'example/model/TestAsyncModel',
+  'example/model/AsyncModelMixin',
   'text!kitchen_sink/view/example/form/templates/Validation.html',
   'text!data/countries.json'
-], function($, _, Backbone, moment, Plumage, User, TestAsyncModel, template, countries) {
+], function($, _, Backbone, moment, Plumage, User, AsyncModelMixin, template, countries) {
 
   return Plumage.view.ModelView.extend({
 
@@ -36,7 +36,6 @@ define([
       viewCls: Plumage.view.form.Form,
       selector: '.server-form',
       name: 'serverForm',
-      modelCls: TestAsyncModel,
       className: 'form-horizontal',
       template: '<div class="fields"></div><div class="address"></div><input type="submit" value="Submit"/>',
       subViews: [{
@@ -51,14 +50,15 @@ define([
 
       var form = this.getSubView('serverForm');
 
-      var model = new TestAsyncModel({}, {
-        ajaxResponse: [{
+      var model = new (Plumage.model.Model.extend(AsyncModelMixin))();
+      var i = 0;
+      model.ajaxResponse = function(){
+        return [{
           meta: {success: false, validationError: {'name': 'invalid'}}
         }, {
           meta: {success: true}
-        }]
-      });
-
+        }][i++ % 2];
+      };
       form.setModel(model);
     }
   });

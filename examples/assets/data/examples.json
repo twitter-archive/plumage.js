@@ -20,7 +20,9 @@
     "name": "grid",
     "examples": [
       {"name": "Grids", "title": "Grids"},
-      {"name": "Filters", "title": "Column Filters"}
+      {"name": "Filters", "title": "Column Filters"},
+      {"name": "InfiniteScroll", "title": "Infinite Scroll"},
+      {"name": "Paging", "title": "Paging"}
     ]
   },
   "form": {

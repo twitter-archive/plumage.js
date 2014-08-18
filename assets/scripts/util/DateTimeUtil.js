@@ -8,6 +8,16 @@ define([
 
   return Plumage.util.DateTimeUtil = {
 
+    parseRelativeDate: function(date, utc) {
+      var today = utc ? moment.utc({hour: 0}) : moment({hour: 0});
+      if (date === 'today') {
+        date = today;
+      } else if ($.isPlainObject(date)) {
+        date = today.clone().add(date);
+      }
+      return date;
+    },
+
     isSameDay: function(date1, date2, isUtc) {
       if (!date1 || !date2) {
         return false;
@@ -32,16 +42,16 @@ define([
 
     formatDate: function(timestamp, dateFormat) {
       dateFormat = dateFormat || Plumage.util.defaultDateFormat;
-      return new moment(Number(timestamp)*1000).format(dateFormat);
+      return new moment(Number(timestamp)).format(dateFormat);
     },
 
     formatDateUTC: function(timestamp, dateFormat) {
       dateFormat = dateFormat || Plumage.util.defaultDateFormat;
-      return new moment(Number(timestamp)*1000).utc().format(dateFormat);
+      return new moment(Number(timestamp)).utc().format(dateFormat);
     },
 
     formatDateFromNow: function(timestamp) {
-      return moment(Number(timestamp)*1000).fromNow();
+      return moment(Number(timestamp)).fromNow();
     },
 
     formatDuration: function(millis) {
@@ -54,6 +64,9 @@ define([
         minutes = d.minutes(),
         started = false;
 
+      if (millis < 60000) {
+        return d.seconds() + ' seconds';
+      }
       if(days > 0) {
         started = true;
         result += days + (days === 1 ? ' day ' : ' days ');
@@ -68,6 +81,7 @@ define([
         started = true;
         result += minutes + (minutes === 1 ? ' minute' : ' minutes');
       }
+
       return result;
     },
 
@@ -80,6 +94,10 @@ define([
         hours = d.hours(),
         minutes = d.minutes(),
         started = false;
+
+      if (millis < 60000) {
+        return d.seconds() + 's';
+      }
 
       if(days > 0) {
         started = true;

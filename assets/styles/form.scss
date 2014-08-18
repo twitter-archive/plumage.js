@@ -3,16 +3,6 @@
     margin-bottom: 10px;
   }
 
-  .control-label {
-    text-align: left;
-    cursor: default;
-    color: #555;
-    width: 120px;
-  }
-
-  .controls {
-    margin-left: 120px;
-  }
   .field-value {
     line-height: 20px;
     padding-top: 5px;
@@ -116,6 +106,17 @@
   }
 }
 
-.dropdown-select .dropdown-toggle {
-  margin-bottom: 10px;
+.dropdown-select {
+   .opensleft {
+     right: 0;
+     left: auto;
+   }
+
+  .dropdown-toggle {
+    margin-bottom: 10px;
+  }
+}
+
+.form-horizontal .dropdown-select .dropdown-toggle {
+  margin-bottom: 0;
 }

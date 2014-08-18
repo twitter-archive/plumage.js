@@ -1,9 +1,10 @@
 define([
   'jquery',
+  'underscore',
   'backbone',
   'PlumageRoot',
   'view/ModelView'
-], function($, Backbone, Plumage, ModelView) {
+], function($, _, Backbone, Plumage, ModelView) {
 
   return Plumage.view.controller.IndexView = ModelView.extend({
 
@@ -14,6 +15,8 @@ define([
     gridViewCls: undefined,
 
     filterViewCls: undefined,
+
+    gridOptions: undefined,
 
     initialize:function (options) {
       ModelView.prototype.initialize.apply(this, arguments);
@@ -26,7 +29,7 @@ define([
         this.filterViewCls = require(this.filterViewCls);
       }
 
-      this.subViews = [];
+      this.subViews = this.subViews || [];
 
       var gridView = this.getGridView();
       if (gridView) {
@@ -42,7 +45,8 @@ define([
 
     getGridView: function() {
       if (!this.gridView && this.gridViewCls) {
-        this.gridView = new this.gridViewCls({selector: '.grid-view', filterView: this.getFilterView()});
+        this.gridView = new this.gridViewCls(
+          _.extend({selector: '.grid-view', filterView: this.getFilterView()}, this.gridOptions || {}));
       }
       return this.gridView;
     },

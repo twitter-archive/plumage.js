@@ -1,0 +1,21 @@
+<div class="intro">
+  <p>
+    In order to reduce response time when querying large data sets, you'll want to return only
+    a portion of all rows in a single query. Traditionally you'd do this with paging, but a more useable
+    solution is allocate space for all rows, but query them only as they become visible.
+  </p>
+  <p>
+    To do this in a GridView just set {infiniteScroll: true} (the default) and paging will be taken care
+    of for you when necessary.
+  </p>
+</div>
+
+<div class="example">
+  <h5>Grid with Infinite Scroll (page size: 20)</h5>
+
+  <pre class="request-log" style="height: 80px; overflow: auto;"></pre>
+  <div class="grid-view"></div>
+</div>
+
+
+

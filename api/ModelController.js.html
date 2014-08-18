@@ -260,9 +260,16 @@ function($, _, Backbone, Plumage, BaseController, ModelUtil) {
       }
     },
 
-    /** Debounced helper for reloading the index model */
-    reloadIndex: _.debounce(function(collection) {
-      collection.updateUrl();
+    /**
+     * Debounced helper for reloading the index model
+     * @param {Plumage.model.Collection} collection Collection to reload
+     * @param {Boolean} updateUrl should update url? default to true
+     */
+    reloadIndex: _.debounce(function(collection, updateUrl) {
+      updateUrl = updateUrl === undefined ? true : false;
+      if (updateUrl) {
+        collection.updateUrl();
+      }
       collection.load();
     }, 200)
   });

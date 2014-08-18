@@ -2,10 +2,13 @@
 <div class="control-group">
   <label class="control-label" for="{{valueAttr}}">{{label}}</label>
   <div class="controls">
-    <span class="dropdown">
-      {{> field}}
-      <div class="picker"></div>
+    <span class="field">
+	    <span class="dropdown">
+	      {{> field}}
+	      <div class="picker"></div>
+	    </span>
     </span>
+    <span class="help-inline">{{#if message}}{{message}}{{/if}}</span>
   </div>
 </div>
 {{else}}

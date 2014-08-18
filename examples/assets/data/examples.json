@@ -20,7 +20,9 @@
     "name": "grid",
     "examples": [
       {"name": "Grids", "title": "Grids"},
-      {"name": "Filters", "title": "Column Filters"}
+      {"name": "Filters", "title": "Column Filters"},
+      {"name": "InfiniteScroll", "title": "Infinite Scroll"},
+      {"name": "Paging", "title": "Paging"}
     ]
   },
   "form": {
@@ -30,7 +32,8 @@
       {"name": "SelectFields", "title": "Select Fields"},
       {"name": "MultiSelectFields", "title": "MultiSelect Fields"},
       {"name": "DateFields", "title": "Date Fields"},
-      {"name": "InPlaceFields", "title": "In Place Fields"}
+      {"name": "InPlaceFields", "title": "In Place Fields"},
+      {"name": "Validation", "title": "Validation"}
     ]
   }
 }

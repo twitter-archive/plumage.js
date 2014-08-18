@@ -23,7 +23,10 @@ define([
 
     iconCls: undefined,
 
+    opens: 'right',
+
     preventFocus: false,
+
 
     events:{
       'click li a': 'onItemClick',
@@ -42,7 +45,8 @@ define([
       var data = Select.prototype.getTemplateData.apply(this, arguments);
       data = _.extend(data, {
         buttonCls: this.buttonCls,
-        iconCls: this.iconCls
+        iconCls: this.iconCls,
+        opens: this.opens
       });
       return data;
     },

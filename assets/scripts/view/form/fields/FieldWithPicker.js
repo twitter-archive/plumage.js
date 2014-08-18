@@ -39,16 +39,16 @@ define([
      * @extends Plumage.view.form.fields.Field
      */
     initialize:function(options) {
-      this.subViews = [_.extend({
+      this.subViews = this.subViews.concat([_.extend({
         viewCls: this.pickerCls,
         name: 'picker',
         selector: '.picker',
         replaceEl: true
-      }, this.pickerOptions)];
+      }, this.pickerOptions)]);
 
       Field.prototype.initialize.apply(this, arguments);
 
-      var picker = this.getSubView('picker');
+      var picker = this.getPicker();
 
       picker.on('apply', this.onPickerApply, this);
       picker.on('close', this.onPickerClose, this);
@@ -65,7 +65,7 @@ define([
 
     //update the picker model
     valueChanged: function() {
-      var picker = this.getSubView('picker').setValue(this.getValue());
+      this.getPicker().setValue(this.getValue());
     },
 
     //
@@ -88,7 +88,7 @@ define([
 
     open: function() {
       this.update();
-      this.$('.dropdown').addClass('open');
+      this.$('.dropdown:first').addClass('open');
     },
 
     /** Close the dropdown */
@@ -145,11 +145,17 @@ define([
 
     onBlur: function(e) {
       this.close();
-      this.updateValueFromDom();
+      //don't update value from DOM if picker apply was clicked
+      if(this.applying) {
+        this.applying = false;
+      } else {
+        this.updateValueFromDom();
+      }
       this.trigger('blur', this);
     },
 
     onPickerApply: function(picker, model) {
+      this.applying = true;
       this.setValue(this.processPickerValue(picker.getValue()));
       this.close();
     },

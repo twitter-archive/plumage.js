@@ -174,6 +174,7 @@ define([
         this.model.on('change', this.onModelChange, this);
         this.model.on('load', this.onModelLoad, this);
         this.model.on('destroy', this.onModelDestroy, this);
+        this.model.on('invalid', this.onModelInvalid, this);
         this.model.on('error', this.onModelError, this);
       }
 
@@ -220,9 +221,19 @@ define([
      * @param {Plumage.model.Model} model Model to update.
      */
     updateModel: function(rootModel, parentModel) {
+      var success = true;
       this.eachSubView(function(subView) {
-        subView.callOrRecurse('updateModel', [rootModel, this.model]);
+        success = subView.callOrRecurse('updateModel', [rootModel, this.model]) && success;
       });
+      return success;
+    },
+
+    isValid: function(rootModel, parentModel) {
+      var valid = true;
+      this.eachSubView(function(subView) {
+        valid = subView.callOrRecurse('isValid', [rootModel, this.model]) && valid;
+      });
+      return valid;
     },
 
     /** Hook to modify view state on model load */
@@ -267,6 +278,9 @@ define([
     },
 
     onModelDestroy: function(event, model) {
+    },
+
+    onModelInvalid: function(model, validationErrors) {
     },
 
     onModelError: function(model, response, options) {

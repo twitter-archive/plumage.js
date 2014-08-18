@@ -58,6 +58,23 @@ define([
     /** Text to show when blank */
     placeholder: undefined,
 
+    /** required, minLength, maxLength, email, cc etc.*/
+    validationRules: undefined,
+
+    /** Template to show when validation fails */
+    validationMessages: {
+      required: 'required',
+      minLength: 'Must be at least {{param0}} chars',
+      maxLength: 'Must not be more than {{param0}} chars',
+      email: 'Not a valid email address'
+    },
+
+    /** error, warning, success. Cleared on model load */
+    validationState: undefined,
+
+    /** message to display next to field, eg error message */
+    message: undefined,
+
 
     /**
      * An editable view for displaying and editing a single value of a model.
@@ -148,6 +165,11 @@ define([
       return selector ? this.$(selector).first() : this.$el;
     },
 
+    hasValue: function() {
+      var value = this.getValue();
+      return value !== null && value !== undefined && value !== '';
+    },
+
     //
     // Modifiers
     //
@@ -165,15 +187,18 @@ define([
         label: this.getLabel(),
         valueAttr: this.valueAttr,
         value: this.getValueString(this.getValue()),
-        hasValue: this.getValue() !== null && this.getValue() !== undefined,
+        hasValue: this.hasValue(),
         placeholder: this.placeholder,
-        readonly: this.readonly
+        readonly: this.readonly,
+        validationState: this.validationState,
+        message: this.message
       };
       return data;
     },
 
     setModel: function() {
       ModelView.prototype.setModel.apply(this, arguments);
+      this.setValidationState(null, null);
       this.updateValueFromModel();
     },
 
@@ -231,6 +256,84 @@ define([
       this.$el.blur();
     },
 
+    //
+    // Validation
+    //
+
+    validators: {
+      required: function(value, params) {
+        return value !== undefined && value !== '';
+      },
+      minLength: function(value, params) {
+        return value.length >= params;
+      },
+      maxLength: function(value, params) {
+        return value.length <= params;
+      },
+      email: function(value) {
+        return (/^([a-zA-Z0-9_.+-])+\@(([a-zA-Z0-9-])+\.)+([a-zA-Z0-9]{2,4})+$/).test(value);
+      }
+    },
+
+    setValidationState: function(state, message) {
+      this.validationState = state;
+      this.message = message;
+      this.$('.control-group').attr('class', 'control-group');
+      if (this.validationState) {
+        this.$('.control-group').addClass(this.validationState);
+      }
+      this.$('.help-inline').html(this.message);
+    },
+
+    validate: function() {
+      var value = this.getValue();
+      var rules = this.validationRules;
+
+      if (rules) {
+        if (!$.isPlainObject(rules)) {
+          //eg 'required'
+          var newRules = {};
+          newRules[rules] = true;
+          rules = newRules;
+        }
+
+        var success;
+        //check required first
+        if (rules.required) {
+          success = this.applyValidator(value, rules.required, 'required');
+        }
+        if (success) {
+          _.keys(rules).every(function(k) {
+            if (k === 'required') {
+              return true;
+            }
+            return success = this.applyValidator(value, rules[k], k);
+          }.bind(this));
+        }
+        if (success) {
+          this.setValidationState(null,null);
+        }
+        return success;
+      }
+      return true;
+    },
+
+    applyValidator: function(value, params, name) {
+      params = $.isArray(params) ? params : [params];
+      var validator = this.validators[name];
+      if (!validator(value, params)) {
+        var message = this.getValidationMessage(name, params);
+        this.setValidationState('error', message);
+        return false;
+      }
+      return true;
+    },
+
+    getValidationMessage: function(name, params) {
+      var message = this.validationMessages[name] || 'invalid';
+      return Handlebars.compile(message)(_.object(_.map(params, function(x, i) {return ['param' + i, x];})));
+    },
+
     ////
     //
     // Helpers
@@ -242,10 +345,14 @@ define([
     // View value <--> Model
     //
 
+    isValid: function() {
+      return this.validate();
+    },
+
     updateModel: function(rootModel, parentModel) {
       var model = this.getModelFromRoot(this.relationship, rootModel, parentModel),
         value = this.getValue();
-      model.set(this.valueAttr, value);
+      return model.set(this.valueAttr, value) !== false;
     },
 
     updateValueFromModel: function() {
@@ -314,7 +421,6 @@ define([
       }
     },
 
-
     /** Hook called when value changes. Useful for keeping view state in sync */
     valueChanged: function() {
       return;
@@ -337,6 +443,7 @@ define([
     },
 
     onBlur: function(e) {
+      this.validate();
       this.trigger('blur', this);
     },
 
@@ -355,10 +462,18 @@ define([
     },
 
     onModelLoad: function () {
+      this.setValidationState(null, null);
       this.updateValueFromModel();
     },
 
-    onModelError: function() {
+    onModelInvalid: function(model, validationError) {
+      var message = validationError[this.valueAttr];
+      if (message) {
+        if ($.isArray(message)) {
+          message = message[0];
+        }
+        this.setValidationState('error', message);
+      }
     }
   });
 });

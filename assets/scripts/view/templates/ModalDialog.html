@@ -6,6 +6,13 @@
   <div class="modal-body">
   </div>
   <div class="modal-footer">
-    <button class="btn" data-dismiss="modal" aria-hidden="true">Close</button>
+    {{#if showCancel}}
+      <a class="cancel" data-dismiss="modal" aria-hidden="true">Cancel</a>
+    {{else}}
+      <button class="btn" data-dismiss="modal" aria-hidden="true">Close</button>
+    {{/if}}
+    {{#if showSubmit}}
+      <button class="btn submit">Submit</button>
+    {{/if}}
   </div>
 </div>

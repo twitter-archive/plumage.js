@@ -71,6 +71,14 @@ define([
       this.getPicker().setShowHourSelect(showHourSelect);
     },
 
+    setMaxDate: function(maxDate) {
+      this.getPicker().model.set('maxDate', maxDate);
+    },
+
+    setMinDate: function(minDate) {
+      this.getPicker().model.set('minDate', minDate);
+    },
+
     //
     // Value
     //
@@ -98,8 +106,9 @@ define([
       if (values.length !== 2) {
         return false;
       }
-      var fromDate = moment(values[0].trim()),
-        toDate = moment(values[1].trim());
+      var utc = this.getPicker().utc,
+        fromDate = utc ? moment.utc(values[0].trim()) : moment(values[0].trim()),
+        toDate = utc ? moment.utc(values[1].trim()) : moment(values[1].trim());
 
       if (!fromDate.isValid() || !toDate.isValid()) {
         return false;
@@ -117,9 +126,13 @@ define([
       if (!value) {
         return null;
       }
+      var format = this.getPicker().showHourSelect ? this.formatWithHour : this.format;
       var values = value.split('-'),
-        fromDate = moment(values[0].trim()).valueOf(),
-        toDate = moment(values[1].trim()).valueOf();
+        utc = this.getPicker().utc,
+        m0 = utc ? moment.utc(values[0].trim(), format) : moment(values[0].trim()),
+        m1 = utc ? moment.utc(values[1].trim(), format) : moment(values[1].trim()),
+        fromDate = m0.valueOf(),
+        toDate = m1.valueOf();
       return [fromDate, toDate];
     },
 
@@ -131,9 +144,6 @@ define([
       if (this.model) {
         var from = this.model.get(this.fromAttr),
           to = this.model.get(this.toAttr);
-        if (!from || !to) {
-          return null;
-        }
         return [from, to];
       }
     },
@@ -145,7 +155,7 @@ define([
       var newValues = {};
       newValues[this.fromAttr] = value[0];
       newValues[this.toAttr] = value[1];
-      model.set(newValues);
+      return model.set(newValues);
     },
 
     valueChanged: function() {
@@ -164,6 +174,15 @@ define([
       if (e.changed[this.fromAttr] !== undefined || e.changed[this.toAttr] !== undefined) {
         this.updateValueFromModel();
       }
-    }
+    },
+
+    onKeyDown: function(e) {
+      if (e.keyCode === 13) { //on enter
+        e.preventDefault();
+        this.updateValueFromDom();
+      } else if(e.keyCode === 27) {
+        this.update();
+      }
+    },
   });
 });

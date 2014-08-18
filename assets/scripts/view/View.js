@@ -204,8 +204,9 @@ define([
 
     callOrRecurse: function(methodName, params) {
       if (this[methodName]) {
-        this[methodName].apply(this, params);
+        return this[methodName].apply(this, params);
       }
+      return true;
     },
 
     /** Show the loading animation. Uses spin.js */

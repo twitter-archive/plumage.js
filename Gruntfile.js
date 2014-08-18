@@ -91,6 +91,9 @@ module.exports = function (grunt) {
     open: {
       server: {
         path: 'http://localhost:<%= connect.options.port %>'
+      },
+      examples: {
+        path: 'http://localhost:<%= connect.options.port %>/plumage.js/examples/kitchen_sink.html'
       }
     },
 
@@ -297,7 +300,7 @@ module.exports = function (grunt) {
     'requirejs',
     'copy:gh-pages',
     'connect:gh-pages',
-    'open',
+    'open:examples',
     'watch'
   ]);
 

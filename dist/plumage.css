@@ -300,13 +300,6 @@ h2.title .light {
 
 .display-field .control-group {
   margin-bottom: 10px; }
-.display-field .control-label {
-  text-align: left;
-  cursor: default;
-  color: #555;
-  width: 120px; }
-.display-field .controls {
-  margin-left: 120px; }
 .display-field .field-value {
   line-height: 20px;
   padding-top: 5px;
@@ -367,8 +360,14 @@ h2.title .light {
 .inplace-field.editing .field-value {
   display: none; }
 
+.dropdown-select .opensleft {
+  right: 0;
+  left: auto; }
 .dropdown-select .dropdown-toggle {
   margin-bottom: 10px; }
+
+.form-horizontal .dropdown-select .dropdown-toggle {
+  margin-bottom: 0; }
 
 .comments-count-icon {
   background: transparent url(comment-icon.png) no-repeat 50% 0;
@@ -673,6 +672,15 @@ div.comment-wrapper .item-author-header {
     padding: 4px 8px; }
   .filter-view .more-menu .dropdown-menu i {
     margin: 0 6px 0 -10px; }
+
+ul.pager {
+  margin: 0; }
+  ul.pager .disabled a {
+    color: #aaa; }
+    ul.pager .disabled a:hover {
+      background: #fff;
+      color: #aaa;
+      cursor: arrow; }
 
 /* fix OS X Lion's hiding scroll bars */
 ::-webkit-scrollbar {
@@ -1105,7 +1113,8 @@ div.comment-wrapper .item-author-header {
   width: 100px; }
 .date-range-field .show-hour-select .hour-select .dropdown-toggle {
   width: 48px;
-  padding: 4px 9px; }
+  padding: 4px 9px;
+  margin-bottom: 0; }
 
 .hour-select .dropdown-menu {
   width: 324px;
@@ -1121,10 +1130,25 @@ div.comment-wrapper .item-author-header {
       text-align: center; }
       .hour-select .dropdown-menu li a:hover {
         background: #49ABD1; }
+    .hour-select .dropdown-menu li.in-range a {
+      background: #A0D6EB; }
+    .hour-select .dropdown-menu li.selected a, .hour-select .dropdown-menu li.other-selected a {
+      background: #49ABD1;
+      color: white; }
   .hour-select .dropdown-menu li:nth-child(-n+12) a {
     background: #FAF2B4; }
     .hour-select .dropdown-menu li:nth-child(-n+12) a:hover {
-      background: #E3C205; }
+      background: #E3C205 !important; }
+  .hour-select .dropdown-menu li:nth-child(-n+12).in-range a {
+    background: #E8DC7D; }
+  .hour-select .dropdown-menu li:nth-child(-n+12).selected a, .hour-select .dropdown-menu li:nth-child(-n+12).other-selected a {
+    background: #E3C205;
+    color: white; }
+
+.date-field.show-hour-select input[type=text] {
+  width: 103px; }
+.date-field.show-hour-select .hour-select a {
+  width: 48px; }
 
 /*
 IMPORTANT:

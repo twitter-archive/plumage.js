@@ -180,6 +180,7 @@
   .hour-select .dropdown-toggle {
     width: 48px;
     padding: 4px 9px;
+    margin-bottom: 0;
   }
 }
 
@@ -202,12 +203,42 @@
           background: #49ABD1;
         }
       }
+      &.in-range a {
+        background: #A0D6EB;
+      }
+      &.selected a, &.other-selected a,{
+        background: #49ABD1;
+        color: white;
+      }
     }
-    li:nth-child(-n+12) a {
-      background: #FAF2B4;
-      &:hover {
+    li:nth-child(-n+12) {
+      a {
+        background: #FAF2B4;
+        &:hover {
+          background: #E3C205 !important;
+        }
+      }
+      &.in-range a {
+        background: #E8DC7D;
+      }
+
+      &.selected a, &.other-selected a {
         background: #E3C205;
+        color: white;
       }
     }
   }
+}
+
+.date-field {
+  &.show-hour-select {
+    input[type=text] {
+      width: 103px;
+    }
+
+    .hour-select a {
+      width: 48px
+    }
+  }
+
 }

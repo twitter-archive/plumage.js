@@ -16,7 +16,6 @@ define([
     },
 
     DateFromNowFormatter: function(row, cell, value, columnDef, dataContext) {
-      //return new Date(Number(value)*1000).toString(columnDef.dateFormat);
       return DateTimeUtil.formatDateFromNow(value);
     },
 
@@ -29,11 +28,10 @@ define([
     },
 
     DurationFormatter: function(row, cell, value, columnDef, dataContext) {
-      return DateTimeUtil.formatDurationShort(Number(value)*1000);
+      return DateTimeUtil.formatDurationShort(Number(value));
     },
 
     NameWithCommentsFormatter: function(row, cell, value, columnDef, dataContext) {
-      //return new Date(Number(value)*1000).toString(columnDef.dateFormat);
       var count = dataContext.get('comments_count');
       if (count > 0) {
         return value + '<span class="comments-count-icon">' + count + '</span>';

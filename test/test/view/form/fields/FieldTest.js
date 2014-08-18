@@ -28,37 +28,43 @@ define([
     }, options));
   }
 
-  test('empty render', function(){
+  function createViewWithModel(options) {
+    var view = createView(options),
+      model = new Post({body: 'foo'});
+
+    view.setModel(model);
+    view.render();
+
+    return view;
+  }
+
+  test('unbound field', function(){
     var field = createView();
 
     field.render();
     equal(field.getValue(), '', 'field with no model should have empty string value');
+
+    ok(!field.hasValue(), 'unbound field should not hasValue');
   });
 
   test('field with model', function() {
-    var model = new Post({body: 'initial'});
-    var field = createView({valueAttr: 'body'});
+    var field = createViewWithModel({label: 'field', valueAttr: 'body'}),
+      model = field.model;
 
-    field.setModel(model);
-    field.render();
-
-    equal(field.getValue(), 'initial');
-
-    model.set('body', 'foo');
     equal(field.getValue(), 'foo');
 
+    field.model.set('body', 'bar');
+    equal(field.getValue(), 'bar');
+
     this.ajaxResponse = {results: ExampleData.POST_DATA};
-    model.load();
+    field.model.load();
 
     equal(field.getValue(), model.get('body'));
   });
 
   test('update model', function() {
-    var model = new Post({body: 'foo'});
-    var field = createView({valueAttr: 'body'});
-
-    field.setModel(model);
-    field.render();
+    var field = createViewWithModel({label: 'field', valueAttr: 'body'}),
+      model = field.model;
 
     field.setValue('new value');
     equal(model.get('body'), 'foo', 'model value should not change on field change');
@@ -71,4 +77,51 @@ define([
     field.setValue('new value2');
     equal(model.get('body'), 'new value2', 'model value should update on change when using updateModelOnChange');
   });
+
+  test('validation error', function() {
+    var field = createViewWithModel({label: 'field', valueAttr: 'body'}),
+      model = field.model;
+
+    model.trigger('invalid', model, {body: 'message'});
+    equal(field.validationState, 'error', 'should set validation state to error');
+    var data = field.getTemplateData();
+
+    equal(data.validationState, 'error', 'should render validation state');
+    equal(data.message, 'message', 'should render message');
+  });
+
+  test('ignore error when not for this field', function() {
+    var field = createViewWithModel({label: 'field', valueAttr: 'body'}),
+      model = field.model;
+
+    model.trigger('invalid', model, {subject: 'message'});
+    equal(field.validationState, undefined, 'should ignore error for other field');
+  });
+
+  test('reset validation state', function() {
+    var field = createViewWithModel({label: 'field', valueAttr: 'body'}),
+      model = field.model;
+
+    model.trigger('invalid', model, {body: 'message'});
+    model.trigger('load', model);
+
+    equal(field.validationState, undefined, 'should reset validation state on load');
+  });
+
+  test('validate', function() {
+    var field = createView({label: 'field', valueAttr: 'body', validationRules: 'required'});
+    field.validate();
+    equal(field.validationState, 'error', 'should fail validation');
+    equal(field.message, field.validationMessages.required);
+
+    field = createView({label: 'field', valueAttr: 'body', validationRules: {required: true, minLength: 2}});
+    field.validate();
+    equal(field.validationState, 'error', 'should fail validation');
+    equal(field.message, field.validationMessages.required);
+
+    field.setValue('a');
+    field.validate();
+    equal(field.message, field.validationMessages.minLength.replace('{{param0}}', 2));
+  });
+
 });

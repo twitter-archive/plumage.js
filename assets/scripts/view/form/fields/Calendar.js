@@ -81,8 +81,9 @@ define([
     initialize: function() {
       Field.prototype.initialize.apply(this, arguments);
 
-      this.month = this.month !== undefined ? this.month : moment().month();
-      this.year = this.year ? this.year : moment().year();
+      var now = this.utc ? moment.utc() : moment();
+      this.month = this.month !== undefined ? this.month : now.month();
+      this.year = this.year ? this.year : now.year();
     },
 
     getTemplateData: function() {
@@ -117,6 +118,13 @@ define([
       }
     },
 
+    getValueFromModel: function() {
+      var result = Field.prototype.getValueFromModel.apply(this, arguments);
+      if ($.isNumeric(result)) {
+        return result;
+      }
+    },
+
     updateModel: function(rootModel, parentModel) {
       var model = this.getModelFromRoot(this.relationship, rootModel, parentModel),
         value = this.getValue();
@@ -131,7 +139,7 @@ define([
         m.date(date[2]);
         value = m.valueOf();
       }
-      model.set(this.valueAttr, value);
+      return model.set(this.valueAttr, value);
     },
 
     /**
@@ -177,10 +185,6 @@ define([
       this.minDate = this.toDateTuple(minDate);
     },
 
-    setMaxDate: function(maxDate) {
-      this.maxDate = this.toDateTuple(maxDate);
-    },
-
     /**
      * Set the maximum selectable date (inclusive)
      */
@@ -194,6 +198,10 @@ define([
       return null;
     },
 
+    setMaxDate: function(maxDate) {
+      this.maxDate = this.toDateTuple(maxDate);
+    },
+
     //
     // Helpers
     //
@@ -202,6 +210,7 @@ define([
       if (!date) {
         return null;
       }
+      date = DateTimeUtil.parseRelativeDate(date);
       if ($.isArray(date)) {
         return date;
       }

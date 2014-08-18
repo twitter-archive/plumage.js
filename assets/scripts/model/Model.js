@@ -604,36 +604,26 @@ function($, _, Backbone, Plumage, requestManager, ModelUtil, BufferedCollection)
       if (_.isEqual(this.latestLoadParams, options.data)) {
         return;
       }
+      //save params to prevent multiple identical requests
       this.latestLoadParams = options.data;
 
-      var success = options.success,
-        error = options.error;
-
-      options.success = function(model, resp, options) {
-        model.fetched = true;
-        model.latestLoadParams = undefined;
-        if (resp.meta && resp.meta.success === false) {
-          model.trigger('error', model, resp, options);
-        }
-        model.onLoad(options);
-        if (success) {
-          success(model, resp, options);
-        }
-      };
-
-      options.error = function(model, xhr, options) {
-        if (typeof theApp !== 'undefined' && theApp.logger) {
-          if (xhr.statusText !== 'abort') {
-            theApp.logger.error(xhr.statusText, 'Model load error');
-          }
-        }
-        if (error) {
-          error(model, xhr, options);
-        }
-      };
+      this._wrapHandlers(options);
 
       this.fireBeginLoad();
       return this.fetch(options);
+    },
+
+    save: function(key, val, options) {
+      var attrs;
+      // Handle both `"key", value` and `{key: value}` -style arguments.
+      if (key === null || typeof key === 'object') {
+        attrs = key;
+        options = val;
+      } else {
+        (attrs = {})[key] = val;
+      }
+      this._wrapHandlers(options);
+      Backbone.Model.prototype.save.apply(this, arguments);
     },
 
     /**
@@ -672,6 +662,12 @@ function($, _, Backbone, Plumage, requestManager, ModelUtil, BufferedCollection)
      */
     fireBeginLoad: function() {
       this.trigger('beginLoad', this);
+      _.each(this.relationships, function(relationship, key) {
+        var rel = this.getRelated(key);
+        if (rel && relationship.remote && !rel.deferLoad) {
+          rel.fireBeginLoad();
+        }
+      }, this);
     },
 
     /**
@@ -730,6 +726,44 @@ function($, _, Backbone, Plumage, requestManager, ModelUtil, BufferedCollection)
      */
     onRelationChange: function() {
       this.trigger('change', this);
+    },
+
+    //
+    // Helpers
+    //
+
+    _wrapHandlers: function(options) {
+      var success = options.success,
+        error = options.error;
+
+      options.success = function(model, resp, options) {
+        if (resp.meta && resp.meta.success === false) {
+          if (resp.meta.validationError) {
+            model.validationError = resp.meta.validationError;
+            model.trigger('invalid', model, model.validationError);
+          } else {
+            model.trigger('error', model, resp, options);
+          }
+        } else {
+          model.latestLoadParams = undefined;
+          model.onLoad(options);
+          if (success) {
+            success(model, resp, options);
+          }
+        }
+
+      };
+
+      options.error = function(model, xhr, options) {
+        if (typeof theApp !== 'undefined' && theApp.logger) {
+          if (xhr.statusText !== 'abort') {
+            theApp.logger.error(xhr.statusText, 'Model load error');
+          }
+        }
+        if (error) {
+          error(model, xhr, options);
+        }
+      };
     }
   });
 });

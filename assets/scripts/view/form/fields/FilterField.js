@@ -44,6 +44,7 @@ define([
           }
         }
       }
+      return true;
     }
   });
 });

@@ -372,8 +372,22 @@ define('util/ModelUtil',[
       return typeof(cls) === 'string' ? require(cls) : cls;
     },
 
-    mergeOption: function(name, model, options) {
-      var result = $.extend(true, {}, model[name] || {}, options[name] || {});
+    mergeOption: function(name, model, options, deep) {
+
+      var args = [options[name] || {}];
+
+      if (deep) {
+        var proto = model;
+        while (proto) {
+          if (proto.hasOwnProperty(name)) {
+            args.unshift(proto[name]);
+          }
+          proto = Object.getPrototypeOf(proto);
+        }
+      } else {
+        args.unshift(model[name] || {});
+      }
+      var result = $.extend.apply(null, [true, {}].concat(args));
       delete options[name];
       model[name] = result;
     }
@@ -1178,36 +1192,26 @@ function($, _, Backbone, Plumage, requestManager, ModelUtil, BufferedCollection)
       if (_.isEqual(this.latestLoadParams, options.data)) {
         return;
       }
+      //save params to prevent multiple identical requests
       this.latestLoadParams = options.data;
 
-      var success = options.success,
-        error = options.error;
-
-      options.success = function(model, resp, options) {
-        model.fetched = true;
-        model.latestLoadParams = undefined;
-        if (resp.meta && resp.meta.success === false) {
-          model.trigger('error', model, resp, options);
-        }
-        model.onLoad(options);
-        if (success) {
-          success(model, resp, options);
-        }
-      };
-
-      options.error = function(model, xhr, options) {
-        if (typeof theApp !== 'undefined' && theApp.logger) {
-          if (xhr.statusText !== 'abort') {
-            theApp.logger.error(xhr.statusText, 'Model load error');
-          }
-        }
-        if (error) {
-          error(model, xhr, options);
-        }
-      };
+      this._wrapHandlers(options);
 
       this.fireBeginLoad();
       return this.fetch(options);
+    },
+
+    save: function(key, val, options) {
+      var attrs;
+      // Handle both `"key", value` and `{key: value}` -style arguments.
+      if (key === null || typeof key === 'object') {
+        attrs = key;
+        options = val;
+      } else {
+        (attrs = {})[key] = val;
+      }
+      this._wrapHandlers(options);
+      Backbone.Model.prototype.save.apply(this, arguments);
     },
 
     /**
@@ -1246,6 +1250,12 @@ function($, _, Backbone, Plumage, requestManager, ModelUtil, BufferedCollection)
      */
     fireBeginLoad: function() {
       this.trigger('beginLoad', this);
+      _.each(this.relationships, function(relationship, key) {
+        var rel = this.getRelated(key);
+        if (rel && relationship.remote && !rel.deferLoad) {
+          rel.fireBeginLoad();
+        }
+      }, this);
     },
 
     /**
@@ -1304,6 +1314,44 @@ function($, _, Backbone, Plumage, requestManager, ModelUtil, BufferedCollection)
      */
     onRelationChange: function() {
       this.trigger('change', this);
+    },
+
+    //
+    // Helpers
+    //
+
+    _wrapHandlers: function(options) {
+      var success = options.success,
+        error = options.error;
+
+      options.success = function(model, resp, options) {
+        if (resp.meta && resp.meta.success === false) {
+          if (resp.meta.validationError) {
+            model.validationError = resp.meta.validationError;
+            model.trigger('invalid', model, model.validationError);
+          } else {
+            model.trigger('error', model, resp, options);
+          }
+        } else {
+          model.latestLoadParams = undefined;
+          model.onLoad(options);
+          if (success) {
+            success(model, resp, options);
+          }
+        }
+
+      };
+
+      options.error = function(model, xhr, options) {
+        if (typeof theApp !== 'undefined' && theApp.logger) {
+          if (xhr.statusText !== 'abort') {
+            theApp.logger.error(xhr.statusText, 'Model load error');
+          }
+        }
+        if (error) {
+          error(model, xhr, options);
+        }
+      };
     }
   });
 });
@@ -8181,9 +8229,16 @@ function($, _, Backbone, Plumage, BaseController, ModelUtil) {
       }
     },
 
-    /** Debounced helper for reloading the index model */
-    reloadIndex: _.debounce(function(collection) {
-      collection.updateUrl();
+    /**
+     * Debounced helper for reloading the index model
+     * @param {Plumage.model.Collection} collection Collection to reload
+     * @param {Boolean} updateUrl should update url? default to true
+     */
+    reloadIndex: _.debounce(function(collection, updateUrl) {
+      updateUrl = updateUrl === undefined ? true : false;
+      if (updateUrl) {
+        collection.updateUrl();
+      }
       collection.load();
     }, 200)
   });
@@ -8530,6 +8585,16 @@ define('util/DateTimeUtil',[
 
   return Plumage.util.DateTimeUtil = {
 
+    parseRelativeDate: function(date, utc) {
+      var today = utc ? moment.utc({hour: 0}) : moment({hour: 0});
+      if (date === 'today') {
+        date = today;
+      } else if ($.isPlainObject(date)) {
+        date = today.clone().add(date);
+      }
+      return date;
+    },
+
     isSameDay: function(date1, date2, isUtc) {
       if (!date1 || !date2) {
         return false;
@@ -8554,16 +8619,16 @@ define('util/DateTimeUtil',[
 
     formatDate: function(timestamp, dateFormat) {
       dateFormat = dateFormat || Plumage.util.defaultDateFormat;
-      return new moment(Number(timestamp)*1000).format(dateFormat);
+      return new moment(Number(timestamp)).format(dateFormat);
     },
 
     formatDateUTC: function(timestamp, dateFormat) {
       dateFormat = dateFormat || Plumage.util.defaultDateFormat;
-      return new moment(Number(timestamp)*1000).utc().format(dateFormat);
+      return new moment(Number(timestamp)).utc().format(dateFormat);
     },
 
     formatDateFromNow: function(timestamp) {
-      return moment(Number(timestamp)*1000).fromNow();
+      return moment(Number(timestamp)).fromNow();
     },
 
     formatDuration: function(millis) {
@@ -8576,6 +8641,9 @@ define('util/DateTimeUtil',[
         minutes = d.minutes(),
         started = false;
 
+      if (millis < 60000) {
+        return d.seconds() + ' seconds';
+      }
       if(days > 0) {
         started = true;
         result += days + (days === 1 ? ' day ' : ' days ');
@@ -8590,6 +8658,7 @@ define('util/DateTimeUtil',[
         started = true;
         result += minutes + (minutes === 1 ? ' minute' : ' minutes');
       }
+
       return result;
     },
 
@@ -8602,6 +8671,10 @@ define('util/DateTimeUtil',[
         hours = d.hours(),
         minutes = d.minutes(),
         started = false;
+
+      if (millis < 60000) {
+        return d.seconds() + 's';
+      }
 
       if(days > 0) {
         started = true;
@@ -8828,8 +8901,9 @@ define('view/View',[
 
     callOrRecurse: function(methodName, params) {
       if (this[methodName]) {
-        this[methodName].apply(this, params);
+        return this[methodName].apply(this, params);
       }
+      return true;
     },
 
     /** Show the loading animation. Uses spin.js */
@@ -9065,11 +9139,13 @@ define('view/ContainerView',[
      */
     callOrRecurse: function(methodName, params) {
       if (this[methodName]) {
-        this[methodName].apply(this, params);
+        return this[methodName].apply(this, params);
       } else {
+        var success = true;
         this.eachSubView(function(subView) {
-          subView.callOrRecurse(methodName, params);
+          success = subView.callOrRecurse(methodName, params) && success;
         });
+        return success;
       }
     }
   });
@@ -9302,6 +9378,7 @@ define('view/ModelView',[
         this.model.on('change', this.onModelChange, this);
         this.model.on('load', this.onModelLoad, this);
         this.model.on('destroy', this.onModelDestroy, this);
+        this.model.on('invalid', this.onModelInvalid, this);
         this.model.on('error', this.onModelError, this);
       }
 
@@ -9348,9 +9425,19 @@ define('view/ModelView',[
      * @param {Plumage.model.Model} model Model to update.
      */
     updateModel: function(rootModel, parentModel) {
+      var success = true;
       this.eachSubView(function(subView) {
-        subView.callOrRecurse('updateModel', [rootModel, this.model]);
+        success = subView.callOrRecurse('updateModel', [rootModel, this.model]) && success;
       });
+      return success;
+    },
+
+    isValid: function(rootModel, parentModel) {
+      var valid = true;
+      this.eachSubView(function(subView) {
+        valid = subView.callOrRecurse('isValid', [rootModel, this.model]) && valid;
+      });
+      return valid;
     },
 
     /** Hook to modify view state on model load */
@@ -9395,6 +9482,9 @@ define('view/ModelView',[
     },
 
     onModelDestroy: function(event, model) {
+    },
+
+    onModelInvalid: function(model, validationErrors) {
     },
 
     onModelError: function(model, response, options) {
@@ -9679,11 +9769,11 @@ define('view/CollectionView',[
 define('view/form/Form',[
   'jquery',
   'backbone',
-  'handlebars',
+  'underscore',
   'PlumageRoot',
   'view/ModelView',
   'util/ModelUtil'
-], function($, Backbone, Handlebars, Plumage, ModelView, ModelUtil) {
+], function($, Backbone, _, Plumage, ModelView, ModelUtil) {
 
   /**
    * Container for a field subviews.
@@ -9711,9 +9801,10 @@ define('view/form/Form',[
     },
 
     getTemplateData: function() {
-      return {
+      var data = ModelView.prototype.getTemplateData.apply(this, arguments);
+      return _.extend(data, {
         actionLabel: this.getActionLabel()
-      };
+      });
     },
 
     getActionLabel: function() {
@@ -9729,14 +9820,20 @@ define('view/form/Form',[
 
     onSubmit: function(e) {
       e.preventDefault();
+      this.submit();
+    },
+
+    submit: function() {
       if (!this.model) {
         var ModelCls = ModelUtil.loadClass(this.modelCls);
         this.model = new ModelCls();
       }
-      this.updateModel(this.model);
-
-      if (this.model.validate) {
-        var error = this.model.validate(this.model.attributes);
+      if(this.isValid()) {
+        this.updateModel(this.model);
+        var error;
+        if (this.model.validate) {
+          error = this.model.validate(this.model.attributes);
+        }
         if(!error) {
           this.model.save(null, {success: this.onSaveSuccess.bind(this)});
         }
@@ -9749,7 +9846,7 @@ define('view/form/Form',[
   });
 });
 
-define('text!view/form/fields/templates/Field.html',[],function () { return '{{#if label}}\n<div class="control-group">\n  <label class="control-label" for="{{valueAttr}}">{{label}}</label>\n  <div class="controls">\n    {{> field}}\n  </div>\n</div>\n{{else}}\n  {{> field}}\n{{/if}}';});
+define('text!view/form/fields/templates/Field.html',[],function () { return '{{#if label}}\n<div class="control-group {{#if validationState}}{{validationState}}{{/if}}">\n  <label class="control-label" for="{{valueAttr}}">{{label}}</label>\n  <div class="controls">\n    <span class="field">{{> field}}</span>\n    <span class="help-inline">{{#if message}}{{message}}{{/if}}</span>\n  </div>\n</div>\n{{else}}\n  {{> field}}\n{{/if}}';});
 
 
 define('view/form/fields/Field',[
@@ -9810,6 +9907,23 @@ define('view/form/fields/Field',[
 
     /** Text to show when blank */
     placeholder: undefined,
+
+    /** required, minLength, maxLength, email, cc etc.*/
+    validationRules: undefined,
+
+    /** Template to show when validation fails */
+    validationMessages: {
+      required: 'required',
+      minLength: 'Must be at least {{param0}} chars',
+      maxLength: 'Must not be more than {{param0}} chars',
+      email: 'Not a valid email address'
+    },
+
+    /** error, warning, success. Cleared on model load */
+    validationState: undefined,
+
+    /** message to display next to field, eg error message */
+    message: undefined,
 
 
     /**
@@ -9901,6 +10015,11 @@ define('view/form/fields/Field',[
       return selector ? this.$(selector).first() : this.$el;
     },
 
+    hasValue: function() {
+      var value = this.getValue();
+      return value !== null && value !== undefined && value !== '';
+    },
+
     //
     // Modifiers
     //
@@ -9918,15 +10037,18 @@ define('view/form/fields/Field',[
         label: this.getLabel(),
         valueAttr: this.valueAttr,
         value: this.getValueString(this.getValue()),
-        hasValue: this.getValue() !== null && this.getValue() !== undefined,
+        hasValue: this.hasValue(),
         placeholder: this.placeholder,
-        readonly: this.readonly
+        readonly: this.readonly,
+        validationState: this.validationState,
+        message: this.message
       };
       return data;
     },
 
     setModel: function() {
       ModelView.prototype.setModel.apply(this, arguments);
+      this.setValidationState(null, null);
       this.updateValueFromModel();
     },
 
@@ -9984,6 +10106,84 @@ define('view/form/fields/Field',[
       this.$el.blur();
     },
 
+    //
+    // Validation
+    //
+
+    validators: {
+      required: function(value, params) {
+        return value !== undefined && value !== '';
+      },
+      minLength: function(value, params) {
+        return value.length >= params;
+      },
+      maxLength: function(value, params) {
+        return value.length <= params;
+      },
+      email: function(value) {
+        return (/^([a-zA-Z0-9_.+-])+\@(([a-zA-Z0-9-])+\.)+([a-zA-Z0-9]{2,4})+$/).test(value);
+      }
+    },
+
+    setValidationState: function(state, message) {
+      this.validationState = state;
+      this.message = message;
+      this.$('.control-group').attr('class', 'control-group');
+      if (this.validationState) {
+        this.$('.control-group').addClass(this.validationState);
+      }
+      this.$('.help-inline').html(this.message);
+    },
+
+    validate: function() {
+      var value = this.getValue();
+      var rules = this.validationRules;
+
+      if (rules) {
+        if (!$.isPlainObject(rules)) {
+          //eg 'required'
+          var newRules = {};
+          newRules[rules] = true;
+          rules = newRules;
+        }
+
+        var success;
+        //check required first
+        if (rules.required) {
+          success = this.applyValidator(value, rules.required, 'required');
+        }
+        if (success) {
+          _.keys(rules).every(function(k) {
+            if (k === 'required') {
+              return true;
+            }
+            return success = this.applyValidator(value, rules[k], k);
+          }.bind(this));
+        }
+        if (success) {
+          this.setValidationState(null,null);
+        }
+        return success;
+      }
+      return true;
+    },
+
+    applyValidator: function(value, params, name) {
+      params = $.isArray(params) ? params : [params];
+      var validator = this.validators[name];
+      if (!validator(value, params)) {
+        var message = this.getValidationMessage(name, params);
+        this.setValidationState('error', message);
+        return false;
+      }
+      return true;
+    },
+
+    getValidationMessage: function(name, params) {
+      var message = this.validationMessages[name] || 'invalid';
+      return Handlebars.compile(message)(_.object(_.map(params, function(x, i) {return ['param' + i, x];})));
+    },
+
     ////
     //
     // Helpers
@@ -9995,10 +10195,14 @@ define('view/form/fields/Field',[
     // View value <--> Model
     //
 
+    isValid: function() {
+      return this.validate();
+    },
+
     updateModel: function(rootModel, parentModel) {
       var model = this.getModelFromRoot(this.relationship, rootModel, parentModel),
         value = this.getValue();
-      model.set(this.valueAttr, value);
+      return model.set(this.valueAttr, value) !== false;
     },
 
     updateValueFromModel: function() {
@@ -10067,7 +10271,6 @@ define('view/form/fields/Field',[
       }
     },
 
-
     /** Hook called when value changes. Useful for keeping view state in sync */
     valueChanged: function() {
       return;
@@ -10090,6 +10293,7 @@ define('view/form/fields/Field',[
     },
 
     onBlur: function(e) {
+      this.validate();
       this.trigger('blur', this);
     },
 
@@ -10108,10 +10312,18 @@ define('view/form/fields/Field',[
     },
 
     onModelLoad: function () {
+      this.setValidationState(null, null);
       this.updateValueFromModel();
     },
 
-    onModelError: function() {
+    onModelInvalid: function(model, validationError) {
+      var message = validationError[this.valueAttr];
+      if (message) {
+        if ($.isArray(message)) {
+          message = message[0];
+        }
+        this.setValidationState('error', message);
+      }
     }
   });
 });
@@ -10465,10 +10677,11 @@ define('view/comment/ExpandableComments',[
 
 define('view/controller/IndexView',[
   'jquery',
+  'underscore',
   'backbone',
   'PlumageRoot',
   'view/ModelView'
-], function($, Backbone, Plumage, ModelView) {
+], function($, _, Backbone, Plumage, ModelView) {
 
   return Plumage.view.controller.IndexView = ModelView.extend({
 
@@ -10479,6 +10692,8 @@ define('view/controller/IndexView',[
     gridViewCls: undefined,
 
     filterViewCls: undefined,
+
+    gridOptions: undefined,
 
     initialize:function (options) {
       ModelView.prototype.initialize.apply(this, arguments);
@@ -10491,7 +10706,7 @@ define('view/controller/IndexView',[
         this.filterViewCls = require(this.filterViewCls);
       }
 
-      this.subViews = [];
+      this.subViews = this.subViews || [];
 
       var gridView = this.getGridView();
       if (gridView) {
@@ -10507,7 +10722,8 @@ define('view/controller/IndexView',[
 
     getGridView: function() {
       if (!this.gridView && this.gridViewCls) {
-        this.gridView = new this.gridViewCls({selector: '.grid-view', filterView: this.getFilterView()});
+        this.gridView = new this.gridViewCls(
+          _.extend({selector: '.grid-view', filterView: this.getFilterView()}, this.gridOptions || {}));
       }
       return this.gridView;
     },
@@ -10947,8 +11163,9 @@ define('view/form/fields/Calendar',[
     initialize: function() {
       Field.prototype.initialize.apply(this, arguments);
 
-      this.month = this.month !== undefined ? this.month : moment().month();
-      this.year = this.year ? this.year : moment().year();
+      var now = this.utc ? moment.utc() : moment();
+      this.month = this.month !== undefined ? this.month : now.month();
+      this.year = this.year ? this.year : now.year();
     },
 
     getTemplateData: function() {
@@ -10983,6 +11200,13 @@ define('view/form/fields/Calendar',[
       }
     },
 
+    getValueFromModel: function() {
+      var result = Field.prototype.getValueFromModel.apply(this, arguments);
+      if ($.isNumeric(result)) {
+        return result;
+      }
+    },
+
     updateModel: function(rootModel, parentModel) {
       var model = this.getModelFromRoot(this.relationship, rootModel, parentModel),
         value = this.getValue();
@@ -10997,7 +11221,7 @@ define('view/form/fields/Calendar',[
         m.date(date[2]);
         value = m.valueOf();
       }
-      model.set(this.valueAttr, value);
+      return model.set(this.valueAttr, value);
     },
 
     /**
@@ -11043,10 +11267,6 @@ define('view/form/fields/Calendar',[
       this.minDate = this.toDateTuple(minDate);
     },
 
-    setMaxDate: function(maxDate) {
-      this.maxDate = this.toDateTuple(maxDate);
-    },
-
     /**
      * Set the maximum selectable date (inclusive)
      */
@@ -11060,6 +11280,10 @@ define('view/form/fields/Calendar',[
       return null;
     },
 
+    setMaxDate: function(maxDate) {
+      this.maxDate = this.toDateTuple(maxDate);
+    },
+
     //
     // Helpers
     //
@@ -11068,6 +11292,7 @@ define('view/form/fields/Calendar',[
       if (!date) {
         return null;
       }
+      date = DateTimeUtil.parseRelativeDate(date);
       if ($.isArray(date)) {
         return date;
       }
@@ -11429,7 +11654,7 @@ define('view/form/fields/picker/Picker',[
   });
 });
 
-define('text!view/form/fields/templates/FieldWithPicker.html',[],function () { return '{{#if label}}\n<div class="control-group">\n  <label class="control-label" for="{{valueAttr}}">{{label}}</label>\n  <div class="controls">\n    <span class="dropdown">\n      {{> field}}\n      <div class="picker"></div>\n    </span>\n  </div>\n</div>\n{{else}}\n<span class="dropdown picker-dropdown">\n  {{> field}}\n  <div class="picker"></div>\n</span>\n{{/if}}\n';});
+define('text!view/form/fields/templates/FieldWithPicker.html',[],function () { return '{{#if label}}\n<div class="control-group">\n  <label class="control-label" for="{{valueAttr}}">{{label}}</label>\n  <div class="controls">\n    <span class="field">\n\t    <span class="dropdown">\n\t      {{> field}}\n\t      <div class="picker"></div>\n\t    </span>\n    </span>\n    <span class="help-inline">{{#if message}}{{message}}{{/if}}</span>\n  </div>\n</div>\n{{else}}\n<span class="dropdown picker-dropdown">\n  {{> field}}\n  <div class="picker"></div>\n</span>\n{{/if}}\n';});
 
 define('view/form/fields/FieldWithPicker',[
   'jquery',
@@ -11472,16 +11697,16 @@ define('view/form/fields/FieldWithPicker',[
      * @extends Plumage.view.form.fields.Field
      */
     initialize:function(options) {
-      this.subViews = [_.extend({
+      this.subViews = this.subViews.concat([_.extend({
         viewCls: this.pickerCls,
         name: 'picker',
         selector: '.picker',
         replaceEl: true
-      }, this.pickerOptions)];
+      }, this.pickerOptions)]);
 
       Field.prototype.initialize.apply(this, arguments);
 
-      var picker = this.getSubView('picker');
+      var picker = this.getPicker();
 
       picker.on('apply', this.onPickerApply, this);
       picker.on('close', this.onPickerClose, this);
@@ -11498,7 +11723,7 @@ define('view/form/fields/FieldWithPicker',[
 
     //update the picker model
     valueChanged: function() {
-      var picker = this.getSubView('picker').setValue(this.getValue());
+      this.getPicker().setValue(this.getValue());
     },
 
     //
@@ -11521,7 +11746,7 @@ define('view/form/fields/FieldWithPicker',[
 
     open: function() {
       this.update();
-      this.$('.dropdown').addClass('open');
+      this.$('.dropdown:first').addClass('open');
     },
 
     /** Close the dropdown */
@@ -11578,11 +11803,17 @@ define('view/form/fields/FieldWithPicker',[
 
     onBlur: function(e) {
       this.close();
-      this.updateValueFromDom();
+      //don't update value from DOM if picker apply was clicked
+      if(this.applying) {
+        this.applying = false;
+      } else {
+        this.updateValueFromDom();
+      }
       this.trigger('blur', this);
     },
 
     onPickerApply: function(picker, model) {
+      this.applying = true;
       this.setValue(this.processPickerValue(picker.getValue()));
       this.close();
     },
@@ -11592,150 +11823,8 @@ define('view/form/fields/FieldWithPicker',[
     }
   });
 });
-define('view/form/fields/DateField',[
-  'jquery',
-  'underscore',
-  'backbone',
-  'handlebars',
-  'moment',
-  'PlumageRoot',
-  'view/form/fields/FieldWithPicker',
-  'view/form/fields/Calendar',
-], function($, _, Backbone, Handlebars, moment, Plumage, FieldWithPicker, Calendar) {
 
-  return Plumage.view.form.fields.DateField = FieldWithPicker.extend(
-  /** @lends Plumage.view.form.fields.DateField.prototype */
-  {
-
-    fieldTemplate: '<div class="input-prepend"><button class="btn" data-toggle="dropdown" data-target="#"><i class="icon-calendar"></i></button>'+FieldWithPicker.prototype.fieldTemplate+'</div>',
-
-    className: 'date-field',
-
-    /** format string for showing the selected date. See moment.js */
-    format: 'MMM D, YYYY',
-
-    events: {
-      'focus input': 'onFocus',
-      'blur input': 'onBlur',
-      'click input': 'onInputClick',
-      'click button': 'onButtonClick',
-    },
-
-    pickerOptions: {
-      applyOnChange: true,
-      subViews: [{
-        viewCls: Calendar,
-        name: 'calendar',
-        minDateAttr: 'minDate',
-        maxDateAttr: 'maxDate'
-      }]
-    },
-
-    keepTime: false,
-
-    minDate: undefined,
-    maxDate: undefined,
-
-    minDateAttr: undefined,
-    maxDateAttr: undefined,
-
-    /**
-     * Field with a popover calendar for selecting a date.
-     *
-     * The value can also be set by editing the text field directly, as long as it can be parsed back into a date.
-     *
-     * See a live demo in the [Kitchen Sink example]{@link /examples/kitchen_sink/form/FieldsAndForms}.
-     *
-     * @constructs
-     * @extends Plumage.view.form.fields.Field
-     */
-    initialize: function(options) {
-      FieldWithPicker.prototype.initialize.apply(this, arguments);
-      var calendar = this.getCalendar();
-
-      if (this.minDate) {
-        this.getPicker().model.set('minDate', this.minDate);
-      }
-      if (this.maxDate) {
-        this.getPicker().model.set('minDate', this.maxDate);
-      }
-    },
-
-    getCalendar: function() {
-      return this.getPicker().getSubView('calendar');
-    },
-
-    setMinDate: function(minDate) {
-      this.getPicker().model.set('minDate', minDate);
-    },
-
-    setMaxDate: function(maxDate) {
-      this.getPicker().model.set('maxDate', maxDate);
-    },
-
-
-    //
-    // Overrides
-    //
-
-    onInput: function(e) {
-      //do nothing on typing. Wait for blur
-    },
-
-    getValueString: function(value) {
-      if (value) {
-        return moment(value).format(this.format);
-      }
-      return '';
-    },
-
-    isDomValueValid: function(value) {
-      value = moment(value);
-      return !value || value.isValid && value.isValid() && this.getCalendar().isDateInMinMax(value);
-    },
-
-    processDomValue: function(value) {
-      if (value) {
-        var m = moment(value);
-        var oldValue = this.getValue();
-        if (oldValue && this.keepTime) {
-          var oldM = moment(oldValue);
-          m.hour(oldM.hour()).minute(oldM.minute()).second(oldM.second()).millisecond(oldM.millisecond());
-        }
-        return m.valueOf();
-      }
-      return null;
-    },
-
-    processPickerValue: function(value) {
-      return this.processDomValue(value);
-    },
-
-    onModelChange: function(e) {
-      FieldWithPicker.prototype.onModelChange.apply(this, arguments);
-      this.updateValueFromModel();
-    },
-
-
-    onKeyDown: function(e) {
-      if (e.keyCode === 13) { //on enter
-        e.preventDefault();
-        this.updateValueFromDom();
-      } else if(e.keyCode === 27) {
-        this.update();
-      }
-    },
-
-    updateValueFromModel: function() {
-      FieldWithPicker.prototype.updateValueFromModel.apply(this, arguments);
-      this.setMinDate(this.model.get(this.minDateAttr));
-      this.setMaxDate(this.model.get(this.maxDateAttr));
-    }
-  });
-});
-
-
-define('text!view/form/fields/templates/DropdownSelect.html',[],function () { return '\n{{#if label}}\n<div class="control-group">\n  <label class="control-label" for="{{valueAttr}}">{{label}}</label>\n  <div class="controls">\n{{/if}}\n\n<span class="dropdown-select dropdown">\n<input type="hidden" {{#if fieldName}}name="{{fieldName}}"{{/if}} value="{{value}}"/>\n<a class="btn dropdown-toggle {{buttonCls}}" data-toggle="dropdown" href="#">\n  {{#iconCls}}\n    <i class="{{.}} icon-white"></i>\n  {{/iconCls}}\n  {{#if hasSelection}}\n    {{valueLabel}}\n  {{else}}\n    {{noSelectionText}}\n  {{/if}}\n  <span class="caret"></span>\n</a>\n<ul class="dropdown-menu">\n{{#listValues}}\n  <li data-value="{{value}}" class="{{value}}{{#selected}} active{{/selected}} {{#disabled}}disabled{{/disabled}}">\n    <a href="#">{{label}}</a>\n  </li>\n{{/listValues}}\n</ul>\n</span>\n\n{{#if label}}\n  </div>\n</div>\n{{/if}}';});
+define('text!view/form/fields/templates/DropdownSelect.html',[],function () { return '\n{{#if label}}\n<div class="control-group">\n  <label class="control-label" for="{{valueAttr}}">{{label}}</label>\n  <div class="controls">\n{{/if}}\n\n<span class="dropdown-select dropdown">\n<input type="hidden" {{#if fieldName}}name="{{fieldName}}"{{/if}} value="{{value}}"/>\n<a class="btn dropdown-toggle {{buttonCls}}" data-toggle="dropdown" href="#">\n  {{#iconCls}}\n    <i class="{{.}} icon-white"></i>\n  {{/iconCls}}\n  {{#if hasSelection}}\n    {{valueLabel}}\n  {{else}}\n    {{noSelectionText}}\n  {{/if}}\n  <span class="caret"></span>\n</a>\n<ul class="dropdown-menu opens{{opens}}">\n{{#listValues}}\n  <li data-value="{{value}}" class="{{value}}{{#selected}} active{{/selected}} {{#disabled}}disabled{{/disabled}} {{classes}}">\n    <a href="#">{{label}}</a>\n  </li>\n{{/listValues}}\n</ul>\n</span>\n\n{{#if label}}\n  </div>\n</div>\n{{/if}}';});
 
 define('view/form/fields/DropdownSelect',[
   'jquery',
@@ -11762,7 +11851,10 @@ define('view/form/fields/DropdownSelect',[
 
     iconCls: undefined,
 
+    opens: 'right',
+
     preventFocus: false,
+
 
     events:{
       'click li a': 'onItemClick',
@@ -11781,7 +11873,8 @@ define('view/form/fields/DropdownSelect',[
       var data = Select.prototype.getTemplateData.apply(this, arguments);
       data = _.extend(data, {
         buttonCls: this.buttonCls,
-        iconCls: this.iconCls
+        iconCls: this.iconCls,
+        opens: this.opens
       });
       return data;
     },
@@ -11819,8 +11912,17 @@ define('view/form/fields/HourSelect',[
   return Plumage.view.form.fields.HourSelect = DropdownSelect.extend({
     className: 'hour-select',
 
-    maxDate: undefined,
     minDate: undefined,
+    maxDate: undefined,
+
+    minDateAttr: undefined,
+    maxDateAttr: undefined,
+
+    /** optional. For displaying a selected range. */
+    fromAttr: undefined,
+
+    /** optional. For displaying a selected range. */
+    toAttr: undefined,
 
     hourFormat: 'ha',
 
@@ -11840,11 +11942,8 @@ define('view/form/fields/HourSelect',[
 
     getTemplateData: function() {
       var data = DropdownSelect.prototype.getTemplateData.apply(this, arguments);
-      var modelValue = this.model.get(this.valueAttr);
-      var m = this.utc ? moment.utc(modelValue) : moment(modelValue);
-
       _.each(data.listValues, function(x) {
-        x.disabled = !this.isHourInMinMax(x.value);
+        x.classes = this.getClassesForHour(x.value).join(' ');
       }, this);
       return data;
     },
@@ -11868,14 +11967,19 @@ define('view/form/fields/HourSelect',[
       var m = this.utc ? moment.utc(modelValue) : moment(modelValue);
       value = m.hour(value).valueOf();
 
-      model.set(this.valueAttr, value);
+      return model.set(this.valueAttr, value);
     },
 
     getMinDate: function() {
       if (this.model && this.minDateAttr) {
         return this.model.get(this.minDateAttr);
       }
-      return null;
+      return this.minDate;
+    },
+
+    setMinDate: function(minDate) {
+      this.minDate = minDate;
+      this.update();
     },
 
     /**
@@ -11885,7 +11989,12 @@ define('view/form/fields/HourSelect',[
       if (this.model && this.maxDateAttr) {
         return this.model.get(this.maxDateAttr);
       }
-      return null;
+      return this.maxDate;
+    },
+
+    setMaxDate: function(maxDate) {
+      this.maxDate = maxDate;
+      this.update();
     },
 
     setValue: function(value) {
@@ -11895,15 +12004,71 @@ define('view/form/fields/HourSelect',[
       DropdownSelect.prototype.setValue.apply(this, arguments);
     },
 
+    //
+    // Helpers
+    //
+
+    getClassesForHour: function(hour) {
+      var m = this.getDate(hour);
+      var classes = [
+        this.isHourInMinMax(hour) ? null : 'disabled',
+        hour === this.getValue() ? 'selected' : null,
+        this.isHourInSelectedRange(hour) ? 'in-range' : null,
+        this.isHourOtherSelection(hour) ? 'other-selected' : null
+      ];
+      return _.compact(classes);
+    },
+
     isHourInMinMax: function(hour) {
+      if (!this.model) {
+        return true;
+      }
+
       var minDate = this.getMinDate(),
         maxDate = this.getMaxDate();
 
-      var modelValue = this.model.get(this.valueAttr);
-      var m = this.utc ? moment.utc(modelValue) : moment(modelValue);
-      m.hour(hour);
+      var m = this.getDate(hour);
 
       return (!minDate || m >= moment(minDate)) && (!maxDate || m <= moment(maxDate));
+    },
+
+    isHourInSelectedRange: function(hour) {
+      if (!this.model || !this.fromAttr || !this.toAttr) {
+        return false;
+      }
+      var fromDate = this.model.get(this.fromAttr),
+        toDate = this.model.get(this.toAttr);
+
+      if (!fromDate || !toDate) {
+        return false;
+      }
+
+      var m = this.getDate(hour);
+      return m.valueOf() >= fromDate &&  m.valueOf() <= toDate;
+    },
+
+    isHourOtherSelection: function(hour) {
+      if (!this.model || !this.fromAttr || !this.toAttr || hour === this.getValue()) {
+        return false;
+      }
+      var fromDate = this.model.get(this.fromAttr),
+        toDate = this.model.get(this.toAttr);
+
+      if (!fromDate || !toDate) {
+        return false;
+      }
+      var m = this.getDate(hour);
+      return m.valueOf() === fromDate ||  m.valueOf() === toDate;
+    },
+
+    getDate: function(hour) {
+      var modelValue = this.model && this.model.get(this.valueAttr), m;
+      if (modelValue !== undefined) {
+        m = this.utc ? moment.utc(modelValue) : moment(modelValue);
+      } else {
+        m = this.utc ? moment.utc() : moment();
+      }
+      return m.hour(hour);
     },
 
 
@@ -11914,6 +12079,188 @@ define('view/form/fields/HourSelect',[
     },
   });
 });
+define('view/form/fields/DateField',[
+  'jquery',
+  'underscore',
+  'backbone',
+  'handlebars',
+  'moment',
+  'PlumageRoot',
+  'util/DateTimeUtil',
+  'view/form/fields/Field',
+  'view/form/fields/FieldWithPicker',
+  'view/form/fields/Calendar',
+  'view/form/fields/HourSelect',
+], function($, _, Backbone, Handlebars, moment, Plumage, DateTimeUtil, Field, FieldWithPicker, Calendar, HourSelect) {
+
+  return Plumage.view.form.fields.DateField = FieldWithPicker.extend(
+  /** @lends Plumage.view.form.fields.DateField.prototype */
+  {
+
+    fieldTemplate: '<div class="input-prepend"><button class="btn" data-toggle="dropdown" data-target="#"><i class="icon-calendar"></i></button>'+FieldWithPicker.prototype.fieldTemplate+'</div>',
+
+    className: 'date-field',
+
+    /** format string for showing the selected date. See moment.js */
+    format: 'MMM D, YYYY',
+
+    events: {
+      'focus input': 'onFocus',
+      'blur input': 'onBlur',
+      'click input': 'onInputClick',
+      'click button': 'onButtonClick',
+    },
+
+    pickerOptions: {
+      applyOnChange: true,
+      subViews: [{
+        viewCls: Calendar,
+        name: 'calendar',
+        minDateAttr: 'minDate',
+        maxDateAttr: 'maxDate'
+      }]
+    },
+
+    subViews: [{
+      viewCls: HourSelect,
+      name: 'hourSelect',
+      selector: '.field',
+      opens: 'left',
+      tagName: 'span'
+    }],
+
+    utc: false,
+
+    keepTime: false,
+
+    minDate: undefined,
+    maxDate: undefined,
+
+    minDateAttr: undefined,
+    maxDateAttr: undefined,
+
+    showHourSelect: false,
+
+    /**
+     * Field with a popover calendar for selecting a date.
+     *
+     * The value can also be set by editing the text field directly, as long as it can be parsed back into a date.
+     *
+     * See a live demo in the [Kitchen Sink example]{@link /examples/kitchen_sink/form/FieldsAndForms}.
+     *
+     * @constructs
+     * @extends Plumage.view.form.fields.Field
+     */
+    initialize: function(options) {
+
+      FieldWithPicker.prototype.initialize.apply(this, arguments);
+      var calendar = this.getCalendar();
+      calendar.utc = this.utc;
+
+      var hourSelect = this.getSubView('hourSelect');
+      hourSelect.utc = this.utc;
+      hourSelect.valueAttr = this.valueAttr;
+      hourSelect.updateModelOnChange = this.updateModelOnChange;
+      this.setShowHourSelect(this.showHourSelect);
+
+      if (this.minDate) {
+        this.setMinDate(this.minDate);
+      }
+      if (this.maxDate) {
+        this.setMaxDate(this.maxDate);
+      }
+    },
+
+    getCalendar: function() {
+      return this.getPicker().getSubView('calendar');
+    },
+
+    setMinDate: function(minDate) {
+      minDate = DateTimeUtil.parseRelativeDate(minDate);
+      this.getPicker().model.set('minDate', minDate);
+      this.getSubView('hourSelect').setMinDate(minDate);
+    },
+
+    setMaxDate: function(maxDate) {
+      maxDate = DateTimeUtil.parseRelativeDate(maxDate);
+      this.getPicker().model.set('maxDate', maxDate);
+      this.getSubView('hourSelect').setMaxDate(maxDate);
+    },
+
+    setShowHourSelect: function(showHourSelect) {
+      this.showHourSelect = showHourSelect;
+      this.$el.toggleClass('show-hour-select', this.showHourSelect);
+      if(this.isRendered) {
+        this.render();
+      }
+    },
+
+
+    //
+    // Overrides
+    //
+
+    onInput: function(e) {
+      //do nothing on typing. Wait for blur
+    },
+
+    getValueString: function(value) {
+      if (value) {
+        var m = this.utc ? moment.utc(value) : moment(value);
+        return m.format(this.format);
+      }
+      return '';
+    },
+
+    isDomValueValid: function(value) {
+      var m = this.utc ? moment.utc(value) : moment(value);
+      return !value || m.isValid && m.isValid() && this.getCalendar().isDateInMinMax(value);
+    },
+
+    processDomValue: function(value) {
+      if (value) {
+        var m = moment(value);
+        var oldValue = this.getValue();
+        if (oldValue && this.keepTime) {
+          var oldM = moment(oldValue);
+          m.hour(oldM.hour()).minute(oldM.minute()).second(oldM.second()).millisecond(oldM.millisecond());
+        }
+        return m.valueOf();
+      }
+      return null;
+    },
+
+    processPickerValue: function(value) {
+      return this.processDomValue(value);
+    },
+
+    onModelChange: function(e) {
+      FieldWithPicker.prototype.onModelChange.apply(this, arguments);
+      this.updateValueFromModel();
+    },
+
+
+    onKeyDown: function(e) {
+      if (e.keyCode === 13) { //on enter
+        e.preventDefault();
+        this.updateValueFromDom();
+      } else if(e.keyCode === 27) {
+        this.update();
+      }
+    },
+
+    updateValueFromModel: function() {
+      FieldWithPicker.prototype.updateValueFromModel.apply(this, arguments);
+      if (this.minDateAttr) {
+        this.setMinDate(this.model.get(this.minDateAttr));
+      }
+      if (this.maxDateAttr) {
+        this.setMaxDate(this.model.get(this.maxDateAttr));
+      }
+    }
+  });
+});
+
 
 define('text!view/form/fields/picker/templates/DateRangePicker.html',[],function () { return '<div class="calendar-wrap">\n  <div class="date-field">\n    <label class="control-label" for="daterangepicker_from">From</label>\n    <span class="from-date"></span>\n    {{#if showHourSelect}}<span class="from-hour"></span>{{/if}}\n  </div>\n  <div class="from-calendar"></div>\n</div>\n\n<div class="calendar-wrap">\n  <div class="date-field">\n    <label class="control-label" for="daterangepicker_to">To</label>\n    <span class="to-date"></span>\n    {{#if showHourSelect}}<span class="to-hour"></span>{{/if}}\n  </div>\n  <div class="to-calendar"></div>\n</div>\n\n<div class="ranges-wrap">\n  <ul class="ranges">\n    {{#ranges}}\n      <li><a href="#">{{name}}</a></li>\n    {{/ranges}}\n  </ul>\n  <button class="btn btn-small apply">Apply</button>\n  <a href="#" class="cancel">cancel</a>\n</div>\n';});
 
@@ -12017,6 +12364,8 @@ define('view/form/fields/picker/DateRangePicker',[
       valueAttr: 'fromDate',
       minDateAttr: 'minDate',
       maxDateAttr: 'toDate',
+      fromAttr: 'fromDate',
+      toAttr: 'toDate',
       preventFocus: true,
       replaceEl: true
     }, {
@@ -12026,6 +12375,8 @@ define('view/form/fields/picker/DateRangePicker',[
       valueAttr: 'toDate',
       minDateAttr: 'fromDate',
       maxDateAttr: 'maxDate',
+      fromAttr: 'fromDate',
+      toAttr: 'toDate',
       preventFocus: true,
       replaceEl: true
     }],
@@ -12082,7 +12433,11 @@ define('view/form/fields/picker/DateRangePicker',[
     },
 
     setValue: function(value) {
-      this.model.set({fromDate: value[0], toDate: value[1]});
+      var data = {fromDate: undefined, toDate: undefined};
+      if (value && value.length) {
+        data = {fromDate: value[0], toDate: value[1]};
+      }
+      this.model.set(data);
     },
 
     //
@@ -12100,7 +12455,7 @@ define('view/form/fields/picker/DateRangePicker',[
           value[i] = today.clone().add(value[i]);
         }
       }
-      this.setValue([value[0].valueOf(), value[1].valueOf()]);
+      this.setValue([value[0].startOf('day').valueOf(), value[1].endOf('day').valueOf()]);
       this.update();
     },
 
@@ -12201,6 +12556,14 @@ define('view/form/fields/DateRangeField',[
       this.getPicker().setShowHourSelect(showHourSelect);
     },
 
+    setMaxDate: function(maxDate) {
+      this.getPicker().model.set('maxDate', maxDate);
+    },
+
+    setMinDate: function(minDate) {
+      this.getPicker().model.set('minDate', minDate);
+    },
+
     //
     // Value
     //
@@ -12228,8 +12591,9 @@ define('view/form/fields/DateRangeField',[
       if (values.length !== 2) {
         return false;
       }
-      var fromDate = moment(values[0].trim()),
-        toDate = moment(values[1].trim());
+      var utc = this.getPicker().utc,
+        fromDate = utc ? moment.utc(values[0].trim()) : moment(values[0].trim()),
+        toDate = utc ? moment.utc(values[1].trim()) : moment(values[1].trim());
 
       if (!fromDate.isValid() || !toDate.isValid()) {
         return false;
@@ -12247,9 +12611,13 @@ define('view/form/fields/DateRangeField',[
       if (!value) {
         return null;
       }
+      var format = this.getPicker().showHourSelect ? this.formatWithHour : this.format;
       var values = value.split('-'),
-        fromDate = moment(values[0].trim()).valueOf(),
-        toDate = moment(values[1].trim()).valueOf();
+        utc = this.getPicker().utc,
+        m0 = utc ? moment.utc(values[0].trim(), format) : moment(values[0].trim()),
+        m1 = utc ? moment.utc(values[1].trim(), format) : moment(values[1].trim()),
+        fromDate = m0.valueOf(),
+        toDate = m1.valueOf();
       return [fromDate, toDate];
     },
 
@@ -12261,9 +12629,6 @@ define('view/form/fields/DateRangeField',[
       if (this.model) {
         var from = this.model.get(this.fromAttr),
           to = this.model.get(this.toAttr);
-        if (!from || !to) {
-          return null;
-        }
         return [from, to];
       }
     },
@@ -12275,7 +12640,7 @@ define('view/form/fields/DateRangeField',[
       var newValues = {};
       newValues[this.fromAttr] = value[0];
       newValues[this.toAttr] = value[1];
-      model.set(newValues);
+      return model.set(newValues);
     },
 
     valueChanged: function() {
@@ -12294,7 +12659,16 @@ define('view/form/fields/DateRangeField',[
       if (e.changed[this.fromAttr] !== undefined || e.changed[this.toAttr] !== undefined) {
         this.updateValueFromModel();
       }
-    }
+    },
+
+    onKeyDown: function(e) {
+      if (e.keyCode === 13) { //on enter
+        e.preventDefault();
+        this.updateValueFromDom();
+      } else if(e.keyCode === 27) {
+        this.update();
+      }
+    },
   });
 });
 
@@ -12906,6 +13280,7 @@ define('view/form/fields/FilterTypeAhead',[
           }
         }
       }
+      return true;
     }
   });
 });
@@ -13200,6 +13575,7 @@ define('view/form/fields/FilterField',[
           }
         }
       }
+      return true;
     }
   });
 });
@@ -13406,7 +13782,6 @@ define('view/grid/Formatters',[
     },
 
     DateFromNowFormatter: function(row, cell, value, columnDef, dataContext) {
-      //return new Date(Number(value)*1000).toString(columnDef.dateFormat);
       return DateTimeUtil.formatDateFromNow(value);
     },
 
@@ -13419,11 +13794,10 @@ define('view/grid/Formatters',[
     },
 
     DurationFormatter: function(row, cell, value, columnDef, dataContext) {
-      return DateTimeUtil.formatDurationShort(Number(value)*1000);
+      return DateTimeUtil.formatDurationShort(Number(value));
     },
 
     NameWithCommentsFormatter: function(row, cell, value, columnDef, dataContext) {
-      //return new Date(Number(value)*1000).toString(columnDef.dateFormat);
       var count = dataContext.get('comments_count');
       if (count > 0) {
         return value + '<span class="comments-count-icon">' + count + '</span>';
@@ -13805,6 +14179,75 @@ define('view/grid/GridView',[
   });
 });
 
+
+define('text!view/grid/templates/Pager.html',[],function () { return '<ul class="pager">\n  <li class="previous {{#if atFirstPage}}disabled{{/if}}"><a href="#">&larr;Previous</a></li>\n  <li class="next {{#if atLastPage}}disabled{{/if}}"><a href="#">Next &rarr;</a></li>\n</ul>';});
+
+define('view/grid/Pager',[
+  'jquery',
+  'underscore',
+  'backbone',
+  'PlumageRoot',
+  'view/ModelView',
+  'text!view/grid/templates/Pager.html'
+], function($, _, Backbone, Plumage, ModelView, template) {
+
+  return Plumage.view.grid.Pager = ModelView.extend({
+
+    className: 'pager',
+
+    template: template,
+
+    events: {
+      'click .pager .previous a': 'onPreviousClick',
+      'click .pager .next a': 'onNextClick',
+    },
+
+    getTemplateData: function() {
+      return {
+        atFirstPage: this.atFirstPage(),
+        atLastPage: this.atLastPage()
+      };
+    },
+
+    atFirstPage: function() {
+      if (this.model) {
+        return this.model.get('page') === 0;
+      }
+      return false;
+    },
+
+    atLastPage: function() {
+      if (this.model) {
+        return this.model.size() < this.model.get('pageSize');
+      }
+      return false;
+    },
+
+    onPreviousClick: function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      if (!this.atFirstPage()) {
+        var page = this.model.get('page');
+        this.model.set('page', Math.max(page-1, 0));
+        this.model.load();
+      }
+    },
+
+    onNextClick: function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      var page = this.model.get('page'),
+        pageSize = this.model.get('pageSize'),
+        atLastPage = this.model.size() < pageSize;
+
+      if (!this.atLastPage()) {
+        this.model.set('page', page+1);
+        this.model.load();
+      }
+    }
+  });
+});
+
 define('view/ListItemView',[ 'jquery', 'underscore', 'backbone',
   'PlumageRoot',
   'view/ModelView' ], function($, _, Backbone, Plumage, ModelView) {
@@ -14011,7 +14454,7 @@ define('view/ListAndDetailView',[
   });
 });
 
-define('text!view/templates/ModalDialog.html',[],function () { return '<div class="modal hide fade" tabindex="-1" role="dialog" aria-hidden="true">\n  <div class="modal-header">\n    <button type="button" class="close" data-dismiss="modal" aria-hidden="true">x</button>\n    <h3 id="myModalLabel">{{header}}</h3>\n  </div>\n  <div class="modal-body">\n  </div>\n  <div class="modal-footer">\n    <button class="btn" data-dismiss="modal" aria-hidden="true">Close</button>\n  </div>\n</div>';});
+define('text!view/templates/ModalDialog.html',[],function () { return '<div class="modal hide fade" tabindex="-1" role="dialog" aria-hidden="true">\n  <div class="modal-header">\n    <button type="button" class="close" data-dismiss="modal" aria-hidden="true">x</button>\n    <h3 id="myModalLabel">{{header}}</h3>\n  </div>\n  <div class="modal-body">\n  </div>\n  <div class="modal-footer">\n    {{#if showCancel}}\n      <a class="cancel" data-dismiss="modal" aria-hidden="true">Cancel</a>\n    {{else}}\n      <button class="btn" data-dismiss="modal" aria-hidden="true">Close</button>\n    {{/if}}\n    {{#if showSubmit}}\n      <button class="btn submit">Submit</button>\n    {{/if}}\n  </div>\n</div>';});
 
 define('view/ModalDialog',[
   'jquery',
@@ -14030,8 +14473,16 @@ define('view/ModalDialog',[
 
     header: '',
 
+    showCancel: false,
+
+    showSubmit: false,
+
     modalOptions: {
       show:false
+    },
+
+    events: {
+      'click .submit': 'onSubmitClick'
     },
 
     initialize: function(options) {
@@ -14055,7 +14506,9 @@ define('view/ModalDialog',[
     getTemplateData: function() {
       var data = ModelView.prototype.getTemplateData.apply(this, arguments);
       return _.extend(data,{
-        header: this.header
+        header: this.header,
+        showCancel: this.showCancel,
+        showSubmit: this.showSubmit
       });
     },
 
@@ -14068,6 +14521,10 @@ define('view/ModalDialog',[
 
     hide: function() {
       this.$('.modal').modal('hide');
+    },
+
+    onSubmitClick: function() {
+      this.trigger('submit', this);
     }
   });
 });
@@ -14993,6 +15450,7 @@ define('plumage',[
   'view/grid/Formatters',
   'view/grid/GridView',
   'view/grid/GridData',
+  'view/grid/Pager',
   'view/ListAndDetailView',
   'view/ListItemView',
   'view/ListView',

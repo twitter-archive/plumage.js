@@ -62,6 +62,7 @@ define([
           }
         }
       }
+      return true;
     }
   });
 });

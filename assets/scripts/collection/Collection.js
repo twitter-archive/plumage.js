@@ -395,6 +395,14 @@ define([
       }
     },
 
+    /**
+     * Gets a named [Selection]{@link Plumage.collection.Selection} for storing selection state.
+     *
+     * A collection can have any number of named selections, which are created on demand. Selections
+     * are named so that different views can share the same selection state.
+     *
+     * @param {String} selectionName Name of selection to get.
+     */
     getSelection: function(selectionName) {
       if (!this.selections) {
         this.selections = {};

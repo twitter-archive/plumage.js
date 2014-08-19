@@ -240,6 +240,7 @@ module.exports = function (grunt) {
           'assets/scripts/model/Filter.js',
           'assets/scripts/collection/Collection.js',
           'assets/scripts/collection/BufferedCollection.js',
+          'assets/scripts/collection/Selection.js',
 
           'assets/scripts/view/View.js',
           'assets/scripts/view/ContainerView.js',

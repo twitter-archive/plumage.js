@@ -14,6 +14,10 @@ define([
 
     headerTemplate: 'Confirmation Dialog',
 
+    message: undefined,
+
+    messageCls: undefined,
+
     bodyTemplate: 'Are you sure you want to do this?',
 
     buttonText: 'Confirm',
@@ -37,13 +41,22 @@ define([
         headerTemplate: this.headerTemplate(data),
         bodyTemplate: this.bodyTemplate(data),
         buttonText: this.buttonText,
-        buttonCls: this.buttonCls
+        buttonCls: this.buttonCls,
+        message:  this.message,
+        messageCls: this.messageCls
       });
     },
 
-    onConfirmClick: function() {
+    setMessage: function(message, messageCls) {
+      this.message = message;
+      this.messageCls = this.messageCls;
+      this.$('.message-body').attr('class', 'message-body ' + messageCls).html(message);
+      this.$('.message').show();
+    },
+
+    onConfirmClick: function(e) {
+      $(e.target).attr('disabled', '');
       this.trigger('confirm');
-      this.hide();
     }
   });
 });

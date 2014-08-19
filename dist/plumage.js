@@ -1829,6 +1829,14 @@ define('collection/Collection',[
       }
     },
 
+    /**
+     * Gets a named [Selection]{@link Plumage.collection.Selection} for storing selection state.
+     *
+     * A collection can have any number of named selections, which are created on demand. Selections
+     * are named so that different views can share the same selection state.
+     *
+     * @param {String} selectionName Name of selection to get.
+     */
     getSelection: function(selectionName) {
       if (!this.selections) {
         this.selections = {};
@@ -2576,14 +2584,27 @@ define('collection/Selection',['jquery', 'underscore', 'backbone',
         'PlumageRoot', 'collection/Collection'],
 function($, _, Backbone, Plumage, Collection) {
 
-  return Plumage.collection.Selection = Collection.extend({
-
+  return Plumage.collection.Selection = Collection.extend(
+  /** @lends Plumage.collection.Selection.prototype */
+  {
+    /** multiselect? */
     multi: false,
 
     model: Plumage.model.Model.extend({idAttribute: 'id'}),
 
+    /** parent collection being selected from */
     collection: undefined,
 
+    /**
+     * A selection of models from a Collection.
+     *
+     * Contains a set of selected ids (stored as models with a single 'id' field).
+     *
+     * Includes a number of methods for selecting and deselecting items.
+     *
+     * @constructs
+     * @extends Plumage.collection.Collection
+     */
     initialize: function(data, options) {
       Plumage.collection.Collection.prototype.initialize.apply(this, arguments);
       if (options && options.collection) {
@@ -2592,18 +2613,24 @@ function($, _, Backbone, Plumage, Collection) {
       }
     },
 
+    /** total number of items in the parent collection */
     getTotalSize: function() {
       return this.collection.size();
     },
 
+    /** Is id selected? */
     isSelectedId: function(id) {
       return this.getById(id) !== null;
     },
 
+    /** Is index selected? */
     isSelectedIndex: function(index) {
       return this.getById(this.collection.at(index).id) !== undefined;
     },
 
+    /**
+     * @returns {Array} array of selected indices
+     */
     getSelectedIndices: function() {
       return this.map(function(selectionItem) {
         var item = this.collection.getById(selectionItem.id);
@@ -2611,6 +2638,10 @@ function($, _, Backbone, Plumage, Collection) {
       }.bind(this));
     },
 
+    /**
+     * Select a array of indices
+     * @param {Array} indices Array of indices to select
+     */
     setSelectedIndices: function(indices) {
       var ids = _.map(indices, function(index) {
         return this.collection.at(index).id;
@@ -2618,18 +2649,28 @@ function($, _, Backbone, Plumage, Collection) {
       this.setSelectedIds(ids);
     },
 
+    /**
+     * @returns {Array} array of selected ids
+     */
     getSelectedIds: function(ids) {
       return this.map(function(item) {return item.id;});
     },
 
+    /**
+     * Select a array of ids
+     * @param {Array} ids Array of ids to select
+     */
     setSelectedIds: function(ids) {
       var data = _.map(ids, function(id) {return {id: id};});
       this.reset(data);
     },
 
+    /**
+     * Select a single index
+     * @param {Number} index index to select
+     */
     selectIndex: function(index) {
       var item = this.collection.at(index);
-
       if (this.getById(item.id) === undefined) {
         if (!this.multi) {
           this.deselectAll();
@@ -2638,6 +2679,10 @@ function($, _, Backbone, Plumage, Collection) {
       }
     },
 
+    /**
+     * Deselect a single index
+     * @param {Number} index index to dsselect
+     */
     deselectIndex: function(index) {
       var item = this.collection.at(index),
         selectionItem = this.getById(item.id);
@@ -2647,6 +2692,9 @@ function($, _, Backbone, Plumage, Collection) {
       }
     },
 
+    /**
+     * Select all items in the parent collection
+     */
     selectAll: function() {
       var data = this.collection.map(function(item) {
         return {id: item.id};
@@ -2654,6 +2702,9 @@ function($, _, Backbone, Plumage, Collection) {
       this.reset(data);
     },
 
+    /**
+     * Clears this selection
+     */
     deselectAll: function() {
       this.reset([]);
     },
@@ -2661,6 +2712,7 @@ function($, _, Backbone, Plumage, Collection) {
     // Event handlers
 
     onCollectionLoad: function() {
+      // reset with only ids still in the collection after load
       var data = [];
       this.each(function(item){
         if (this.collection.getById(item.id) !== undefined) {
@@ -12870,6 +12922,70 @@ define('view/form/fields/DropdownMultiSelect',[
 
 });
 
+define('view/form/fields/FilterCheckbox',[
+  'jquery',
+  'backbone',
+  'handlebars',
+  'PlumageRoot',
+  'view/form/fields/Checkbox'
+], function($, Backbone, Handlebars, Plumage, Checkbox) {
+
+
+  return Plumage.view.form.fields.FilterCheckbox = Checkbox.extend({
+
+    filterKey: undefined,
+
+    filterValue: true,
+
+    invertMatch: false,
+
+    checkboxLabel: undefined,
+
+    comparison: 'equals',
+
+    updateModelOnChange: true,
+
+    processFilterValue: function(value) {
+      return ((value === this.filterValue) !== this.invertMatch) ? true : false;
+    },
+
+    processValueForFilter: function(value) {
+      return (value !== this.invertMatch) ? this.filterValue : undefined;
+    },
+
+    getValueFromModel: function() {
+      if (this.model) {
+        var filters = this.model.getFilters(this.filterKey),
+          value;
+        if (filters && filters.length) {
+          value = filters[0].get('value');
+        }
+        return this.processFilterValue(value);
+      }
+      return undefined;
+    },
+
+    updateModel: function(rootModel, parentModel) {
+      var model = this.getModelFromRoot(this.relationship, rootModel, parentModel),
+        value = this.processValueForFilter(this.getValue()),
+        filters = this.model.getFilters(this.filterKey);
+
+      if (model) {
+        if (filters && filters.length) {
+          if (value === undefined || String(value) === '') {
+            this.model.removeFilter(filters[0]);
+          } else {
+            filters[0].set('value', value);
+          }
+        } else {
+          if (value !== undefined && String(value) !== '') {
+            model.addFilter(new Plumage.model.Filter({key: this.filterKey, comparison: this.comparison, value: value}));
+          }
+        }
+      }
+    }
+  });
+});
 
 define('text!view/form/fields/templates/TypeAhead.html',[],function () { return '<span class="typeahead-select {{#if menuShown}}open{{/if}}">\n<span class="input-append">\n  <input type="text" placeholder="{{noSelectionText}}" value="{{value}}">\n  <button class="btn cancel-typeahead"><i class="icon-remove"></i></button>\n</span>\n\n<ul class="dropdown-menu">\n</ul>\n</span>';});
 
@@ -14531,7 +14647,7 @@ define('view/ModalDialog',[
 
 
 
-define('text!view/templates/ConfirmationDialog.html',[],function () { return '<div class="modal hide fade" tabindex="-1" role="dialog" aria-hidden="true">\n  <div class="modal-header">\n    <button type="button" class="close" data-dismiss="modal" aria-hidden="true">x</button>\n    <h3 id="myModalLabel">{{{headerTemplate}}}</h3>\n  </div>\n  <div class="modal-body">\n    {{{bodyTemplate}}}\n  </div>\n  <div class="modal-footer">\n  <button class="btn" data-dismiss="modal" aria-hidden="true">Cancel</button>\n    <button class="btn confirm {{buttonCls}}">{{buttonText}}</button>\n  </div>\n</div>';});
+define('text!view/templates/ConfirmationDialog.html',[],function () { return '<div class="modal hide fade" tabindex="-1" role="dialog" aria-hidden="true">\n  <div class="modal-header">\n    <button type="button" class="close" data-dismiss="modal" aria-hidden="true">x</button>\n    <h3 id="myModalLabel">{{{headerTemplate}}}</h3>\n  </div>\n  <div class="modal-body">\n    <div class="message">\n      <div class="message-body {{messageCls}}">\n        {{message}}\n      </div>\n    </div>\n\n    {{{bodyTemplate}}}\n  </div>\n  <div class="modal-footer">\n  <button class="btn" data-dismiss="modal" aria-hidden="true">Cancel</button>\n    <button class="btn confirm {{buttonCls}}">{{buttonText}}</button>\n  </div>\n</div>';});
 
 define('view/ConfirmationDialog',[
   'jquery',
@@ -14548,6 +14664,10 @@ define('view/ConfirmationDialog',[
     template: template,
 
     headerTemplate: 'Confirmation Dialog',
+
+    message: undefined,
+
+    messageCls: undefined,
 
     bodyTemplate: 'Are you sure you want to do this?',
 
@@ -14572,13 +14692,22 @@ define('view/ConfirmationDialog',[
         headerTemplate: this.headerTemplate(data),
         bodyTemplate: this.bodyTemplate(data),
         buttonText: this.buttonText,
-        buttonCls: this.buttonCls
+        buttonCls: this.buttonCls,
+        message:  this.message,
+        messageCls: this.messageCls
       });
     },
 
-    onConfirmClick: function() {
+    setMessage: function(message, messageCls) {
+      this.message = message;
+      this.messageCls = this.messageCls;
+      this.$('.message-body').attr('class', 'message-body ' + messageCls).html(message);
+      this.$('.message').show();
+    },
+
+    onConfirmClick: function(e) {
+      $(e.target).attr('disabled', '');
       this.trigger('confirm');
-      this.hide();
     }
   });
 });
@@ -15432,6 +15561,7 @@ define('plumage',[
   'view/form/fields/DropdownSelect',
   'view/form/fields/Field',
   'view/form/fields/FieldWithPicker',
+  'view/form/fields/FilterCheckbox',
   'view/form/fields/FilterTypeAhead',
   'view/form/fields/HourSelect',
   'view/form/fields/InPlaceTextField',

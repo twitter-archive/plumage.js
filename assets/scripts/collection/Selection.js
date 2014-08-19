@@ -2,14 +2,27 @@ define(['jquery', 'underscore', 'backbone',
         'PlumageRoot', 'collection/Collection'],
 function($, _, Backbone, Plumage, Collection) {
 
-  return Plumage.collection.Selection = Collection.extend({
-
+  return Plumage.collection.Selection = Collection.extend(
+  /** @lends Plumage.collection.Selection.prototype */
+  {
+    /** multiselect? */
     multi: false,
 
     model: Plumage.model.Model.extend({idAttribute: 'id'}),
 
+    /** parent collection being selected from */
     collection: undefined,
 
+    /**
+     * A selection of models from a Collection.
+     *
+     * Contains a set of selected ids (stored as models with a single 'id' field).
+     *
+     * Includes a number of methods for selecting and deselecting items.
+     *
+     * @constructs
+     * @extends Plumage.collection.Collection
+     */
     initialize: function(data, options) {
       Plumage.collection.Collection.prototype.initialize.apply(this, arguments);
       if (options && options.collection) {
@@ -18,18 +31,24 @@ function($, _, Backbone, Plumage, Collection) {
       }
     },
 
+    /** total number of items in the parent collection */
     getTotalSize: function() {
       return this.collection.size();
     },
 
+    /** Is id selected? */
     isSelectedId: function(id) {
       return this.getById(id) !== null;
     },
 
+    /** Is index selected? */
     isSelectedIndex: function(index) {
       return this.getById(this.collection.at(index).id) !== undefined;
     },
 
+    /**
+     * @returns {Array} array of selected indices
+     */
     getSelectedIndices: function() {
       return this.map(function(selectionItem) {
         var item = this.collection.getById(selectionItem.id);
@@ -37,6 +56,10 @@ function($, _, Backbone, Plumage, Collection) {
       }.bind(this));
     },
 
+    /**
+     * Select a array of indices
+     * @param {Array} indices Array of indices to select
+     */
     setSelectedIndices: function(indices) {
       var ids = _.map(indices, function(index) {
         return this.collection.at(index).id;
@@ -44,18 +67,28 @@ function($, _, Backbone, Plumage, Collection) {
       this.setSelectedIds(ids);
     },
 
+    /**
+     * @returns {Array} array of selected ids
+     */
     getSelectedIds: function(ids) {
       return this.map(function(item) {return item.id;});
     },
 
+    /**
+     * Select a array of ids
+     * @param {Array} ids Array of ids to select
+     */
     setSelectedIds: function(ids) {
       var data = _.map(ids, function(id) {return {id: id};});
       this.reset(data);
     },
 
+    /**
+     * Select a single index
+     * @param {Number} index index to select
+     */
     selectIndex: function(index) {
       var item = this.collection.at(index);
-
       if (this.getById(item.id) === undefined) {
         if (!this.multi) {
           this.deselectAll();
@@ -64,6 +97,10 @@ function($, _, Backbone, Plumage, Collection) {
       }
     },
 
+    /**
+     * Deselect a single index
+     * @param {Number} index index to dsselect
+     */
     deselectIndex: function(index) {
       var item = this.collection.at(index),
         selectionItem = this.getById(item.id);
@@ -73,6 +110,9 @@ function($, _, Backbone, Plumage, Collection) {
       }
     },
 
+    /**
+     * Select all items in the parent collection
+     */
     selectAll: function() {
       var data = this.collection.map(function(item) {
         return {id: item.id};
@@ -80,6 +120,9 @@ function($, _, Backbone, Plumage, Collection) {
       this.reset(data);
     },
 
+    /**
+     * Clears this selection
+     */
     deselectAll: function() {
       this.reset([]);
     },
@@ -87,6 +130,7 @@ function($, _, Backbone, Plumage, Collection) {
     // Event handlers
 
     onCollectionLoad: function() {
+      // reset with only ids still in the collection after load
       var data = [];
       this.each(function(item){
         if (this.collection.getById(item.id) !== undefined) {

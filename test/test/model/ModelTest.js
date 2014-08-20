@@ -303,8 +303,10 @@ define([
     post.load();
 
     equal(this.syncArgs.options.data.foo, post.getQueryParams().foo, 'request url should include query params');
-  });
 
+    post.load({data:{bar: '2'}});
+    deepEqual(this.syncArgs.options.data, {foo: '1', bar: '2'}, 'request url should include data option');
+  });
 
   test('View state', function(){
     var PostWithViewState = Post.extend({viewAttrs: ['tab', 'filter']});

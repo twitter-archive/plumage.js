@@ -1185,9 +1185,7 @@ function($, _, Backbone, Plumage, requestManager, ModelUtil, BufferedCollection)
      */
     load: function(options) {
       options = options || {};
-      options = _.extend({
-        data: this.getQueryParams()
-      }, options);
+      options.data = _.extend(this.getQueryParams(), options.data);
 
       if (_.isEqual(this.latestLoadParams, options.data)) {
         return;
@@ -11070,8 +11068,8 @@ define('view/form/fields/Select',[
     onListModelDestroy: function(model, options) {
     },
 
-    onListModelError: function(model, options) {
-      this.onModelError(model, options);
+    onListModelError: function(model, response, options) {
+      this.onModelError(model, response, options);
     }
   });
 });

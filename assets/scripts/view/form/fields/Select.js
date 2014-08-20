@@ -230,8 +230,8 @@ define([
     onListModelDestroy: function(model, options) {
     },
 
-    onListModelError: function(model, options) {
-      this.onModelError(model, options);
+    onListModelError: function(model, response, options) {
+      this.onModelError(model, response, options);
     }
   });
 });

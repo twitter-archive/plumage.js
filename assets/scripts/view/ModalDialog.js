@@ -36,7 +36,7 @@ define([
     onRender: function() {
       ModelView.prototype.onRender.apply(this, arguments);
       if (this.contentView) {
-        this.$('.modal-body').html(this.contentView.render().el);
+        this.$('.modal-content').html(this.contentView.render().el);
       }
 
       if (this.$el.closest('html').length === 0) {
@@ -55,14 +55,20 @@ define([
     },
 
     show: function() {
-      if (!this.isRendered) {
-        this.render();
-      }
+      this.render();
       this.$('.modal').modal('show');
+      this.onShow();
+      if (this.contentView) {
+        this.contentView.onShow();
+      }
     },
 
     hide: function() {
       this.$('.modal').modal('hide');
+      if (this.contentView) {
+        this.contentView.onHide();
+      }
+      this.onHide();
     },
 
     onSubmitClick: function() {

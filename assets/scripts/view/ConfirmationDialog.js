@@ -5,8 +5,9 @@ define([
   'handlebars',
   'PlumageRoot',
   'view/ModalDialog',
+  'view/MessageView',
   'text!view/templates/ConfirmationDialog.html'
-], function($, _, Backbone, Handlebars, Plumage, ModalDialog, template) {
+], function($, _, Backbone, Handlebars, Plumage, ModalDialog, MessageView, template) {
 
   return Plumage.view.ConfirmationDialog = ModalDialog.extend({
 
@@ -28,6 +29,14 @@ define([
       'click .confirm': 'onConfirmClick'
     },
 
+    subViews: [{
+      viewCls: MessageView,
+      name: 'message',
+      selector: '.message',
+      updateOnMessage: false,
+      replaceEl: true,
+    }],
+
     initialize: function(options) {
       options = options || {};
       ModalDialog.prototype.initialize.apply(this, arguments);
@@ -48,10 +57,7 @@ define([
     },
 
     setMessage: function(message, messageCls) {
-      this.message = message;
-      this.messageCls = this.messageCls;
-      this.$('.message-body').attr('class', 'message-body ' + messageCls).html(message);
-      this.$('.message').show();
+      this.getSubView('message').setMessage(message, messageCls);
     },
 
     onConfirmClick: function(e) {

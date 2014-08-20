@@ -1210,8 +1210,9 @@ function($, _, Backbone, Plumage, requestManager, ModelUtil, BufferedCollection)
       } else {
         (attrs = {})[key] = val;
       }
+      options = options || {};
       this._wrapHandlers(options);
-      Backbone.Model.prototype.save.apply(this, arguments);
+      Backbone.Model.prototype.save.apply(this, [attrs, options]);
     },
 
     /**
@@ -1328,10 +1329,13 @@ function($, _, Backbone, Plumage, requestManager, ModelUtil, BufferedCollection)
         if (resp.meta && resp.meta.success === false) {
           if (resp.meta.validationError) {
             model.validationError = resp.meta.validationError;
-            model.trigger('invalid', model, model.validationError);
-          } else {
-            model.trigger('error', model, resp, options);
           }
+          model.trigger('invalid',
+            model,
+            model.validationError,
+            resp.meta.message_body,
+            resp.meta.message_class
+          );
         } else {
           model.latestLoadParams = undefined;
           model.onLoad(options);
@@ -1342,6 +1346,7 @@ function($, _, Backbone, Plumage, requestManager, ModelUtil, BufferedCollection)
 
       };
 
+      //NOTE: backbone triggers 'error'
       options.error = function(model, xhr, options) {
         if (typeof theApp !== 'undefined' && theApp.logger) {
           if (xhr.statusText !== 'abort') {
@@ -9863,17 +9868,16 @@ define('view/form/Form',[
       return this.actionLabel ? this.actionLabel : 'Submit';
     },
 
-    onChange: function(e) {
-      if (this.updateModelOnChange) {
-        this.onSubmit(e);
+    setMessage: function(message, messageCls) {
+      var messageView = this.getSubView('message');
+      if (messageView) {
+        messageView.setMessage(message, messageCls);
       }
-      this.trigger('change', this, e);
     },
 
-    onSubmit: function(e) {
-      e.preventDefault();
-      this.submit();
-    },
+    //
+    // actions
+    //
 
     submit: function() {
       if (!this.model) {
@@ -9892,8 +9896,36 @@ define('view/form/Form',[
       }
     },
 
+    //
+    // Events
+    //
+
+    onChange: function(e) {
+      if (this.updateModelOnChange) {
+        this.onSubmit(e);
+      }
+      this.trigger('change', this, e);
+    },
+
+    onSubmit: function(e) {
+      e.preventDefault();
+      this.submit();
+    },
+
     onSaveSuccess: function(model, resp, xhr) {
-      this.trigger('save', this, model);
+      if (resp.meta.success) {
+        this.trigger('save', this, model);
+      } else {
+        if (resp.meta.message_body) {
+          this.setMessage(resp.meta.message_body, resp.meta.message_class);
+        }
+      }
+    },
+
+    onModelInvalid: function(model, validationError, message, messageCls) {
+      if (message) {
+        this.setMessage(message, messageCls);
+      }
     }
   });
 });
@@ -10369,12 +10401,14 @@ define('view/form/fields/Field',[
     },
 
     onModelInvalid: function(model, validationError) {
-      var message = validationError[this.valueAttr];
-      if (message) {
-        if ($.isArray(message)) {
-          message = message[0];
+      if (validationError) {
+        var message = validationError[this.valueAttr];
+        if (message) {
+          if ($.isArray(message)) {
+            message = message[0];
+          }
+          this.setValidationState('error', message);
         }
-        this.setValidationState('error', message);
       }
     }
   });
@@ -14570,7 +14604,7 @@ define('view/ListAndDetailView',[
   });
 });
 
-define('text!view/templates/ModalDialog.html',[],function () { return '<div class="modal hide fade" tabindex="-1" role="dialog" aria-hidden="true">\n  <div class="modal-header">\n    <button type="button" class="close" data-dismiss="modal" aria-hidden="true">x</button>\n    <h3 id="myModalLabel">{{header}}</h3>\n  </div>\n  <div class="modal-body">\n  </div>\n  <div class="modal-footer">\n    {{#if showCancel}}\n      <a class="cancel" data-dismiss="modal" aria-hidden="true">Cancel</a>\n    {{else}}\n      <button class="btn" data-dismiss="modal" aria-hidden="true">Close</button>\n    {{/if}}\n    {{#if showSubmit}}\n      <button class="btn submit">Submit</button>\n    {{/if}}\n  </div>\n</div>';});
+define('text!view/templates/ModalDialog.html',[],function () { return '<div class="modal hide fade" tabindex="-1" role="dialog" aria-hidden="true">\n  <div class="modal-header">\n    <button type="button" class="close" data-dismiss="modal" aria-hidden="true">x</button>\n    <h3 id="myModalLabel">{{header}}</h3>\n  </div>\n  <div class="modal-body">\n    <div class="modal-content"></div>\n  </div>\n  <div class="modal-footer">\n    {{#if showCancel}}\n      <a class="cancel" data-dismiss="modal" aria-hidden="true">Cancel</a>\n    {{else}}\n      <button class="btn" data-dismiss="modal" aria-hidden="true">Close</button>\n    {{/if}}\n    {{#if showSubmit}}\n      <button class="btn submit">Submit</button>\n    {{/if}}\n  </div>\n</div>';});
 
 define('view/ModalDialog',[
   'jquery',
@@ -14610,7 +14644,7 @@ define('view/ModalDialog',[
     onRender: function() {
       ModelView.prototype.onRender.apply(this, arguments);
       if (this.contentView) {
-        this.$('.modal-body').html(this.contentView.render().el);
+        this.$('.modal-content').html(this.contentView.render().el);
       }
 
       if (this.$el.closest('html').length === 0) {
@@ -14629,14 +14663,20 @@ define('view/ModalDialog',[
     },
 
     show: function() {
-      if (!this.isRendered) {
-        this.render();
-      }
+      this.render();
       this.$('.modal').modal('show');
+      this.onShow();
+      if (this.contentView) {
+        this.contentView.onShow();
+      }
     },
 
     hide: function() {
       this.$('.modal').modal('hide');
+      if (this.contentView) {
+        this.contentView.onHide();
+      }
+      this.onHide();
     },
 
     onSubmitClick: function() {
@@ -14647,7 +14687,83 @@ define('view/ModalDialog',[
 
 
 
-define('text!view/templates/ConfirmationDialog.html',[],function () { return '<div class="modal hide fade" tabindex="-1" role="dialog" aria-hidden="true">\n  <div class="modal-header">\n    <button type="button" class="close" data-dismiss="modal" aria-hidden="true">x</button>\n    <h3 id="myModalLabel">{{{headerTemplate}}}</h3>\n  </div>\n  <div class="modal-body">\n    <div class="message">\n      <div class="message-body {{messageCls}}">\n        {{message}}\n      </div>\n    </div>\n\n    {{{bodyTemplate}}}\n  </div>\n  <div class="modal-footer">\n  <button class="btn" data-dismiss="modal" aria-hidden="true">Cancel</button>\n    <button class="btn confirm {{buttonCls}}">{{buttonText}}</button>\n  </div>\n</div>';});
+define('text!view/templates/MessageView.html',[],function () { return '\n{{#body}}\n<div class="message-body {{../cls}}">\n{{{.}}}\n</div>\n{{/body}}\n';});
+
+define('view/MessageView',[
+  'jquery',
+  'backbone',
+  'handlebars',
+  'PlumageRoot',
+  'view/ModelView',
+  'text!view/templates/MessageView.html'
+], function($, Backbone, Handlebars, Plumage, ModelView, template) {
+
+  /**
+   * lists with selections need two models:
+   *  - one for list contents
+   *  - one for list selection
+   *
+   * The selection model, populated by the model hierarchy. The list model needs to be populated manually.
+   */
+  return Plumage.view.MessageView = ModelView.extend({
+
+    className: 'message',
+
+    template: template,
+
+    updateOnMessage: true,
+
+    events: {
+      'click a': 'onLinkClick'
+    },
+
+    initialize: function() {
+      ModelView.prototype.initialize.apply(this, arguments);
+      if (this.updateOnMessage) {
+        theApp.dispatch.on('message', this.setMessage.bind(this));
+      }
+    },
+
+    onRender: function() {
+      ModelView.prototype.onRender.apply(this, arguments);
+      this.updateClass();
+    },
+
+    getTemplateData: function() {
+      var data = {
+        body: this.messageBody,
+        cls: this.messageCls
+      };
+      return data;
+    },
+
+    updateClass: function() {
+      this.$el.toggleClass('show', Boolean(this.messageBody));
+    },
+
+    setMessage: function(messageBody, messageCls) {
+      this.messageBody = messageBody;
+      this.messageCls = messageCls;
+      if (this.shown) {
+        this.render();
+      }
+    },
+
+    onShow: function() {
+      ModelView.prototype.onShow.apply(this, arguments);
+      this.render();
+
+    },
+
+    setModel: function() {
+      this.messageBody = undefined;
+      this.messageCls = undefined;
+      ModelView.prototype.setModel.apply(this, arguments);
+    }
+  });
+});
+
+define('text!view/templates/ConfirmationDialog.html',[],function () { return '<div class="modal hide fade" tabindex="-1" role="dialog" aria-hidden="true">\n  <div class="modal-header">\n    <button type="button" class="close" data-dismiss="modal" aria-hidden="true">x</button>\n    <h3 id="myModalLabel">{{{headerTemplate}}}</h3>\n  </div>\n  <div class="modal-body">\n    <div class="message"></div>\n    <div class="modal-content">\n\t    {{{bodyTemplate}}}\n    </div>\n  </div>\n  <div class="modal-footer">\n  <button class="btn" data-dismiss="modal" aria-hidden="true">Cancel</button>\n    <button class="btn confirm {{buttonCls}}">{{buttonText}}</button>\n  </div>\n</div>';});
 
 define('view/ConfirmationDialog',[
   'jquery',
@@ -14656,8 +14772,9 @@ define('view/ConfirmationDialog',[
   'handlebars',
   'PlumageRoot',
   'view/ModalDialog',
+  'view/MessageView',
   'text!view/templates/ConfirmationDialog.html'
-], function($, _, Backbone, Handlebars, Plumage, ModalDialog, template) {
+], function($, _, Backbone, Handlebars, Plumage, ModalDialog, MessageView, template) {
 
   return Plumage.view.ConfirmationDialog = ModalDialog.extend({
 
@@ -14679,6 +14796,14 @@ define('view/ConfirmationDialog',[
       'click .confirm': 'onConfirmClick'
     },
 
+    subViews: [{
+      viewCls: MessageView,
+      name: 'message',
+      selector: '.message',
+      updateOnMessage: false,
+      replaceEl: true,
+    }],
+
     initialize: function(options) {
       options = options || {};
       ModalDialog.prototype.initialize.apply(this, arguments);
@@ -14699,10 +14824,7 @@ define('view/ConfirmationDialog',[
     },
 
     setMessage: function(message, messageCls) {
-      this.message = message;
-      this.messageCls = this.messageCls;
-      this.$('.message-body').attr('class', 'message-body ' + messageCls).html(message);
-      this.$('.message').show();
+      this.getSubView('message').setMessage(message, messageCls);
     },
 
     onConfirmClick: function(e) {
@@ -14802,78 +14924,6 @@ define('view/DisplayField',[
   });
 });
 
-
-define('text!view/templates/MessageView.html',[],function () { return '\n{{#body}}\n<div class="message-body {{../cls}}">\n{{{.}}}\n</div>\n{{/body}}\n';});
-
-define('view/MessageView',[
-  'jquery',
-  'backbone',
-  'handlebars',
-  'PlumageRoot',
-  'view/ModelView',
-  'text!view/templates/MessageView.html'
-], function($, Backbone, Handlebars, Plumage, ModelView, template) {
-
-  /**
-   * lists with selections need two models:
-   *  - one for list contents
-   *  - one for list selection
-   *
-   * The selection model, populated by the model hierarchy. The list model needs to be populated manually.
-   */
-  return Plumage.view.MessageView = ModelView.extend({
-
-    className: 'message',
-
-    template: template,
-
-    events: {
-      'click a': 'onLinkClick'
-    },
-
-    initialize: function() {
-      ModelView.prototype.initialize.apply(this, arguments);
-      theApp.dispatch.on('message', this.onMessage.bind(this));
-    },
-
-    onRender: function() {
-      ModelView.prototype.onRender.apply(this, arguments);
-      this.updateClass();
-    },
-
-    getTemplateData: function() {
-      var data = {
-        body: this.messageBody,
-        cls: this.messageCls
-      };
-      return data;
-    },
-
-    updateClass: function() {
-      this.$el.toggleClass('show', Boolean(this.messageBody));
-    },
-
-    onMessage: function(messageBody, messageCls) {
-      this.messageBody = messageBody;
-      this.messageCls = messageCls;
-      if (this.shown) {
-        this.render();
-      }
-    },
-
-    onShow: function() {
-      ModelView.prototype.onShow.apply(this, arguments);
-      this.render();
-
-    },
-
-    setModel: function() {
-      this.messageBody = undefined;
-      this.messageCls = undefined;
-      ModelView.prototype.setModel.apply(this, arguments);
-    }
-  });
-});
 
 define('text!view/templates/NavView.html',[],function () { return '\n<div id="nav-top">\n  <a class="brand" href="/">\n    <span class="nav-title">{{title}}</span>\n    {{#subtitle}}<span class="nav-subtitle">{{.}}</span>{{/subtitle}}\n  </a>\n  <div id="extra-links">\n  {{#aboutUrl}}\n    <a class="outlink" href="{{.}}" target="_">about</a>\n  {{/aboutUrl}}\n\n  {{#helpUrl}}\n    <a class="outlink" href="{{.}}" target="_">help</a>\n  {{/helpUrl}}\n  </div>\n\n  <div id="nav-top-right" class="nav pull-right">\n    <div class="nav-search"></div>\n  </div>\n  <div class="clear"></div>\n</div>\n\n{{#if navItems}}\n<div id="main-nav" class="navbar">\n  <div class="navbar-inner">\n    <ul class="nav-menu nav menu">\n      {{#navItems}}\n      <li class="{{className}}"><a href="{{url}}">{{label}}</a></li>\n      {{/navItems}}\n    </ul>\n\n    <ul class="nav right-nav pull-right">\n      <li class="user-menu"></li>\n    </ul>\n  </div>\n</div>\n{{/if}}';});
 

@@ -622,8 +622,9 @@ function($, _, Backbone, Plumage, requestManager, ModelUtil, BufferedCollection)
       } else {
         (attrs = {})[key] = val;
       }
+      options = options || {};
       this._wrapHandlers(options);
-      Backbone.Model.prototype.save.apply(this, arguments);
+      Backbone.Model.prototype.save.apply(this, [attrs, options]);
     },
 
     /**
@@ -740,10 +741,13 @@ function($, _, Backbone, Plumage, requestManager, ModelUtil, BufferedCollection)
         if (resp.meta && resp.meta.success === false) {
           if (resp.meta.validationError) {
             model.validationError = resp.meta.validationError;
-            model.trigger('invalid', model, model.validationError);
-          } else {
-            model.trigger('error', model, resp, options);
           }
+          model.trigger('invalid',
+            model,
+            model.validationError,
+            resp.meta.message_body,
+            resp.meta.message_class
+          );
         } else {
           model.latestLoadParams = undefined;
           model.onLoad(options);
@@ -754,6 +758,7 @@ function($, _, Backbone, Plumage, requestManager, ModelUtil, BufferedCollection)
 
       };
 
+      //NOTE: backbone triggers 'error'
       options.error = function(model, xhr, options) {
         if (typeof theApp !== 'undefined' && theApp.logger) {
           if (xhr.statusText !== 'abort') {

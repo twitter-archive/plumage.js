@@ -467,12 +467,14 @@ define([
     },
 
     onModelInvalid: function(model, validationError) {
-      var message = validationError[this.valueAttr];
-      if (message) {
-        if ($.isArray(message)) {
-          message = message[0];
+      if (validationError) {
+        var message = validationError[this.valueAttr];
+        if (message) {
+          if ($.isArray(message)) {
+            message = message[0];
+          }
+          this.setValidationState('error', message);
         }
-        this.setValidationState('error', message);
       }
     }
   });

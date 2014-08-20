@@ -20,13 +20,17 @@ define([
 
     template: template,
 
+    updateOnMessage: true,
+
     events: {
       'click a': 'onLinkClick'
     },
 
     initialize: function() {
       ModelView.prototype.initialize.apply(this, arguments);
-      theApp.dispatch.on('message', this.onMessage.bind(this));
+      if (this.updateOnMessage) {
+        theApp.dispatch.on('message', this.setMessage.bind(this));
+      }
     },
 
     onRender: function() {
@@ -46,7 +50,7 @@ define([
       this.$el.toggleClass('show', Boolean(this.messageBody));
     },
 
-    onMessage: function(messageBody, messageCls) {
+    setMessage: function(messageBody, messageCls) {
       this.messageBody = messageBody;
       this.messageCls = messageCls;
       if (this.shown) {

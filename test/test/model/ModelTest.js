@@ -338,6 +338,39 @@ define([
     equal(post.urlWithParams({foo: 'bar', tab: 'foo'}), '/posts/1?tab=foo&foo=bar', 'should override view params');
   });
 
+  //
+  // Saving
+  //
+
+  test('saving', function() {
+    var post = new Post();
+    post.set(ExampleData.POST_DATA);
+    var eventLog = new EventLog(post);
+
+    this.ajaxResponse = {
+      meta: {success: true},
+      result: ExampleData.POST_DATA
+    };
+    post.save();
+    equal(eventLog.counts.load, 1, 'should fire load on save');
+
+    // save failed
+    this.ajaxResponse = {
+      meta: {success: false, message_body: 'oops', message_class: 'bad'}
+    };
+
+    post.save();
+    equal(eventLog.counts.load, 1, 'should not fire load again');
+    equal(eventLog.counts.invalid, 1, 'should fire invalid');
+
+    this.ajaxResponse = {
+      meta: {success: false, validationError: {'body':'too short'}}
+    };
+    post.save();
+    equal(eventLog.counts.load, 1, 'should not fire load again');
+    equal(eventLog.counts.invalid, 2, 'should fire invalid');
+  });
+
 
 //  test('Relationship with getParams', function() {
 //    var PostParams = Post.extend({relationships: _.clone(Post.prototype.relationships)});

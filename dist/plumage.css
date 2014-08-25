@@ -628,6 +628,13 @@ div.comment-wrapper .item-author-header {
   z-index: 10;
   pointer-events: none; }
 
+/****** Checkbox select *******/
+.grid-view .checkbox-select {
+  text-align: center;
+  cursor: pointer; }
+  .grid-view .checkbox-select input {
+    margin: 0; }
+
 /**
  *   Filter View
  */

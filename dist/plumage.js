@@ -2591,7 +2591,7 @@ function($, _, Backbone, Plumage, Collection) {
   /** @lends Plumage.collection.Selection.prototype */
   {
     /** multiselect? */
-    multi: false,
+    multi: true,
 
     model: Plumage.model.Model.extend({idAttribute: 'id'}),
 
@@ -2623,7 +2623,7 @@ function($, _, Backbone, Plumage, Collection) {
 
     /** Is id selected? */
     isSelectedId: function(id) {
-      return this.getById(id) !== null;
+      return this.getById(id) !== undefined;
     },
 
     /** Is index selected? */
@@ -2675,10 +2675,11 @@ function($, _, Backbone, Plumage, Collection) {
     selectIndex: function(index) {
       var item = this.collection.at(index);
       if (this.getById(item.id) === undefined) {
-        if (!this.multi) {
-          this.deselectAll();
+        if (this.multi) {
+          this.add(new this.model({id: item.id}));
+        } else {
+          this.setSelectedIds([item.id]);
         }
-        this.add(new Plumage.model.Data({id: item.id}));
       }
     },
 
@@ -2692,6 +2693,14 @@ function($, _, Backbone, Plumage, Collection) {
 
       if (selectionItem) {
         this.remove(selectionItem);
+      }
+    },
+
+    toggleIndex: function(index) {
+      if (this.isSelectedIndex(index)) {
+        this.deselectIndex(index);
+      } else {
+        this.selectIndex(index);
       }
     },
 
@@ -7537,164 +7546,6 @@ define("slickgrid/slick.grid", ["slickgrid/slick.core"], function(){});
 define("slickgrid/plugins/slick.rowselectionmodel", function(){});
 
 (function ($) {
-  // register namespace
-  $.extend(true, window, {
-    "Slick": {
-      "CheckboxSelectColumn": CheckboxSelectColumn
-    }
-  });
-
-
-  function CheckboxSelectColumn(options) {
-    var _grid;
-    var _self = this;
-    var _handler = new Slick.EventHandler();
-    var _selectedRowsLookup = {};
-    var _defaults = {
-      columnId: "_checkbox_selector",
-      cssClass: null,
-      selectAll: true,
-      toolTip: "Select/Deselect All",
-      width: 30
-    };
-
-    var _options = $.extend(true, {}, _defaults, options);
-
-    function init(grid) {
-      _grid = grid;
-      _handler
-        .subscribe(_grid.onSelectedRowsChanged, handleSelectedRowsChanged)
-        .subscribe(_grid.onClick, handleClick)
-        .subscribe(_grid.onHeaderClick, handleHeaderClick)
-        .subscribe(_grid.onKeyDown, handleKeyDown);
-    }
-
-    function destroy() {
-      _handler.unsubscribeAll();
-    }
-
-    function handleSelectedRowsChanged(e, args) {
-      var selectedRows = _grid.getSelectedRows();
-      var lookup = {}, row, i;
-      for (i = 0; i < selectedRows.length; i++) {
-        row = selectedRows[i];
-        lookup[row] = true;
-        if (lookup[row] !== _selectedRowsLookup[row]) {
-          _grid.invalidateRow(row);
-          delete _selectedRowsLookup[row];
-        }
-      }
-      for (i in _selectedRowsLookup) {
-        _grid.invalidateRow(i);
-      }
-      _selectedRowsLookup = lookup;
-      _grid.render();
-
-      if (_options.selectAll) {
-        if (selectedRows.length && selectedRows.length == _grid.getDataLength()) {
-          _grid.updateColumnHeader(_options.columnId, "<input type='checkbox' checked='checked'>", _options.toolTip);
-        } else {
-          _grid.updateColumnHeader(_options.columnId, "<input type='checkbox'>", _options.toolTip);
-        }
-      }
-    }
-
-    function handleKeyDown(e, args) {
-      if (e.which == 32) {
-        if (_grid.getColumns()[args.cell].id === _options.columnId) {
-          // if editing, try to commit
-          if (!_grid.getEditorLock().isActive() || _grid.getEditorLock().commitCurrentEdit()) {
-            toggleRowSelection(args.row);
-          }
-          e.preventDefault();
-          e.stopImmediatePropagation();
-        }
-      }
-    }
-
-    function handleClick(e, args) {
-      // clicking on a row select checkbox
-      if (_grid.getColumns()[args.cell].id === _options.columnId && $(e.target).is(":checkbox")) {
-        // if editing, try to commit
-        if (_grid.getEditorLock().isActive() && !_grid.getEditorLock().commitCurrentEdit()) {
-          e.preventDefault();
-          e.stopImmediatePropagation();
-          return;
-        }
-
-        toggleRowSelection(args.row);
-        e.stopPropagation();
-        e.stopImmediatePropagation();
-      }
-    }
-
-    function toggleRowSelection(row) {
-      if (_selectedRowsLookup[row]) {
-        _grid.setSelectedRows($.grep(_grid.getSelectedRows(), function (n) {
-          return n != row
-        }));
-      } else {
-        _grid.setSelectedRows(_grid.getSelectedRows().concat(row));
-      }
-    }
-
-    function handleHeaderClick(e, args) {
-      if (args.column.id == _options.columnId && $(e.target).is(":checkbox")) {
-        // if editing, try to commit
-        if (_grid.getEditorLock().isActive() && !_grid.getEditorLock().commitCurrentEdit()) {
-          e.preventDefault();
-          e.stopImmediatePropagation();
-          return;
-        }
-
-        if ($(e.target).is(":checked")) {
-          var rows = [];
-          for (var i = 0; i < _grid.getDataLength(); i++) {
-            rows.push(i);
-          }
-          _grid.setSelectedRows(rows);
-        } else {
-          _grid.setSelectedRows([]);
-        }
-        e.stopPropagation();
-        e.stopImmediatePropagation();
-      }
-    }
-
-    function getColumnDefinition() {
-      return {
-        id: _options.columnId,
-        name: _options.selectAll ? "<input type='checkbox'>" : "",
-        toolTip: _options.toolTip,
-        field: "sel",
-        width: _options.width,
-        resizable: false,
-        sortable: false,
-        cssClass: _options.cssClass,
-        formatter: checkboxSelectionFormatter
-      };
-    }
-
-    function checkboxSelectionFormatter(row, cell, value, columnDef, dataContext) {
-      if (dataContext) {
-        return _selectedRowsLookup[row]
-            ? "<input type='checkbox' checked='checked'>"
-            : "<input type='checkbox'>";
-      }
-      return null;
-    }
-
-    $.extend(this, {
-      "init": init,
-      "destroy": destroy,
-
-      "getColumnDefinition": getColumnDefinition
-    });
-  }
-})(jQuery);
-define("slickgrid/plugins/slick.checkboxselectcolumn", function(){});
-
-(function ($) {
   function SlickColumnPicker(columns, grid, options) {
     var $menu;
     var columnCheckboxes;
@@ -7853,7 +7704,6 @@ define('slickgrid-all',[
   'slickgrid/slick.core',
   'slickgrid/slick.grid',
   'slickgrid/plugins/slick.rowselectionmodel',
-  'slickgrid/plugins/slick.checkboxselectcolumn',
   'slickgrid/controls/slick.columnpicker'
 ],
 function() {
@@ -7900,6 +7750,8 @@ function($, _, Backbone, Plumage, Selection, Slick) {
       _.extend(this, options);
 
       this.selection.on('change', this.onSelectionChange, this);
+      this.selection.on('add', this.onSelectionChange, this);
+      this.selection.on('remove', this.onSelectionChange, this);
       this.selection.on('reset', this.onSelectionChange, this);
     },
 
@@ -8157,7 +8009,7 @@ function($, _, Backbone, Plumage, BaseController, ModelUtil) {
       view.setModel(this.indexModel);
       this.showView(view);
 
-      this.loadModel(this.indexModel).then(function() {
+      this.loadModel(this.indexModel, {reset: true}).then(function() {
         view.setModel(model);
       });
 
@@ -8294,7 +8146,7 @@ function($, _, Backbone, Plumage, BaseController, ModelUtil) {
       if (updateUrl) {
         collection.updateUrl();
       }
-      collection.load();
+      collection.load({reset: true});
     }, 200)
   });
 });
@@ -14075,6 +13927,17 @@ define('view/grid/GridView',[
 
     infiniteScroll: true,
 
+    checkboxSelect: false,
+
+    checkboxColumn: {
+      id: 'checkbox-select',
+      cssClass: 'checkbox-select',
+      field: 'sel',
+      width: 30,
+      resizable: false,
+      sortable: false
+    },
+
     noDataText: 'No Rows Found',
 
     saveViewState: true,
@@ -14084,6 +13947,21 @@ define('view/grid/GridView',[
     initialize: function () {
       var me = this;
       ModelView.prototype.initialize.apply(this, arguments);
+
+      //checkbox select
+      if (this.checkboxSelect) {
+        this.columns = _.clone(this.columns);
+        this.columns.unshift(_.extend({
+          formatter: function(row, cell, value, columnDef, dataContext) {
+            if (dataContext) {
+              var selected = this.selection.isSelectedId(dataContext.id);
+              return selected ? '<input type="checkbox" checked="checked">' : '<input type="checkbox">';
+            }
+            return null;
+          }.bind(this)
+        }, this.checkboxColumn));
+      }
+
       var gridData = this.createGridData();
 
       this.gridEl = $('<div class="grid"></div>');
@@ -14136,6 +14014,12 @@ define('view/grid/GridView',[
     },
 
     setSelection: function(selection) {
+      if (this.selection) {
+        this.selection.off('all', this.onSelectionChanged, this);
+      }
+      this.selection = selection;
+      this.selection.on('all', this.onSelectionChanged, this);
+
       this.grid.setSelectionModel(new GridSelection(selection));
     },
 
@@ -14239,7 +14123,7 @@ define('view/grid/GridView',[
       $(this.gridEl).detach();
     },
 
-    onGridClick: function(e) {
+    onGridClick: function(e, args) {
       var target = e.target;
 
       if (target.tagName === 'A' && $(target).attr('href')) {
@@ -14248,6 +14132,14 @@ define('view/grid/GridView',[
           window.router.navigateWithQueryParams($(target).attr('href'), {trigger: true});
         }
         return false;
+      }
+
+      if (this.grid.getColumns()[args.cell].id === 'checkbox-select') {
+        if (this.selection) {
+          this.toggleRowSelected(args.row);
+        }
+        e.stopPropagation();
+        return;
       }
 
       var cell = this.grid.getCellFromEvent(e);
@@ -14259,6 +14151,21 @@ define('view/grid/GridView',[
         model = data.getItem(data.getIndexForId(id));
 
       this.trigger('itemSelected',  model);
+    },
+
+    toggleRowSelected: function(index) {
+      this.selection.toggleIndex(index);
+    },
+
+    onSelectionChanged: function(event, selection, model, options) {
+      if (event === 'add' || event === 'remove') {
+        this.grid.invalidateRow(this.grid.getData().getIndexForId(model.id));
+      } else if (event === 'reset') {
+        this.grid.invalidate();
+      }
+      if (this.rendered) {
+        this.grid.render();
+      }
     },
 
     onResize: function() {

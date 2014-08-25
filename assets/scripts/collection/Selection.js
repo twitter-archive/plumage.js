@@ -6,7 +6,7 @@ function($, _, Backbone, Plumage, Collection) {
   /** @lends Plumage.collection.Selection.prototype */
   {
     /** multiselect? */
-    multi: false,
+    multi: true,
 
     model: Plumage.model.Model.extend({idAttribute: 'id'}),
 
@@ -38,7 +38,7 @@ function($, _, Backbone, Plumage, Collection) {
 
     /** Is id selected? */
     isSelectedId: function(id) {
-      return this.getById(id) !== null;
+      return this.getById(id) !== undefined;
     },
 
     /** Is index selected? */
@@ -90,10 +90,11 @@ function($, _, Backbone, Plumage, Collection) {
     selectIndex: function(index) {
       var item = this.collection.at(index);
       if (this.getById(item.id) === undefined) {
-        if (!this.multi) {
-          this.deselectAll();
+        if (this.multi) {
+          this.add(new this.model({id: item.id}));
+        } else {
+          this.setSelectedIds([item.id]);
         }
-        this.add(new Plumage.model.Data({id: item.id}));
       }
     },
 
@@ -107,6 +108,14 @@ function($, _, Backbone, Plumage, Collection) {
 
       if (selectionItem) {
         this.remove(selectionItem);
+      }
+    },
+
+    toggleIndex: function(index) {
+      if (this.isSelectedIndex(index)) {
+        this.deselectIndex(index);
+      } else {
+        this.selectIndex(index);
       }
     },
 

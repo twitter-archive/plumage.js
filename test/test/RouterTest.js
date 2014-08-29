@@ -41,13 +41,4 @@ define([
 
     equal(qParam, 'sdf');
   });
-
-
-  test('parseQueryString decodes +', function(){
-    var router = new Router(),
-      queryString = 'q=sdf+sdf';
-    var params = router.parseQueryString(queryString);
-    equal(params.q, 'sdf sdf', 'should remove + from query');
-  });
-
 });

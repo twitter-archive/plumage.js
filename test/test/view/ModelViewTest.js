@@ -8,11 +8,13 @@ define([
   'sinon',
   'test/environment',
   'test/EventLog',
+  'test/DummyEvent',
   'view/ModelView',
   'view/ContainerView',
   'example/model/Post',
+  'example/collection/PostCollection',
   'example/ExampleData'
-], function($, _, Backbone, sinon, Environment, EventLog, ModelView, ContainerView, Post, ExampleData) {
+], function($, _, Backbone, sinon, Environment, EventLog, DummyEvent, ModelView, ContainerView, Post, PostCollection, ExampleData) {
 
 
   //use Environment to mock ajax
@@ -183,4 +185,20 @@ define([
 
     ok(view.subViews[0] instanceof ModelView, 'should instantiate subviews');
   });
+
+  test('onLinkClick short circuits view state only navigation', function() {
+    var model = new PostCollection();
+    var view = new ModelView();
+    view.setModel(model);
+
+    var eventLog = new EventLog(model);
+
+    sinon.stub(model, 'updateUrl');
+    view.onLinkClick(new DummyEvent('click', $('<a href="?sortField=foo">foo</a>')));
+    equal(model.get('sortField'), 'foo', 'should set view state');
+    ok(eventLog.counts.load === undefined, 'should not trigger load');
+    equal(eventLog.counts.change, 1, 'should trigger change');
+
+  });
+
 });

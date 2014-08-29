@@ -1,5 +1,5 @@
-define(['jquery', 'underscore', 'backbone', 'PlumageRoot', 'History'],
-function($, _, Backbone, Plumage, History) {
+define(['jquery', 'underscore', 'backbone', 'PlumageRoot', 'History', 'util/ModelUtil'],
+function($, _, Backbone, Plumage, History, ModelUtil) {
   return Plumage.Router = Backbone.Router.extend(
   /** @lends Plumage.Router.prototype */
   {
@@ -129,30 +129,13 @@ function($, _, Backbone, Plumage, History) {
      * Override to parse query string
      */
     execute: function(callback, args) {
-      var queryParams = this.parseQueryString(args.pop());
+      var queryParams = ModelUtil.parseQueryString(args.pop());
       if (queryParams) {
         args.push(queryParams);
       }
       if (callback) {
         callback.apply(this, args);
       }
-    },
-
-    parseQueryString: function(queryString) {
-      if (!queryString) {
-        return undefined;
-      }
-      var result = {};
-      queryString = decodeURIComponent(queryString.replace(/\+/g, '%20'));
-      if(queryString) {
-        $.each(queryString.split('&'), function(index, value) {
-          if(value) {
-            var param = value.split('=');
-            result[param[0]] = param[1];
-          }
-        });
-      }
-      return result;
     }
   });
 });

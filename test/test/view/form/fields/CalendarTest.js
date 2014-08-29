@@ -9,16 +9,9 @@ define([
   'sinon',
   'test/environment',
   'test/EventLog',
+  'test/DummyEvent',
   'view/form/fields/Calendar'
-], function($, _, Backbone, moment, sinon, Environment, EventLog, Calendar) {
-
-  var Event = function(name) {
-    this.name = name;
-  };
-  _.extend(Event.prototype, {
-    preventDefault: function() {},
-    stopPropagation: function() {}
-  });
+], function($, _, Backbone, moment, sinon, Environment, EventLog, DummyEvent, Calendar) {
 
   //use Environment to mock ajax
   module('Calendar', _.extend(new Environment(), {
@@ -74,10 +67,10 @@ define([
   test('month buttons', function () {
     var view = createView();
     view.setValue(moment([2014,0,15]));
-    view.onPrevClick(new Event('click'));
+    view.onPrevClick(new DummyEvent('click'));
     deepEqual([view.year, view.month], [2013,11]);
 
-    view.onNextClick(new Event('click'));
+    view.onNextClick(new DummyEvent('click'));
     deepEqual([view.year, view.month], [2014,0]);
   });
 

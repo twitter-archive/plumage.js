@@ -307,6 +307,22 @@ define([
       ContainerView.prototype.onHide.apply(this, arguments);
     },
 
+    /** override to short circuit changes to view state only */
+    onLinkClick: function(e) {
+      var a = $(e.target).closest('a');
+      if (!a.hasClass('outlink')) {
+        if (a.attr('href')[0] === '?') {
+          e.preventDefault();
+          e.stopPropagation();
+          var params = ModelUtil.parseQueryString(a.attr('href').slice(1));
+          this.model.set(params);
+          this.model.updateUrl({replace: false});
+        } else {
+          ContainerView.prototype.onLinkClick.apply(this, arguments);
+        }
+      }
+    },
+
     delegateEvents: function(events) {
       Backbone.View.prototype.delegateEvents.apply(this, arguments);
     },

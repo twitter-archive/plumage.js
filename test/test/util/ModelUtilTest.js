@@ -59,4 +59,10 @@ define([
     equal(model.config.foo.baz, 2, 'should include new');
     equal(model.config.foo.boop, 2, 'should override copy');
   });
+
+  test('parseQueryString decodes +', function(){
+    var queryString = 'q=sdf+sdf';
+    var params = ModelUtil.parseQueryString(queryString);
+    equal(params.q, 'sdf sdf', 'should remove + from query');
+  });
 });

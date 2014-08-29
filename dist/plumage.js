@@ -390,6 +390,23 @@ define('util/ModelUtil',[
       var result = $.extend.apply(null, [true, {}].concat(args));
       delete options[name];
       model[name] = result;
+    },
+
+    parseQueryString: function(queryString) {
+      if (!queryString) {
+        return undefined;
+      }
+      var result = {};
+      queryString = decodeURIComponent(queryString.replace(/\+/g, '%20'));
+      if(queryString) {
+        $.each(queryString.split('&'), function(index, value) {
+          if(value) {
+            var param = value.split('=');
+            result[param[0]] = param[1];
+          }
+        });
+      }
+      return result;
     }
   };
 });
@@ -8270,8 +8287,8 @@ function($, _, Backbone, Plumage) {
   return Plumage.History;
 });
 
-define('Router',['jquery', 'underscore', 'backbone', 'PlumageRoot', 'History'],
-function($, _, Backbone, Plumage, History) {
+define('Router',['jquery', 'underscore', 'backbone', 'PlumageRoot', 'History', 'util/ModelUtil'],
+function($, _, Backbone, Plumage, History, ModelUtil) {
   return Plumage.Router = Backbone.Router.extend(
   /** @lends Plumage.Router.prototype */
   {
@@ -8401,30 +8418,13 @@ function($, _, Backbone, Plumage, History) {
      * Override to parse query string
      */
     execute: function(callback, args) {
-      var queryParams = this.parseQueryString(args.pop());
+      var queryParams = ModelUtil.parseQueryString(args.pop());
       if (queryParams) {
         args.push(queryParams);
       }
       if (callback) {
         callback.apply(this, args);
       }
-    },
-
-    parseQueryString: function(queryString) {
-      if (!queryString) {
-        return undefined;
-      }
-      var result = {};
-      queryString = decodeURIComponent(queryString.replace(/\+/g, '%20'));
-      if(queryString) {
-        $.each(queryString.split('&'), function(index, value) {
-          if(value) {
-            var param = value.split('=');
-            result[param[0]] = param[1];
-          }
-        });
-      }
-      return result;
     }
   });
 });
@@ -9019,6 +9019,10 @@ define('view/ContainerView',[
       });
     },
 
+    onLinkClick: function(e) {
+      View.prototype.onLinkClick.apply(this, arguments);
+    },
+
     //
     // Util
     //
@@ -9416,6 +9420,22 @@ define('view/ModelView',[
 
     onHide: function() {
       ContainerView.prototype.onHide.apply(this, arguments);
+    },
+
+    /** override to short circuit changes to view state only */
+    onLinkClick: function(e) {
+      var a = $(e.target).closest('a');
+      if (!a.hasClass('outlink')) {
+        if (a.attr('href')[0] === '?') {
+          e.preventDefault();
+          e.stopPropagation();
+          var params = ModelUtil.parseQueryString(a.attr('href').slice(1));
+          this.model.set(params);
+          this.model.updateUrl({replace: false});
+        } else {
+          ContainerView.prototype.onLinkClick.apply(this, arguments);
+        }
+      }
     },
 
     delegateEvents: function(events) {

@@ -14163,9 +14163,6 @@ define('view/grid/GridView',[
       }
 
       var cell = this.grid.getCellFromEvent(e);
-      if (!cell || !this.grid.canCellBeActive(cell.row, cell.cell)) {
-        return false;
-      }
       var id = this.grid.getDataItem(cell.row).id,
         data = this.grid.getData(),
         model = data.getItem(data.getIndexForId(id));

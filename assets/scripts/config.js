@@ -50,6 +50,7 @@ require.config({
     spinjs: '../bower_components/spinjs/spin',
     underscore: '../bower_components/underscore/underscore',
     text: '../bower_components/text/text',
-    bootstrap: '../bower_components/bootstrap/docs/assets/js/bootstrap'
+    bootstrap: '../bower_components/bootstrap/docs/assets/js/bootstrap',
+    'jquery.cookie': '../bower_components/jquery.cookie/jquery.cookie'
   }
 });

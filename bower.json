@@ -27,7 +27,8 @@
     "spinjs": "~1.3.2",
     "d3": "~3.3.6",
     "linkify": "latest",
-    "jquery.scrollTo": "~1.4.7"
+    "jquery.scrollTo": "~1.4.7",
+    "jquery.cookie": "~1.4.1"
   },
   "devDependencies" : {
     "blanket": "latest",

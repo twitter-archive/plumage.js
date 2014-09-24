@@ -11610,7 +11610,7 @@ define('view/form/fields/picker/Picker',[
   });
 });
 
-define('text!view/form/fields/templates/FieldWithPicker.html',[],function () { return '{{#if label}}\n<div class="control-group">\n  <label class="control-label" for="{{valueAttr}}">{{label}}</label>\n  <div class="controls">\n    <span class="field">\n\t    <span class="dropdown">\n\t      {{> field}}\n\t      <div class="picker"></div>\n\t    </span>\n    </span>\n    <span class="help-inline">{{#if message}}{{message}}{{/if}}</span>\n  </div>\n</div>\n{{else}}\n<span class="dropdown picker-dropdown">\n  {{> field}}\n  <div class="picker"></div>\n</span>\n{{/if}}\n';});
+define('text!view/form/fields/templates/FieldWithPicker.html',[],function () { return '{{#if label}}\n<div class="control-group">\n  <label class="control-label" for="{{valueAttr}}">{{label}}</label>\n  <div class="controls">\n    <span class="field">\n\t    <span class="dropdown">\n\t      {{> field}}\n\t      <div class="picker"></div>\n\t    </span>\n    </span>\n    <span class="help-inline">{{#if message}}{{message}}{{/if}}</span>\n  </div>\n</div>\n{{else}}\n<span class="field">\n<span class="dropdown picker-dropdown">\n  {{> field}}\n  <div class="picker"></div>\n</span>\n</span>\n{{/if}}\n';});
 
 define('view/form/fields/FieldWithPicker',[
   'jquery',

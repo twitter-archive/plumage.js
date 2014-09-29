@@ -86,11 +86,11 @@ define([
         }.bind(this));
       }
 
-      this.onResize = _.debounce(this.onResize, 50);
-
       if (this.filterView) {
-        this.filterView.moreMenu.on('itemClick', this.onMoreMenuItemClick.bind(this));
+        this.setFilterView(this.filterView);
       }
+
+      this.onResize = _.debounce(this.onResize, 50);
     },
 
     delegateEvents: function(events) {
@@ -130,6 +130,14 @@ define([
       this.selection.on('all', this.onSelectionChanged, this);
 
       this.grid.setSelectionModel(new GridSelection(selection));
+    },
+
+    setFilterView: function(filterView) {
+      if (this.filterView) {
+        this.filterView.moreMenu.off('itemClick', this.onMoreMenuItemClick, this);
+      }
+      this.filterView = filterView;
+      this.filterView.moreMenu.on('itemClick', this.onMoreMenuItemClick, this);
     },
 
     /**

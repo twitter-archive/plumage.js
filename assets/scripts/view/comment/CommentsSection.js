@@ -137,7 +137,7 @@ define([
       if (this.commentForm) {
         this.commentForm.setModel(new Comment({
           commentable_type: this.model.commentableType,
-          commentable_id: this.getCommentableId(this.model),
+          commentable_url: this.model.url(),
           body: '',
           subject: this.getSubject(this.model)
         }));

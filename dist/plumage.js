@@ -10405,7 +10405,7 @@ define('view/comment/CommentView',[
       if (this.model) {
         var result = this.model.toViewJSON();
         result.body = result.body.replace(/\n/g, '<br/>');
-        result.created_at = moment(result.created_at*1000).fromNow();
+        result.created_at = moment(result.created_at).fromNow();
         result.can_delete = result.user.account === window.currentUser;
         return result;
       }
@@ -10566,7 +10566,7 @@ define('view/comment/CommentsSection',[
       if (this.commentForm) {
         this.commentForm.setModel(new Comment({
           commentable_type: this.model.commentableType,
-          commentable_id: this.getCommentableId(this.model),
+          commentable_url: this.model.url(),
           body: '',
           subject: this.getSubject(this.model)
         }));
@@ -13997,11 +13997,11 @@ define('view/grid/GridView',[
         }.bind(this));
       }
 
-      this.onResize = _.debounce(this.onResize, 50);
-
       if (this.filterView) {
-        this.filterView.moreMenu.on('itemClick', this.onMoreMenuItemClick.bind(this));
+        this.setFilterView(this.filterView);
       }
+
+      this.onResize = _.debounce(this.onResize, 50);
     },
 
     delegateEvents: function(events) {
@@ -14041,6 +14041,14 @@ define('view/grid/GridView',[
       this.selection.on('all', this.onSelectionChanged, this);
 
       this.grid.setSelectionModel(new GridSelection(selection));
+    },
+
+    setFilterView: function(filterView) {
+      if (this.filterView) {
+        this.filterView.moreMenu.off('itemClick', this.onMoreMenuItemClick, this);
+      }
+      this.filterView = filterView;
+      this.filterView.moreMenu.on('itemClick', this.onMoreMenuItemClick, this);
     },
 
     /**

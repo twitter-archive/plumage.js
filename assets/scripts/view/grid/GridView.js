@@ -212,6 +212,7 @@ define([
         this.onDoneLoad();
         this.grid.invalidate();
         this.updateNoData();
+        this.grid.scrollRowToTop(0);
       }
       if (models && models.get && models.get('sortField')) {
         this.grid.setSortColumn(models.get('sortField'), String(models.get('sortDir')) === '1');

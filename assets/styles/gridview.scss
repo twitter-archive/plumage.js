@@ -154,6 +154,20 @@
   float: right;
 }
 
+
+
+.filter-view {
+  .actions, .actions-right {
+    span {
+      margin: 0 5px;
+    }
+  }
+
+  .actions-right {
+    float: right;
+  }
+}
+
 .filter-view .more-menu {
   margin-left: 10px;
   .dropdown-toggle {

@@ -6,7 +6,8 @@ define([
   'PlumageRoot',
   'view/View',
   'view/ModelView',
-  'text!view/templates/TabView.html'
+  'text!view/templates/TabView.html',
+  'jquery.cookie'
 ], function($, _, Backbone, Handlebars, Plumage, View, ModelView, template) {
 
   return Plumage.view.TabView = ModelView.extend({
@@ -16,6 +17,8 @@ define([
     template: Handlebars.compile(template),
 
     viewStateAttr: 'tab',
+
+    cookieName: undefined,
 
     events: {
       'click .tabs a': 'onTabClick'
@@ -36,9 +39,13 @@ define([
 
     setModel: function() {
       ModelView.prototype.setModel.apply(this, arguments);
-      if (this.model.get(this.viewStateAttr) === undefined) {
-        var firstTabView = _.find(this.subViews, function(subView){ return subView.tabId !== undefined;});
-        this.model.set(this.viewStateAttr, firstTabView.tabId);
+      var tab = this.model.get(this.viewStateAttr);
+      if (tab === undefined) {
+        tab = this.getTabCookie();
+        if (tab === undefined) {
+          tab = _.find(this.subViews, function(subView){ return subView.tabId !== undefined;}).tabId;
+        }
+        this.model.set(this.viewStateAttr, tab);
       }
     },
 
@@ -52,6 +59,7 @@ define([
       if (this.model) {
         this.model.set(this.viewStateAttr, tabId);
         this.model.updateUrl();
+        this.updateTabCookie();
       }
     },
 
@@ -95,6 +103,18 @@ define([
             }
           }
         }, this);
+      }
+    },
+
+    getTabCookie: function() {
+      if (this.cookieName) {
+        return $.cookie('tabview.' + this.cookieName);
+      }
+    },
+
+    updateTabCookie: function() {
+      if (this.cookieName) {
+        $.cookie('tabview.' + this.cookieName, this.getActiveTab(), { expires: 7 });
       }
     },
 

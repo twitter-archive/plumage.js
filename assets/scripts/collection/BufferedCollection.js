@@ -31,7 +31,7 @@ function($, _, Backbone, Plumage) {
     requests: undefined,
 
     /** Total rows on the server. */
-    total: undefined,
+    total: 0,
 
     initialize: function(collection, options) {
       this.requests = [];

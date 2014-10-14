@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="utf-8">
-    <title>JSDoc: Class: Collection</title>
+    <title>JSDoc: Class: Selection</title>
 
     <script src="scripts/prettify/prettify.js"> </script>
     <script src="scripts/prettify/lang-css.js"> </script>
@@ -44,7 +44,7 @@
 <div class="container">
   <div class="row">
 <div id="main" class="span8">
-    <h1 class="page-title">Class: Collection</h1>
+    <h1 class="page-title">Class: Selection</h1>
     
 
 
@@ -55,7 +55,7 @@
     <h2>
         <span class="ancestors"><a href="Plumage.html">Plumage</a><a href="Plumage.collection.html">.collection</a>.</span>
     
-    Collection
+    Selection
     </h2>
     
 </header>  
@@ -67,7 +67,7 @@
     
         
 <dt>
-    <h4 class="name" id="Collection"><span class="type-signature"></span>new Collection<span class="signature">()</span><span class="type-signature"></span></h4>
+    <h4 class="name" id="Selection"><span class="type-signature"></span>new Selection<span class="signature">()</span><span class="type-signature"></span></h4>
     
     
 </dt>
@@ -75,24 +75,9 @@
     
     
     <div class="description">
-        <p>Base Collection class for Plumage collections.</p>
-<p>Based on Backbone.Collection, but extends Plumage.Model for additional features like
-viewState, attributes and relationships.</p>
-<p>Collections have parameters that affect its display eg sortField.
-Rather than use JS attributes like Backbone.Collection, use Model attributes (by extending Plumage.model.Model)
-which allows model binding. Then the Field can be agnostic about whether its binding a model's attribute or a
-collection's pageSize or sortField. This also gets us view state and query params.</p>
-<p>A Collection can also have relationships like a Model. eg Collections have relations collection of Filters.
-This allows Filter Views to bind to a collection's Filters as if they were any other Model.</p>
-<h4>Additional Features</h4>
-<h5>Attributes and View State</h5>
-<h5>Filters and Relationships</h5>
-<h5>processInMemory</h5>
-<p>By default, calling <a href="Plumage.collection.Collection.html#load">load</a> after changing view state (sort, filter etc)
-queries the server for new data. If <a href="Plumage.collection.Collection.html#processInMemory">processInMemory</a>
-has been set however, load is short circuited with filtering, sorting and searching performed in memory.
-Useful when you don't have that much data and you don't want to adding sorting/paging etc to your server.</p>
-<p>Unless the relationship has remote = true, related Collections automatically have processInMemory set.</p>
+        <p>A selection of models from a Collection.</p>
+<p>Contains a set of selected ids (stored as models with a single 'id' field).</p>
+<p>Includes a number of methods for selecting and deselecting items.</p>
     </div>
     
 
@@ -125,7 +110,7 @@ Useful when you don't have that much data and you don't want to adding sorting/p
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="Collection.js.html">collection/Collection.js</a>, <a href="Collection.js.html#line72">line 72</a>
+        <a href="Selection.js.html">collection/Selection.js</a>, <a href="Selection.js.html#line26">line 26</a>
     </li></ul></dd>
     
     
@@ -157,7 +142,7 @@ Useful when you don't have that much data and you don't want to adding sorting/p
         <h3 class="subsection-title">Extends</h3>
         
         <ul>
-            <li><a href="Plumage.model.Model.html">Plumage.model.Model</a></li>
+            <li><a href="Plumage.collection.Collection.html">Plumage.collection.Collection</a></li>
         </ul>
     
     
@@ -173,6 +158,60 @@ Useful when you don't have that much data and you don't want to adding sorting/p
         <h3 class="subsection-title">Members</h3>
         
         <dl>
+            
+<dt>
+    <h4 class="name" id="collection"><span class="type-signature"></span>collection<span class="type-signature"></span></h4>
+    
+    
+</dt>
+<dd>
+    
+    <div class="description">
+        <p>parent collection being selected from</p>
+    </div>
+    
+    
+    
+
+    
+<dl class="details">
+    
+        
+    
+    
+    
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="Selection.js.html">collection/Selection.js</a>, <a href="Selection.js.html#line14">line 14</a>
+    </li></ul></dd>
+    
+    
+    
+    
+    
+    
+    
+</dl>
+
+    
+    
+</dd>
+
+        
             
 <dt>
     <h4 class="name" id="defaultMeta"><span class="type-signature"></span>defaultMeta<span class="type-signature"></span></h4>
@@ -196,6 +235,11 @@ Useful when you don't have that much data and you don't want to adding sorting/p
     
     
 
+    
+    <dt class="inherited-from">Inherited From:</dt>
+    <dd class="inherited-from"><ul class="dummy"><li>
+        <a href="Plumage.collection.Collection.html#defaultMeta">Plumage.collection.Collection#defaultMeta</a>
+    </li></dd>
     
     
     
@@ -310,6 +354,11 @@ Useful when you don't have that much data and you don't want to adding sorting/p
     
 
     
+    <dt class="inherited-from">Inherited From:</dt>
+    <dd class="inherited-from"><ul class="dummy"><li>
+        <a href="Plumage.collection.Collection.html#hasFilters">Plumage.collection.Collection#hasFilters</a>
+    </li></dd>
+    
     
     
     
@@ -401,6 +450,60 @@ Useful when you don't have that much data and you don't want to adding sorting/p
         
             
 <dt>
+    <h4 class="name" id="multi"><span class="type-signature"></span>multi<span class="type-signature"></span></h4>
+    
+    
+</dt>
+<dd>
+    
+    <div class="description">
+        <p>multiselect?</p>
+    </div>
+    
+    
+    
+
+    
+<dl class="details">
+    
+        
+    
+    
+    
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="Selection.js.html">collection/Selection.js</a>, <a href="Selection.js.html#line9">line 9</a>
+    </li></ul></dd>
+    
+    
+    
+    
+    
+    
+    
+</dl>
+
+    
+    
+</dd>
+
+        
+            
+<dt>
     <h4 class="name" id="originalModels"><span class="type-signature"></span>originalModels<span class="type-signature"></span></h4>
     
     
@@ -422,6 +525,11 @@ Useful when you don't have that much data and you don't want to adding sorting/p
     
     
 
+    
+    <dt class="inherited-from">Inherited From:</dt>
+    <dd class="inherited-from"><ul class="dummy"><li>
+        <a href="Plumage.collection.Collection.html#originalModels">Plumage.collection.Collection#originalModels</a>
+    </li></dd>
     
     
     
@@ -476,6 +584,11 @@ Useful when you don't have that much data and you don't want to adding sorting/p
     
     
 
+    
+    <dt class="inherited-from">Inherited From:</dt>
+    <dd class="inherited-from"><ul class="dummy"><li>
+        <a href="Plumage.collection.Collection.html#processInMemory">Plumage.collection.Collection#processInMemory</a>
+    </li></dd>
     
     
     
@@ -835,6 +948,11 @@ Helper for <a href="Plumage.collection.Collection.html#updateInMemory">updateInM
     
 
     
+    <dt class="inherited-from">Inherited From:</dt>
+    <dd class="inherited-from"><ul class="dummy"><li>
+        <a href="Plumage.collection.Collection.html#_filter">Plumage.collection.Collection#_filter</a>
+    </li></dd>
+    
     
     
     
@@ -930,6 +1048,11 @@ in other collections are ignored.</p>
     
 
     
+    <dt class="inherited-from">Inherited From:</dt>
+    <dd class="inherited-from"><ul class="dummy"><li>
+        <a href="Plumage.collection.Collection.html#_onModelEvent">Plumage.collection.Collection#_onModelEvent</a>
+    </li></dd>
+    
     
     
     
@@ -998,6 +1121,11 @@ in other collections are ignored.</p>
     
     
 
+    
+    <dt class="inherited-from">Inherited From:</dt>
+    <dd class="inherited-from"><ul class="dummy"><li>
+        <a href="Plumage.collection.Collection.html#_prepareModel">Plumage.collection.Collection#_prepareModel</a>
+    </li></dd>
     
     
     
@@ -1118,6 +1246,11 @@ Helper for <a href="Plumage.collection.Collection.html#updateInMemory">updateInM
     
 
     
+    <dt class="inherited-from">Inherited From:</dt>
+    <dd class="inherited-from"><ul class="dummy"><li>
+        <a href="Plumage.collection.Collection.html#_query">Plumage.collection.Collection#_query</a>
+    </li></dd>
+    
     
     
     
@@ -1210,6 +1343,11 @@ Internal method to sever a model's ties to a collection.</p>
     
 
     
+    <dt class="inherited-from">Inherited From:</dt>
+    <dd class="inherited-from"><ul class="dummy"><li>
+        <a href="Plumage.collection.Collection.html#_removeReference">Plumage.collection.Collection#_removeReference</a>
+    </li></dd>
+    
     
     
     
@@ -1280,6 +1418,11 @@ is first initialized or reset.</p>
     
     
 
+    
+    <dt class="inherited-from">Inherited From:</dt>
+    <dd class="inherited-from"><ul class="dummy"><li>
+        <a href="Plumage.collection.Collection.html#_reset">Plumage.collection.Collection#_reset</a>
+    </li></dd>
     
     
     
@@ -1399,6 +1542,11 @@ Helper for <a href="Plumage.collection.Collection.html#updateInMemory">updateInM
     
 
     
+    <dt class="inherited-from">Inherited From:</dt>
+    <dd class="inherited-from"><ul class="dummy"><li>
+        <a href="Plumage.collection.Collection.html#_sort">Plumage.collection.Collection#_sort</a>
+    </li></dd>
+    
     
     
     
@@ -1489,6 +1637,11 @@ Helper for <a href="Plumage.collection.Collection.html#updateInMemory">updateInM
     
     
 
+    
+    <dt class="inherited-from">Inherited From:</dt>
+    <dd class="inherited-from"><ul class="dummy"><li>
+        <a href="Plumage.collection.Collection.html#add">Plumage.collection.Collection#add</a>
+    </li></dd>
     
     
     
@@ -1607,6 +1760,11 @@ Helper for <a href="Plumage.collection.Collection.html#updateInMemory">updateInM
     
 
     
+    <dt class="inherited-from">Inherited From:</dt>
+    <dd class="inherited-from"><ul class="dummy"><li>
+        <a href="Plumage.collection.Collection.html#at">Plumage.collection.Collection#at</a>
+    </li></dd>
+    
     
     
     
@@ -1675,6 +1833,11 @@ Helper for <a href="Plumage.collection.Collection.html#updateInMemory">updateInM
     
     
 
+    
+    <dt class="inherited-from">Inherited From:</dt>
+    <dd class="inherited-from"><ul class="dummy"><li>
+        <a href="Plumage.collection.Collection.html#clone">Plumage.collection.Collection#clone</a>
+    </li></dd>
     
     
     
@@ -1746,6 +1909,11 @@ wait for the server to agree.</p>
     
     
 
+    
+    <dt class="inherited-from">Inherited From:</dt>
+    <dd class="inherited-from"><ul class="dummy"><li>
+        <a href="Plumage.collection.Collection.html#create">Plumage.collection.Collection#create</a>
+    </li></dd>
     
     
     
@@ -2125,6 +2293,192 @@ wait for the server to agree.</p>
         
             
 <dt>
+    <h4 class="name" id="deselectAll"><span class="type-signature"></span>deselectAll<span class="signature">()</span><span class="type-signature"></span></h4>
+    
+    
+</dt>
+<dd>
+    
+    
+    <div class="description">
+        <p>Clears this selection</p>
+    </div>
+    
+
+    
+    
+    
+    
+    
+    
+    
+<dl class="details">
+    
+        
+    
+    
+    
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="Selection.js.html">collection/Selection.js</a>, <a href="Selection.js.html#line135">line 135</a>
+    </li></ul></dd>
+    
+    
+    
+    
+    
+    
+    
+</dl>
+
+    
+    
+
+    
+
+    
+    
+    
+    
+    
+    
+    
+</dd>
+
+        
+            
+<dt>
+    <h4 class="name" id="deselectIndex"><span class="type-signature"></span>deselectIndex<span class="signature">(index)</span><span class="type-signature"></span></h4>
+    
+    
+</dt>
+<dd>
+    
+    
+    <div class="description">
+        <p>Deselect a single index</p>
+    </div>
+    
+
+    
+    
+    
+    
+    
+        <h5>Parameters:</h5>
+        
+
+<table class="params">
+    <thead>
+	<tr>
+		
+		<th>Name</th>
+		
+		
+		<th>Type</th>
+		
+		
+		
+		
+		
+		<th class="last">Description</th>
+	</tr>
+	</thead>
+	
+	<tbody>
+	
+	
+        <tr>
+            
+                <td class="name"><code>index</code></td>
+            
+            
+            <td class="type">
+            
+                
+<span class="param-type">Number</span>
+
+
+            
+            </td>
+            
+            
+            
+            
+            
+            <td class="description last"><p>index to dsselect</p></td>
+        </tr>
+	
+	
+	</tbody>
+</table>
+    
+    
+    
+<dl class="details">
+    
+        
+    
+    
+    
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="Selection.js.html">collection/Selection.js</a>, <a href="Selection.js.html#line105">line 105</a>
+    </li></ul></dd>
+    
+    
+    
+    
+    
+    
+    
+</dl>
+
+    
+    
+
+    
+
+    
+    
+    
+    
+    
+    
+    
+</dd>
+
+        
+            
+<dt>
     <h4 class="name" id="fetch"><span class="type-signature"></span>fetch<span class="signature">()</span><span class="type-signature"></span></h4>
     
     
@@ -2152,6 +2506,11 @@ isLoadStillValid, and not trigger load if it's not.</p>
     
     
 
+    
+    <dt class="inherited-from">Inherited From:</dt>
+    <dd class="inherited-from"><ul class="dummy"><li>
+        <a href="Plumage.collection.Collection.html#fetch">Plumage.collection.Collection#fetch</a>
+    </li></dd>
     
     
     
@@ -2299,6 +2658,11 @@ of <code>find</code>.</p>
     
 
     
+    <dt class="inherited-from">Inherited From:</dt>
+    <dd class="inherited-from"><ul class="dummy"><li>
+        <a href="Plumage.collection.Collection.html#findWhere">Plumage.collection.Collection#findWhere</a>
+    </li></dd>
+    
     
     
     
@@ -2442,6 +2806,11 @@ of <code>find</code>.</p>
     
 
     
+    <dt class="inherited-from">Inherited From:</dt>
+    <dd class="inherited-from"><ul class="dummy"><li>
+        <a href="Plumage.collection.Collection.html#forceReload">Plumage.collection.Collection#forceReload</a>
+    </li></dd>
+    
     
     
     
@@ -2558,6 +2927,11 @@ of <code>find</code>.</p>
     
     
 
+    
+    <dt class="inherited-from">Inherited From:</dt>
+    <dd class="inherited-from"><ul class="dummy"><li>
+        <a href="Plumage.collection.Collection.html#getById">Plumage.collection.Collection#getById</a>
+    </li></dd>
     
     
     
@@ -2908,6 +3282,180 @@ the parent collection if there is one.</p>
         
             
 <dt>
+    <h4 class="name" id="getSelectedIds"><span class="type-signature"></span>getSelectedIds<span class="signature">()</span><span class="type-signature"> &rarr; {Array}</span></h4>
+    
+    
+</dt>
+<dd>
+    
+    
+
+    
+    
+    
+    
+    
+    
+    
+<dl class="details">
+    
+        
+    
+    
+    
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="Selection.js.html">collection/Selection.js</a>, <a href="Selection.js.html#line73">line 73</a>
+    </li></ul></dd>
+    
+    
+    
+    
+    
+    
+    
+</dl>
+
+    
+    
+
+    
+
+    
+    
+    
+    
+    
+    <h5>Returns:</h5>
+    
+            
+<div class="param-desc">
+    <p>array of selected ids</p>
+</div>
+
+
+
+<dl>
+	<dt>
+		Type
+	</dt>
+	<dd>
+		
+<span class="param-type">Array</span>
+
+
+	</dd>
+</dl>
+
+        
+    
+    
+</dd>
+
+        
+            
+<dt>
+    <h4 class="name" id="getSelectedIndices"><span class="type-signature"></span>getSelectedIndices<span class="signature">()</span><span class="type-signature"> &rarr; {Array}</span></h4>
+    
+    
+</dt>
+<dd>
+    
+    
+
+    
+    
+    
+    
+    
+    
+    
+<dl class="details">
+    
+        
+    
+    
+    
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="Selection.js.html">collection/Selection.js</a>, <a href="Selection.js.html#line52">line 52</a>
+    </li></ul></dd>
+    
+    
+    
+    
+    
+    
+    
+</dl>
+
+    
+    
+
+    
+
+    
+    
+    
+    
+    
+    <h5>Returns:</h5>
+    
+            
+<div class="param-desc">
+    <p>array of selected indices</p>
+</div>
+
+
+
+<dl>
+	<dt>
+		Type
+	</dt>
+	<dd>
+		
+<span class="param-type">Array</span>
+
+
+	</dd>
+</dl>
+
+        
+    
+    
+</dd>
+
+        
+            
+<dt>
     <h4 class="name" id="getSelection"><span class="type-signature"></span>getSelection<span class="signature">(selectionName)</span><span class="type-signature"></span></h4>
     
     
@@ -2985,6 +3533,11 @@ are named so that different views can share the same selection state.</p>
     
 
     
+    <dt class="inherited-from">Inherited From:</dt>
+    <dd class="inherited-from"><ul class="dummy"><li>
+        <a href="Plumage.collection.Collection.html#getSelection">Plumage.collection.Collection#getSelection</a>
+    </li></dd>
+    
     
     
     
@@ -3000,6 +3553,75 @@ are named so that different views can share the same selection state.</p>
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
         <a href="Collection.js.html">collection/Collection.js</a>, <a href="Collection.js.html#line406">line 406</a>
+    </li></ul></dd>
+    
+    
+    
+    
+    
+    
+    
+</dl>
+
+    
+    
+
+    
+
+    
+    
+    
+    
+    
+    
+    
+</dd>
+
+        
+            
+<dt>
+    <h4 class="name" id="getTotalSize"><span class="type-signature"></span>getTotalSize<span class="signature">()</span><span class="type-signature"></span></h4>
+    
+    
+</dt>
+<dd>
+    
+    
+    <div class="description">
+        <p>total number of items in the parent collection</p>
+    </div>
+    
+
+    
+    
+    
+    
+    
+    
+    
+<dl class="details">
+    
+        
+    
+    
+    
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="Selection.js.html">collection/Selection.js</a>, <a href="Selection.js.html#line35">line 35</a>
     </li></ul></dd>
     
     
@@ -3053,6 +3675,11 @@ are named so that different views can share the same selection state.</p>
     
     
 
+    
+    <dt class="inherited-from">Inherited From:</dt>
+    <dd class="inherited-from"><ul class="dummy"><li>
+        <a href="Plumage.collection.Collection.html#getUniqueValuesForAttribute">Plumage.collection.Collection#getUniqueValuesForAttribute</a>
+    </li></dd>
     
     
     
@@ -3122,6 +3749,11 @@ are named so that different views can share the same selection state.</p>
     
     
 
+    
+    <dt class="inherited-from">Inherited From:</dt>
+    <dd class="inherited-from"><ul class="dummy"><li>
+        <a href="Plumage.collection.Collection.html#hasMore">Plumage.collection.Collection#hasMore</a>
+    </li></dd>
     
     
     
@@ -3842,6 +4474,11 @@ or <a href="Plumage.model.Model.html#createRelatedCollection">createRelatedColle
     
 
     
+    <dt class="inherited-from">Inherited From:</dt>
+    <dd class="inherited-from"><ul class="dummy"><li>
+        <a href="Plumage.collection.Collection.html#isLoadStillValid">Plumage.collection.Collection#isLoadStillValid</a>
+    </li></dd>
+    
     
     
     
@@ -3902,6 +4539,144 @@ or <a href="Plumage.model.Model.html#createRelatedCollection">createRelatedColle
         
             
 <dt>
+    <h4 class="name" id="isSelectedId"><span class="type-signature"></span>isSelectedId<span class="signature">()</span><span class="type-signature"></span></h4>
+    
+    
+</dt>
+<dd>
+    
+    
+    <div class="description">
+        <p>Is id selected?</p>
+    </div>
+    
+
+    
+    
+    
+    
+    
+    
+    
+<dl class="details">
+    
+        
+    
+    
+    
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="Selection.js.html">collection/Selection.js</a>, <a href="Selection.js.html#line40">line 40</a>
+    </li></ul></dd>
+    
+    
+    
+    
+    
+    
+    
+</dl>
+
+    
+    
+
+    
+
+    
+    
+    
+    
+    
+    
+    
+</dd>
+
+        
+            
+<dt>
+    <h4 class="name" id="isSelectedIndex"><span class="type-signature"></span>isSelectedIndex<span class="signature">()</span><span class="type-signature"></span></h4>
+    
+    
+</dt>
+<dd>
+    
+    
+    <div class="description">
+        <p>Is index selected?</p>
+    </div>
+    
+
+    
+    
+    
+    
+    
+    
+    
+<dl class="details">
+    
+        
+    
+    
+    
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="Selection.js.html">collection/Selection.js</a>, <a href="Selection.js.html#line45">line 45</a>
+    </li></ul></dd>
+    
+    
+    
+    
+    
+    
+    
+</dl>
+
+    
+    
+
+    
+
+    
+    
+    
+    
+    
+    
+    
+</dd>
+
+        
+            
+<dt>
     <h4 class="name" id="load"><span class="type-signature"></span>load<span class="signature">()</span><span class="type-signature"></span></h4>
     
     
@@ -3932,6 +4707,11 @@ the server for a processInMemory collection, call <a href="Plumage.collection.Co
     
     
 
+    
+    <dt class="inherited-from">Inherited From:</dt>
+    <dd class="inherited-from"><ul class="dummy"><li>
+        <a href="Plumage.collection.Collection.html#load">Plumage.collection.Collection#load</a>
+    </li></dd>
     
     
     
@@ -4617,6 +5397,11 @@ Pluck an attribute from each model in the collection.</p>
     
 
     
+    <dt class="inherited-from">Inherited From:</dt>
+    <dd class="inherited-from"><ul class="dummy"><li>
+        <a href="Plumage.collection.Collection.html#pluck">Plumage.collection.Collection#pluck</a>
+    </li></dd>
+    
     
     
     
@@ -4686,6 +5471,11 @@ Remove a model from the end of the collection.</p>
     
     
 
+    
+    <dt class="inherited-from">Inherited From:</dt>
+    <dd class="inherited-from"><ul class="dummy"><li>
+        <a href="Plumage.collection.Collection.html#pop">Plumage.collection.Collection#pop</a>
+    </li></dd>
     
     
     
@@ -4757,6 +5547,11 @@ Add a model to the end of the collection.</p>
     
 
     
+    <dt class="inherited-from">Inherited From:</dt>
+    <dd class="inherited-from"><ul class="dummy"><li>
+        <a href="Plumage.collection.Collection.html#push">Plumage.collection.Collection#push</a>
+    </li></dd>
+    
     
     
     
@@ -4826,6 +5621,11 @@ Remove a model, or a list of models from the set.</p>
     
     
 
+    
+    <dt class="inherited-from">Inherited From:</dt>
+    <dd class="inherited-from"><ul class="dummy"><li>
+        <a href="Plumage.collection.Collection.html#remove">Plumage.collection.Collection#remove</a>
+    </li></dd>
     
     
     
@@ -4972,6 +5772,11 @@ Useful for bulk operations and optimizations.</p>
     
 
     
+    <dt class="inherited-from">Inherited From:</dt>
+    <dd class="inherited-from"><ul class="dummy"><li>
+        <a href="Plumage.collection.Collection.html#reset">Plumage.collection.Collection#reset</a>
+    </li></dd>
+    
     
     
     
@@ -5090,6 +5895,11 @@ calls resetInMemory if its not.</p>
     
 
     
+    <dt class="inherited-from">Inherited From:</dt>
+    <dd class="inherited-from"><ul class="dummy"><li>
+        <a href="Plumage.collection.Collection.html#resetFromRelationship">Plumage.collection.Collection#resetFromRelationship</a>
+    </li></dd>
+    
     
     
     
@@ -5160,6 +5970,11 @@ Used when data is updated from server.</p>
     
 
     
+    <dt class="inherited-from">Inherited From:</dt>
+    <dd class="inherited-from"><ul class="dummy"><li>
+        <a href="Plumage.collection.Collection.html#resetInMemory">Plumage.collection.Collection#resetInMemory</a>
+    </li></dd>
+    
     
     
     
@@ -5175,6 +5990,192 @@ Used when data is updated from server.</p>
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
         <a href="Collection.js.html">collection/Collection.js</a>, <a href="Collection.js.html#line708">line 708</a>
+    </li></ul></dd>
+    
+    
+    
+    
+    
+    
+    
+</dl>
+
+    
+    
+
+    
+
+    
+    
+    
+    
+    
+    
+    
+</dd>
+
+        
+            
+<dt>
+    <h4 class="name" id="selectAll"><span class="type-signature"></span>selectAll<span class="signature">()</span><span class="type-signature"></span></h4>
+    
+    
+</dt>
+<dd>
+    
+    
+    <div class="description">
+        <p>Select all items in the parent collection</p>
+    </div>
+    
+
+    
+    
+    
+    
+    
+    
+    
+<dl class="details">
+    
+        
+    
+    
+    
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="Selection.js.html">collection/Selection.js</a>, <a href="Selection.js.html#line125">line 125</a>
+    </li></ul></dd>
+    
+    
+    
+    
+    
+    
+    
+</dl>
+
+    
+    
+
+    
+
+    
+    
+    
+    
+    
+    
+    
+</dd>
+
+        
+            
+<dt>
+    <h4 class="name" id="selectIndex"><span class="type-signature"></span>selectIndex<span class="signature">(index)</span><span class="type-signature"></span></h4>
+    
+    
+</dt>
+<dd>
+    
+    
+    <div class="description">
+        <p>Select a single index</p>
+    </div>
+    
+
+    
+    
+    
+    
+    
+        <h5>Parameters:</h5>
+        
+
+<table class="params">
+    <thead>
+	<tr>
+		
+		<th>Name</th>
+		
+		
+		<th>Type</th>
+		
+		
+		
+		
+		
+		<th class="last">Description</th>
+	</tr>
+	</thead>
+	
+	<tbody>
+	
+	
+        <tr>
+            
+                <td class="name"><code>index</code></td>
+            
+            
+            <td class="type">
+            
+                
+<span class="param-type">Number</span>
+
+
+            
+            </td>
+            
+            
+            
+            
+            
+            <td class="description last"><p>index to select</p></td>
+        </tr>
+	
+	
+	</tbody>
+</table>
+    
+    
+    
+<dl class="details">
+    
+        
+    
+    
+    
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="Selection.js.html">collection/Selection.js</a>, <a href="Selection.js.html#line90">line 90</a>
     </li></ul></dd>
     
     
@@ -5229,6 +6230,11 @@ so that attributes and models can be set from the same data.</p>
     
     
 
+    
+    <dt class="inherited-from">Inherited From:</dt>
+    <dd class="inherited-from"><ul class="dummy"><li>
+        <a href="Plumage.collection.Collection.html#set">Plumage.collection.Collection#set</a>
+    </li></dd>
     
     
     
@@ -5303,6 +6309,11 @@ the core operation for updating the data contained by the collection.</p>
     
 
     
+    <dt class="inherited-from">Inherited From:</dt>
+    <dd class="inherited-from"><ul class="dummy"><li>
+        <a href="Plumage.collection.Collection.html#setCollection">Plumage.collection.Collection#setCollection</a>
+    </li></dd>
+    
     
     
     
@@ -5318,6 +6329,240 @@ the core operation for updating the data contained by the collection.</p>
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
         <a href="Collection.js.html">collection/Collection.js</a>, <a href="Collection.js.html#line823">line 823</a>
+    </li></ul></dd>
+    
+    
+    
+    
+    
+    
+    
+</dl>
+
+    
+    
+
+    
+
+    
+    
+    
+    
+    
+    
+    
+</dd>
+
+        
+            
+<dt>
+    <h4 class="name" id="setSelectedIds"><span class="type-signature"></span>setSelectedIds<span class="signature">(ids)</span><span class="type-signature"></span></h4>
+    
+    
+</dt>
+<dd>
+    
+    
+    <div class="description">
+        <p>Select a array of ids</p>
+    </div>
+    
+
+    
+    
+    
+    
+    
+        <h5>Parameters:</h5>
+        
+
+<table class="params">
+    <thead>
+	<tr>
+		
+		<th>Name</th>
+		
+		
+		<th>Type</th>
+		
+		
+		
+		
+		
+		<th class="last">Description</th>
+	</tr>
+	</thead>
+	
+	<tbody>
+	
+	
+        <tr>
+            
+                <td class="name"><code>ids</code></td>
+            
+            
+            <td class="type">
+            
+                
+<span class="param-type">Array</span>
+
+
+            
+            </td>
+            
+            
+            
+            
+            
+            <td class="description last"><p>Array of ids to select</p></td>
+        </tr>
+	
+	
+	</tbody>
+</table>
+    
+    
+    
+<dl class="details">
+    
+        
+    
+    
+    
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="Selection.js.html">collection/Selection.js</a>, <a href="Selection.js.html#line81">line 81</a>
+    </li></ul></dd>
+    
+    
+    
+    
+    
+    
+    
+</dl>
+
+    
+    
+
+    
+
+    
+    
+    
+    
+    
+    
+    
+</dd>
+
+        
+            
+<dt>
+    <h4 class="name" id="setSelectedIndices"><span class="type-signature"></span>setSelectedIndices<span class="signature">(indices)</span><span class="type-signature"></span></h4>
+    
+    
+</dt>
+<dd>
+    
+    
+    <div class="description">
+        <p>Select a array of indices</p>
+    </div>
+    
+
+    
+    
+    
+    
+    
+        <h5>Parameters:</h5>
+        
+
+<table class="params">
+    <thead>
+	<tr>
+		
+		<th>Name</th>
+		
+		
+		<th>Type</th>
+		
+		
+		
+		
+		
+		<th class="last">Description</th>
+	</tr>
+	</thead>
+	
+	<tbody>
+	
+	
+        <tr>
+            
+                <td class="name"><code>indices</code></td>
+            
+            
+            <td class="type">
+            
+                
+<span class="param-type">Array</span>
+
+
+            
+            </td>
+            
+            
+            
+            
+            
+            <td class="description last"><p>Array of indices to select</p></td>
+        </tr>
+	
+	
+	</tbody>
+</table>
+    
+    
+    
+<dl class="details">
+    
+        
+    
+    
+    
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="Selection.js.html">collection/Selection.js</a>, <a href="Selection.js.html#line63">line 63</a>
     </li></ul></dd>
     
     
@@ -5466,6 +6711,11 @@ the core operation for updating the data contained by the collection.</p>
     
 
     
+    <dt class="inherited-from">Inherited From:</dt>
+    <dd class="inherited-from"><ul class="dummy"><li>
+        <a href="Plumage.collection.Collection.html#setSort">Plumage.collection.Collection#setSort</a>
+    </li></dd>
+    
     
     
     
@@ -5536,6 +6786,11 @@ Remove a model from the beginning of the collection.</p>
     
 
     
+    <dt class="inherited-from">Inherited From:</dt>
+    <dd class="inherited-from"><ul class="dummy"><li>
+        <a href="Plumage.collection.Collection.html#shift">Plumage.collection.Collection#shift</a>
+    </li></dd>
+    
     
     
     
@@ -5605,6 +6860,11 @@ Slice out a sub-array of models from the collection.</p>
     
     
 
+    
+    <dt class="inherited-from">Inherited From:</dt>
+    <dd class="inherited-from"><ul class="dummy"><li>
+        <a href="Plumage.collection.Collection.html#slice">Plumage.collection.Collection#slice</a>
+    </li></dd>
     
     
     
@@ -5906,6 +7166,11 @@ Add a model to the beginning of the collection.</p>
     
 
     
+    <dt class="inherited-from">Inherited From:</dt>
+    <dd class="inherited-from"><ul class="dummy"><li>
+        <a href="Plumage.collection.Collection.html#unshift">Plumage.collection.Collection#unshift</a>
+    </li></dd>
+    
     
     
     
@@ -5974,6 +7239,11 @@ Add a model to the beginning of the collection.</p>
     
     
 
+    
+    <dt class="inherited-from">Inherited From:</dt>
+    <dd class="inherited-from"><ul class="dummy"><li>
+        <a href="Plumage.collection.Collection.html#updateInMemory">Plumage.collection.Collection#updateInMemory</a>
+    </li></dd>
     
     
     
@@ -6337,6 +7607,11 @@ Otherwise uses urlRoot like backbone.</p>
     
 
     
+    <dt class="inherited-from">Inherited From:</dt>
+    <dd class="inherited-from"><ul class="dummy"><li>
+        <a href="Plumage.collection.Collection.html#url">Plumage.collection.Collection#url</a>
+    </li></dd>
+    
     
     
     
@@ -6608,6 +7883,11 @@ Return models with matching attributes. Useful for simple cases of <code>filter<
     
     
 
+    
+    <dt class="inherited-from">Inherited From:</dt>
+    <dd class="inherited-from"><ul class="dummy"><li>
+        <a href="Plumage.collection.Collection.html#where">Plumage.collection.Collection#where</a>
+    </li></dd>
     
     
     

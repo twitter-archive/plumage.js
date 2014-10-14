@@ -104,6 +104,18 @@
   pointer-events:none;
 }
 
+
+/****** Checkbox select *******/
+
+.grid-view .checkbox-select {
+  text-align: center;
+  cursor: pointer;
+  input {
+    margin: 0;
+  }
+}
+
+
 /**
  *   Filter View
  */
@@ -140,6 +152,20 @@
 
 .filter-view .search, .filter-view .more-menu {
   float: right;
+}
+
+
+
+.filter-view {
+  .actions, .actions-right {
+    span {
+      margin: 0 5px;
+    }
+  }
+
+  .actions-right {
+    float: right;
+  }
 }
 
 .filter-view .more-menu {

@@ -372,6 +372,13 @@ define('util/ModelUtil',[
       return typeof(cls) === 'string' ? require(cls) : cls;
     },
 
+    /**
+     * Merge options arguments with class values, including deeper prototypes if specified
+     * @param {string} name Name of option to merge
+     * @param {Model} model Model to set the option on
+     * @param {object} options Options argument
+     * @param {boolean} deep Merge deeper prototype values?
+     */
     mergeOption: function(name, model, options, deep) {
 
       var args = [options[name] || {}];
@@ -390,6 +397,23 @@ define('util/ModelUtil',[
       var result = $.extend.apply(null, [true, {}].concat(args));
       delete options[name];
       model[name] = result;
+    },
+
+    parseQueryString: function(queryString) {
+      if (!queryString) {
+        return undefined;
+      }
+      var result = {};
+      queryString = decodeURIComponent(queryString.replace(/\+/g, '%20'));
+      if(queryString) {
+        $.each(queryString.split('&'), function(index, value) {
+          if(value) {
+            var param = value.split('=');
+            result[param[0]] = param[1];
+          }
+        });
+      }
+      return result;
     }
   };
 });
@@ -426,7 +450,7 @@ function($, _, Backbone, Plumage) {
     requests: undefined,
 
     /** Total rows on the server. */
-    total: undefined,
+    total: 0,
 
     initialize: function(collection, options) {
       this.requests = [];
@@ -1185,9 +1209,7 @@ function($, _, Backbone, Plumage, requestManager, ModelUtil, BufferedCollection)
      */
     load: function(options) {
       options = options || {};
-      options = _.extend({
-        data: this.getQueryParams()
-      }, options);
+      options.data = _.extend(this.getQueryParams(), options.data);
 
       if (_.isEqual(this.latestLoadParams, options.data)) {
         return;
@@ -1210,8 +1232,9 @@ function($, _, Backbone, Plumage, requestManager, ModelUtil, BufferedCollection)
       } else {
         (attrs = {})[key] = val;
       }
+      options = options || {};
       this._wrapHandlers(options);
-      Backbone.Model.prototype.save.apply(this, arguments);
+      Backbone.Model.prototype.save.apply(this, [attrs, options]);
     },
 
     /**
@@ -1328,10 +1351,13 @@ function($, _, Backbone, Plumage, requestManager, ModelUtil, BufferedCollection)
         if (resp.meta && resp.meta.success === false) {
           if (resp.meta.validationError) {
             model.validationError = resp.meta.validationError;
-            model.trigger('invalid', model, model.validationError);
-          } else {
-            model.trigger('error', model, resp, options);
           }
+          model.trigger('invalid',
+            model,
+            model.validationError,
+            resp.meta.message_body,
+            resp.meta.message_class
+          );
         } else {
           model.latestLoadParams = undefined;
           model.onLoad(options);
@@ -1342,6 +1368,7 @@ function($, _, Backbone, Plumage, requestManager, ModelUtil, BufferedCollection)
 
       };
 
+      //NOTE: backbone triggers 'error'
       options.error = function(model, xhr, options) {
         if (typeof theApp !== 'undefined' && theApp.logger) {
           if (xhr.statusText !== 'abort') {
@@ -1829,6 +1856,14 @@ define('collection/Collection',[
       }
     },
 
+    /**
+     * Gets a named [Selection]{@link Plumage.collection.Selection} for storing selection state.
+     *
+     * A collection can have any number of named selections, which are created on demand. Selections
+     * are named so that different views can share the same selection state.
+     *
+     * @param {String} selectionName Name of selection to get.
+     */
     getSelection: function(selectionName) {
       if (!this.selections) {
         this.selections = {};
@@ -2576,14 +2611,27 @@ define('collection/Selection',['jquery', 'underscore', 'backbone',
         'PlumageRoot', 'collection/Collection'],
 function($, _, Backbone, Plumage, Collection) {
 
-  return Plumage.collection.Selection = Collection.extend({
-
-    multi: false,
+  return Plumage.collection.Selection = Collection.extend(
+  /** @lends Plumage.collection.Selection.prototype */
+  {
+    /** multiselect? */
+    multi: true,
 
     model: Plumage.model.Model.extend({idAttribute: 'id'}),
 
+    /** parent collection being selected from */
     collection: undefined,
 
+    /**
+     * A selection of models from a Collection.
+     *
+     * Contains a set of selected ids (stored as models with a single 'id' field).
+     *
+     * Includes a number of methods for selecting and deselecting items.
+     *
+     * @constructs
+     * @extends Plumage.collection.Collection
+     */
     initialize: function(data, options) {
       Plumage.collection.Collection.prototype.initialize.apply(this, arguments);
       if (options && options.collection) {
@@ -2592,18 +2640,24 @@ function($, _, Backbone, Plumage, Collection) {
       }
     },
 
+    /** total number of items in the parent collection */
     getTotalSize: function() {
       return this.collection.size();
     },
 
+    /** Is id selected? */
     isSelectedId: function(id) {
-      return this.getById(id) !== null;
+      return this.getById(id) !== undefined;
     },
 
+    /** Is index selected? */
     isSelectedIndex: function(index) {
       return this.getById(this.collection.at(index).id) !== undefined;
     },
 
+    /**
+     * @returns {Array} array of selected indices
+     */
     getSelectedIndices: function() {
       return this.map(function(selectionItem) {
         var item = this.collection.getById(selectionItem.id);
@@ -2611,6 +2665,10 @@ function($, _, Backbone, Plumage, Collection) {
       }.bind(this));
     },
 
+    /**
+     * Select a array of indices
+     * @param {Array} indices Array of indices to select
+     */
     setSelectedIndices: function(indices) {
       var ids = _.map(indices, function(index) {
         return this.collection.at(index).id;
@@ -2618,26 +2676,41 @@ function($, _, Backbone, Plumage, Collection) {
       this.setSelectedIds(ids);
     },
 
+    /**
+     * @returns {Array} array of selected ids
+     */
     getSelectedIds: function(ids) {
       return this.map(function(item) {return item.id;});
     },
 
+    /**
+     * Select a array of ids
+     * @param {Array} ids Array of ids to select
+     */
     setSelectedIds: function(ids) {
       var data = _.map(ids, function(id) {return {id: id};});
       this.reset(data);
     },
 
+    /**
+     * Select a single index
+     * @param {Number} index index to select
+     */
     selectIndex: function(index) {
       var item = this.collection.at(index);
-
       if (this.getById(item.id) === undefined) {
-        if (!this.multi) {
-          this.deselectAll();
+        if (this.multi) {
+          this.add(new this.model({id: item.id}));
+        } else {
+          this.setSelectedIds([item.id]);
         }
-        this.add(new Plumage.model.Data({id: item.id}));
       }
     },
 
+    /**
+     * Deselect a single index
+     * @param {Number} index index to dsselect
+     */
     deselectIndex: function(index) {
       var item = this.collection.at(index),
         selectionItem = this.getById(item.id);
@@ -2647,6 +2720,17 @@ function($, _, Backbone, Plumage, Collection) {
       }
     },
 
+    toggleIndex: function(index) {
+      if (this.isSelectedIndex(index)) {
+        this.deselectIndex(index);
+      } else {
+        this.selectIndex(index);
+      }
+    },
+
+    /**
+     * Select all items in the parent collection
+     */
     selectAll: function() {
       var data = this.collection.map(function(item) {
         return {id: item.id};
@@ -2654,6 +2738,9 @@ function($, _, Backbone, Plumage, Collection) {
       this.reset(data);
     },
 
+    /**
+     * Clears this selection
+     */
     deselectAll: function() {
       this.reset([]);
     },
@@ -2661,6 +2748,7 @@ function($, _, Backbone, Plumage, Collection) {
     // Event handlers
 
     onCollectionLoad: function() {
+      // reset with only ids still in the collection after load
       var data = [];
       this.each(function(item){
         if (this.collection.getById(item.id) !== undefined) {
@@ -7482,164 +7570,6 @@ define("slickgrid/slick.grid", ["slickgrid/slick.core"], function(){});
 define("slickgrid/plugins/slick.rowselectionmodel", function(){});
 
 (function ($) {
-  // register namespace
-  $.extend(true, window, {
-    "Slick": {
-      "CheckboxSelectColumn": CheckboxSelectColumn
-    }
-  });
-
-
-  function CheckboxSelectColumn(options) {
-    var _grid;
-    var _self = this;
-    var _handler = new Slick.EventHandler();
-    var _selectedRowsLookup = {};
-    var _defaults = {
-      columnId: "_checkbox_selector",
-      cssClass: null,
-      selectAll: true,
-      toolTip: "Select/Deselect All",
-      width: 30
-    };
-
-    var _options = $.extend(true, {}, _defaults, options);
-
-    function init(grid) {
-      _grid = grid;
-      _handler
-        .subscribe(_grid.onSelectedRowsChanged, handleSelectedRowsChanged)
-        .subscribe(_grid.onClick, handleClick)
-        .subscribe(_grid.onHeaderClick, handleHeaderClick)
-        .subscribe(_grid.onKeyDown, handleKeyDown);
-    }
-
-    function destroy() {
-      _handler.unsubscribeAll();
-    }
-
-    function handleSelectedRowsChanged(e, args) {
-      var selectedRows = _grid.getSelectedRows();
-      var lookup = {}, row, i;
-      for (i = 0; i < selectedRows.length; i++) {
-        row = selectedRows[i];
-        lookup[row] = true;
-        if (lookup[row] !== _selectedRowsLookup[row]) {
-          _grid.invalidateRow(row);
-          delete _selectedRowsLookup[row];
-        }
-      }
-      for (i in _selectedRowsLookup) {
-        _grid.invalidateRow(i);
-      }
-      _selectedRowsLookup = lookup;
-      _grid.render();
-
-      if (_options.selectAll) {
-        if (selectedRows.length && selectedRows.length == _grid.getDataLength()) {
-          _grid.updateColumnHeader(_options.columnId, "<input type='checkbox' checked='checked'>", _options.toolTip);
-        } else {
-          _grid.updateColumnHeader(_options.columnId, "<input type='checkbox'>", _options.toolTip);
-        }
-      }
-    }
-
-    function handleKeyDown(e, args) {
-      if (e.which == 32) {
-        if (_grid.getColumns()[args.cell].id === _options.columnId) {
-          // if editing, try to commit
-          if (!_grid.getEditorLock().isActive() || _grid.getEditorLock().commitCurrentEdit()) {
-            toggleRowSelection(args.row);
-          }
-          e.preventDefault();
-          e.stopImmediatePropagation();
-        }
-      }
-    }
-
-    function handleClick(e, args) {
-      // clicking on a row select checkbox
-      if (_grid.getColumns()[args.cell].id === _options.columnId && $(e.target).is(":checkbox")) {
-        // if editing, try to commit
-        if (_grid.getEditorLock().isActive() && !_grid.getEditorLock().commitCurrentEdit()) {
-          e.preventDefault();
-          e.stopImmediatePropagation();
-          return;
-        }
-
-        toggleRowSelection(args.row);
-        e.stopPropagation();
-        e.stopImmediatePropagation();
-      }
-    }
-
-    function toggleRowSelection(row) {
-      if (_selectedRowsLookup[row]) {
-        _grid.setSelectedRows($.grep(_grid.getSelectedRows(), function (n) {
-          return n != row
-        }));
-      } else {
-        _grid.setSelectedRows(_grid.getSelectedRows().concat(row));
-      }
-    }
-
-    function handleHeaderClick(e, args) {
-      if (args.column.id == _options.columnId && $(e.target).is(":checkbox")) {
-        // if editing, try to commit
-        if (_grid.getEditorLock().isActive() && !_grid.getEditorLock().commitCurrentEdit()) {
-          e.preventDefault();
-          e.stopImmediatePropagation();
-          return;
-        }
-
-        if ($(e.target).is(":checked")) {
-          var rows = [];
-          for (var i = 0; i < _grid.getDataLength(); i++) {
-            rows.push(i);
-          }
-          _grid.setSelectedRows(rows);
-        } else {
-          _grid.setSelectedRows([]);
-        }
-        e.stopPropagation();
-        e.stopImmediatePropagation();
-      }
-    }
-
-    function getColumnDefinition() {
-      return {
-        id: _options.columnId,
-        name: _options.selectAll ? "<input type='checkbox'>" : "",
-        toolTip: _options.toolTip,
-        field: "sel",
-        width: _options.width,
-        resizable: false,
-        sortable: false,
-        cssClass: _options.cssClass,
-        formatter: checkboxSelectionFormatter
-      };
-    }
-
-    function checkboxSelectionFormatter(row, cell, value, columnDef, dataContext) {
-      if (dataContext) {
-        return _selectedRowsLookup[row]
-            ? "<input type='checkbox' checked='checked'>"
-            : "<input type='checkbox'>";
-      }
-      return null;
-    }
-
-    $.extend(this, {
-      "init": init,
-      "destroy": destroy,
-
-      "getColumnDefinition": getColumnDefinition
-    });
-  }
-})(jQuery);
-define("slickgrid/plugins/slick.checkboxselectcolumn", function(){});
-
-(function ($) {
   function SlickColumnPicker(columns, grid, options) {
     var $menu;
     var columnCheckboxes;
@@ -7798,7 +7728,6 @@ define('slickgrid-all',[
   'slickgrid/slick.core',
   'slickgrid/slick.grid',
   'slickgrid/plugins/slick.rowselectionmodel',
-  'slickgrid/plugins/slick.checkboxselectcolumn',
   'slickgrid/controls/slick.columnpicker'
 ],
 function() {
@@ -7845,6 +7774,8 @@ function($, _, Backbone, Plumage, Selection, Slick) {
       _.extend(this, options);
 
       this.selection.on('change', this.onSelectionChange, this);
+      this.selection.on('add', this.onSelectionChange, this);
+      this.selection.on('remove', this.onSelectionChange, this);
       this.selection.on('reset', this.onSelectionChange, this);
     },
 
@@ -8102,7 +8033,7 @@ function($, _, Backbone, Plumage, BaseController, ModelUtil) {
       view.setModel(this.indexModel);
       this.showView(view);
 
-      this.loadModel(this.indexModel).then(function() {
+      this.loadModel(this.indexModel, {reset: true}).then(function() {
         view.setModel(model);
       });
 
@@ -8239,7 +8170,7 @@ function($, _, Backbone, Plumage, BaseController, ModelUtil) {
       if (updateUrl) {
         collection.updateUrl();
       }
-      collection.load();
+      collection.load({reset: true});
     }, 200)
   });
 });
@@ -8363,8 +8294,8 @@ function($, _, Backbone, Plumage) {
   return Plumage.History;
 });
 
-define('Router',['jquery', 'underscore', 'backbone', 'PlumageRoot', 'History'],
-function($, _, Backbone, Plumage, History) {
+define('Router',['jquery', 'underscore', 'backbone', 'PlumageRoot', 'History', 'util/ModelUtil'],
+function($, _, Backbone, Plumage, History, ModelUtil) {
   return Plumage.Router = Backbone.Router.extend(
   /** @lends Plumage.Router.prototype */
   {
@@ -8494,30 +8425,13 @@ function($, _, Backbone, Plumage, History) {
      * Override to parse query string
      */
     execute: function(callback, args) {
-      var queryParams = this.parseQueryString(args.pop());
+      var queryParams = ModelUtil.parseQueryString(args.pop());
       if (queryParams) {
         args.push(queryParams);
       }
       if (callback) {
         callback.apply(this, args);
       }
-    },
-
-    parseQueryString: function(queryString) {
-      if (!queryString) {
-        return undefined;
-      }
-      var result = {};
-      queryString = decodeURIComponent(queryString.replace(/\+/g, '%20'));
-      if(queryString) {
-        $.each(queryString.split('&'), function(index, value) {
-          if(value) {
-            var param = value.split('=');
-            result[param[0]] = param[1];
-          }
-        });
-      }
-      return result;
     }
   });
 });
@@ -9112,6 +9026,10 @@ define('view/ContainerView',[
       });
     },
 
+    onLinkClick: function(e) {
+      View.prototype.onLinkClick.apply(this, arguments);
+    },
+
     //
     // Util
     //
@@ -9511,6 +9429,22 @@ define('view/ModelView',[
       ContainerView.prototype.onHide.apply(this, arguments);
     },
 
+    /** override to short circuit changes to view state only */
+    onLinkClick: function(e) {
+      var a = $(e.target).closest('a');
+      if (!a.hasClass('outlink')) {
+        if (a.attr('href')[0] === '?') {
+          e.preventDefault();
+          e.stopPropagation();
+          var params = ModelUtil.parseQueryString(a.attr('href').slice(1));
+          this.model.set(params);
+          this.model.updateUrl({replace: false});
+        } else {
+          ContainerView.prototype.onLinkClick.apply(this, arguments);
+        }
+      }
+    },
+
     delegateEvents: function(events) {
       Backbone.View.prototype.delegateEvents.apply(this, arguments);
     },
@@ -9811,17 +9745,16 @@ define('view/form/Form',[
       return this.actionLabel ? this.actionLabel : 'Submit';
     },
 
-    onChange: function(e) {
-      if (this.updateModelOnChange) {
-        this.onSubmit(e);
+    setMessage: function(message, messageCls) {
+      var messageView = this.getSubView('message');
+      if (messageView) {
+        messageView.setMessage(message, messageCls);
       }
-      this.trigger('change', this, e);
     },
 
-    onSubmit: function(e) {
-      e.preventDefault();
-      this.submit();
-    },
+    //
+    // actions
+    //
 
     submit: function() {
       if (!this.model) {
@@ -9840,8 +9773,36 @@ define('view/form/Form',[
       }
     },
 
+    //
+    // Events
+    //
+
+    onChange: function(e) {
+      if (this.updateModelOnChange) {
+        this.onSubmit(e);
+      }
+      this.trigger('change', this, e);
+    },
+
+    onSubmit: function(e) {
+      e.preventDefault();
+      this.submit();
+    },
+
     onSaveSuccess: function(model, resp, xhr) {
-      this.trigger('save', this, model);
+      if (resp.meta.success) {
+        this.trigger('save', this, model);
+      } else {
+        if (resp.meta.message_body) {
+          this.setMessage(resp.meta.message_body, resp.meta.message_class);
+        }
+      }
+    },
+
+    onModelInvalid: function(model, validationError, message, messageCls) {
+      if (message) {
+        this.setMessage(message, messageCls);
+      }
     }
   });
 });
@@ -10317,12 +10278,14 @@ define('view/form/fields/Field',[
     },
 
     onModelInvalid: function(model, validationError) {
-      var message = validationError[this.valueAttr];
-      if (message) {
-        if ($.isArray(message)) {
-          message = message[0];
+      if (validationError) {
+        var message = validationError[this.valueAttr];
+        if (message) {
+          if ($.isArray(message)) {
+            message = message[0];
+          }
+          this.setValidationState('error', message);
         }
-        this.setValidationState('error', message);
       }
     }
   });
@@ -10449,7 +10412,7 @@ define('view/comment/CommentView',[
       if (this.model) {
         var result = this.model.toViewJSON();
         result.body = result.body.replace(/\n/g, '<br/>');
-        result.created_at = moment(result.created_at*1000).fromNow();
+        result.created_at = moment(result.created_at).fromNow();
         result.can_delete = result.user.account === window.currentUser;
         return result;
       }
@@ -10610,7 +10573,7 @@ define('view/comment/CommentsSection',[
       if (this.commentForm) {
         this.commentForm.setModel(new Comment({
           commentable_type: this.model.commentableType,
-          commentable_id: this.getCommentableId(this.model),
+          commentable_url: this.model.url(),
           body: '',
           subject: this.getSubject(this.model)
         }));
@@ -10984,8 +10947,8 @@ define('view/form/fields/Select',[
     onListModelDestroy: function(model, options) {
     },
 
-    onListModelError: function(model, options) {
-      this.onModelError(model, options);
+    onListModelError: function(model, response, options) {
+      this.onModelError(model, response, options);
     }
   });
 });
@@ -11654,7 +11617,7 @@ define('view/form/fields/picker/Picker',[
   });
 });
 
-define('text!view/form/fields/templates/FieldWithPicker.html',[],function () { return '{{#if label}}\n<div class="control-group">\n  <label class="control-label" for="{{valueAttr}}">{{label}}</label>\n  <div class="controls">\n    <span class="field">\n\t    <span class="dropdown">\n\t      {{> field}}\n\t      <div class="picker"></div>\n\t    </span>\n    </span>\n    <span class="help-inline">{{#if message}}{{message}}{{/if}}</span>\n  </div>\n</div>\n{{else}}\n<span class="dropdown picker-dropdown">\n  {{> field}}\n  <div class="picker"></div>\n</span>\n{{/if}}\n';});
+define('text!view/form/fields/templates/FieldWithPicker.html',[],function () { return '{{#if label}}\n<div class="control-group">\n  <label class="control-label" for="{{valueAttr}}">{{label}}</label>\n  <div class="controls">\n    <span class="field">\n\t    <span class="dropdown">\n\t      {{> field}}\n\t      <div class="picker"></div>\n\t    </span>\n    </span>\n    <span class="help-inline">{{#if message}}{{message}}{{/if}}</span>\n  </div>\n</div>\n{{else}}\n<span class="field">\n<span class="dropdown picker-dropdown">\n  {{> field}}\n  <div class="picker"></div>\n</span>\n</span>\n{{/if}}\n';});
 
 define('view/form/fields/FieldWithPicker',[
   'jquery',
@@ -11681,11 +11644,8 @@ define('view/form/fields/FieldWithPicker',[
     pickerOptions: undefined,
 
     events: {
-      'focus input:first': 'onFocus',
-      'blur input:first': 'onBlur',
       'click input:first': 'onInputClick',
       'click button:first': 'onButtonClick',
-      'keydown input:first': 'onKeyDown'
     },
 
     /**
@@ -12105,8 +12065,6 @@ define('view/form/fields/DateField',[
     format: 'MMM D, YYYY',
 
     events: {
-      'focus input': 'onFocus',
-      'blur input': 'onBlur',
       'click input': 'onInputClick',
       'click button': 'onButtonClick',
     },
@@ -12219,10 +12177,10 @@ define('view/form/fields/DateField',[
 
     processDomValue: function(value) {
       if (value) {
-        var m = moment(value);
+        var m = this.utc ? moment.utc(value) : moment(value);
         var oldValue = this.getValue();
         if (oldValue && this.keepTime) {
-          var oldM = moment(oldValue);
+          var oldM = this.utc ? moment.utc(oldValue) : moment(oldValue);
           m.hour(oldM.hour()).minute(oldM.minute()).second(oldM.second()).millisecond(oldM.millisecond());
         }
         return m.valueOf();
@@ -12714,7 +12672,7 @@ define('view/form/fields/MultiSelect',[
 
     getValue: function() {
       var value = Select.prototype.getValue.apply(this, arguments);
-      if (value) {
+      if (value !== undefined) {
         return $.isArray(value) ? _.clone(value) : [value];
       }
       return [];
@@ -12802,7 +12760,7 @@ define('view/form/fields/MultiSelect',[
 });
 
 
-define('text!view/form/fields/templates/DropdownMultiSelect.html',[],function () { return '<div class="dropdown-multiselect dropdown">\n<select {{#if fieldName}}name="{{fieldName}}"{{/if}} style="display: none">\n{{#if noSelectionText}}\n<option value="{{noSelectionValue}}" {{^hasSelection}}selected="true"{{/hasSelection}}>{{noSelectionText}}</option>\n{{/if}}\n{{#listValues}}\n<option value="{{value}}" {{#selected}}selected{{/selected}}>{{label}}</option>\n{{/listValues}}\n</select>\n\n<a class="btn dropdown-toggle {{buttonCls}}" data-toggle="dropdown" href="#">\n  {{#iconCls}}\n    <i class="{{.}} icon-white"></i>\n  {{/iconCls}}\n  {{#if hasSelection}}\n    {{valueLabel}}\n  {{else}}\n    {{noSelectionText}}\n  {{/if}}\n  <span class="caret"></span>\n</a>\n<ul class="dropdown-menu">\n  {{#if showSelectAll}}\n  <li class="select-all {{#allSelected}}active{{/allSelected}}">\n      <a><input type="checkbox" {{#allSelected}} checked{{/allSelected}}/>Select All</a>\n  </li>\n  {{/if}}\n  {{#listValues}}\n  <li data-value="{{value}}" class="{{value}}{{#selected}} active{{/selected}}">\n      <a><input type="checkbox" {{#selected}} checked{{/selected}}/>{{label}}</a>\n  </li>\n  {{/listValues}}\n</ul>\n</div>';});
+define('text!view/form/fields/templates/DropdownMultiSelect.html',[],function () { return '<div class="dropdown-multiselect dropdown">\n<select {{#if fieldName}}name="{{fieldName}}"{{/if}} style="display: none">\n{{#if noSelectionText}}\n<option value="{{noSelectionValue}}" {{^hasSelection}}selected="true"{{/hasSelection}}>{{noSelectionText}}</option>\n{{/if}}\n{{#listValues}}\n<option value="{{value}}" {{#selected}}selected{{/selected}}>{{label}}</option>\n{{/listValues}}\n</select>\n\n<a class="btn dropdown-toggle {{buttonCls}}" data-toggle="dropdown" href="#">\n  {{#iconCls}}\n    <i class="{{.}} icon-white"></i>\n  {{/iconCls}}\n  {{#if hasSelection}}\n    {{valueLabel}}\n  {{else}}\n    {{noSelectionText}}\n  {{/if}}\n  <span class="caret"></span>\n</a>\n<ul class="dropdown-menu {{#if showSelectOnly}}show-select-only{{/if}}">\n  {{#if showSelectAll}}\n  <li class="select-all {{#allSelected}}active{{/allSelected}}">\n      <a><input type="checkbox" {{#allSelected}} checked{{/allSelected}}/>Select All</a>\n  </li>\n  {{/if}}\n  {{#listValues}}\n  <li data-value="{{value}}" class="{{value}}{{#selected}} active{{/selected}}">\n      {{#if ../showSelectOnly}}\n        <a href="#" class="only-link">only</a>\n      {{/if}}\n      <a class="item"><input type="checkbox" {{#selected}} checked{{/selected}}/>{{label}}</a>\n  </li>\n  {{/listValues}}\n</ul>\n</div>';});
 
 define('view/form/fields/DropdownMultiSelect',[
   'jquery',
@@ -12820,12 +12778,13 @@ define('view/form/fields/DropdownMultiSelect',[
 
     template: template,
 
+    showSelectOnly: true,
+
     events:{
       'click li a': 'onItemClick',
       'click li input': 'onItemClick',
       'click li.select-all a': 'onSelectAllClick',
       'click li.select-all input': 'onSelectAllClick'
-
     },
 
     initialize: function() {
@@ -12834,6 +12793,12 @@ define('view/form/fields/DropdownMultiSelect',[
     },
 
     /** overrides **/
+
+    getTemplateData: function() {
+      var data = MultiSelect.prototype.getTemplateData.apply(this, arguments);
+      data.showSelectOnly = this.showSelectOnly;
+      return data;
+    },
 
     onRender: function() {
       MultiSelect.prototype.onRender.apply(this, arguments);
@@ -12850,13 +12815,18 @@ define('view/form/fields/DropdownMultiSelect',[
     /** Event Handlers **/
 
     onItemClick: function(e) {
+
       var li = $(e.target).closest('li'),
         value = li && li.data('value');
 
       if (value !== undefined) {
         e.preventDefault();
         e.stopPropagation();
-        this.toggleValue(value);
+        if ($(e.target).hasClass('only-link')) {
+          this.setValue(value);
+        } else {
+          this.toggleValue(value);
+        }
       }
     },
 
@@ -12870,6 +12840,70 @@ define('view/form/fields/DropdownMultiSelect',[
 
 });
 
+define('view/form/fields/FilterCheckbox',[
+  'jquery',
+  'backbone',
+  'handlebars',
+  'PlumageRoot',
+  'view/form/fields/Checkbox'
+], function($, Backbone, Handlebars, Plumage, Checkbox) {
+
+
+  return Plumage.view.form.fields.FilterCheckbox = Checkbox.extend({
+
+    filterKey: undefined,
+
+    filterValue: true,
+
+    invertMatch: false,
+
+    checkboxLabel: undefined,
+
+    comparison: 'equals',
+
+    updateModelOnChange: true,
+
+    processFilterValue: function(value) {
+      return ((value === this.filterValue) !== this.invertMatch) ? true : false;
+    },
+
+    processValueForFilter: function(value) {
+      return (value !== this.invertMatch) ? this.filterValue : undefined;
+    },
+
+    getValueFromModel: function() {
+      if (this.model) {
+        var filters = this.model.getFilters(this.filterKey),
+          value;
+        if (filters && filters.length) {
+          value = filters[0].get('value');
+        }
+        return this.processFilterValue(value);
+      }
+      return undefined;
+    },
+
+    updateModel: function(rootModel, parentModel) {
+      var model = this.getModelFromRoot(this.relationship, rootModel, parentModel),
+        value = this.processValueForFilter(this.getValue()),
+        filters = this.model.getFilters(this.filterKey);
+
+      if (model) {
+        if (filters && filters.length) {
+          if (value === undefined || String(value) === '') {
+            this.model.removeFilter(filters[0]);
+          } else {
+            filters[0].set('value', value);
+          }
+        } else {
+          if (value !== undefined && String(value) !== '') {
+            model.addFilter(new Plumage.model.Filter({key: this.filterKey, comparison: this.comparison, value: value}));
+          }
+        }
+      }
+    }
+  });
+});
 
 define('text!view/form/fields/templates/TypeAhead.html',[],function () { return '<span class="typeahead-select {{#if menuShown}}open{{/if}}">\n<span class="input-append">\n  <input type="text" placeholder="{{noSelectionText}}" value="{{value}}">\n  <button class="btn cancel-typeahead"><i class="icon-remove"></i></button>\n</span>\n\n<ul class="dropdown-menu">\n</ul>\n</span>';});
 
@@ -13646,7 +13680,7 @@ define('view/menu/DropdownMenu',[
 });
 
 
-define('text!view/grid/templates/FilterView.html',[],function () { return '\n{{#if hasFilters}}<span>Filter by:</span>{{/if}}\n\n<span class="filters"></span>\n\n<span class="actions"></span>\n\n<span class="more-menu"></span>\n\n<span class="search"></span>\n';});
+define('text!view/grid/templates/FilterView.html',[],function () { return '\n{{#if hasFilters}}<span>Filter by:</span>{{/if}}\n\n<span class="filters"></span>\n\n<span class="actions"></span>\n\n\n<span class="more-menu"></span>\n\n<span class="actions-right"></span>\n\n<span class="search"></span>\n';});
 
 define('view/grid/FilterView',[
   'jquery',
@@ -13927,6 +13961,17 @@ define('view/grid/GridView',[
 
     infiniteScroll: true,
 
+    checkboxSelect: false,
+
+    checkboxColumn: {
+      id: 'checkbox-select',
+      cssClass: 'checkbox-select',
+      field: 'sel',
+      width: 30,
+      resizable: false,
+      sortable: false
+    },
+
     noDataText: 'No Rows Found',
 
     saveViewState: true,
@@ -13936,6 +13981,21 @@ define('view/grid/GridView',[
     initialize: function () {
       var me = this;
       ModelView.prototype.initialize.apply(this, arguments);
+
+      //checkbox select
+      if (this.checkboxSelect) {
+        this.columns = _.clone(this.columns);
+        this.columns.unshift(_.extend({
+          formatter: function(row, cell, value, columnDef, dataContext) {
+            if (dataContext) {
+              var selected = this.selection.isSelectedId(dataContext.id);
+              return selected ? '<input type="checkbox" checked="checked">' : '<input type="checkbox">';
+            }
+            return null;
+          }.bind(this)
+        }, this.checkboxColumn));
+      }
+
       var gridData = this.createGridData();
 
       this.gridEl = $('<div class="grid"></div>');
@@ -13951,11 +14011,11 @@ define('view/grid/GridView',[
         }.bind(this));
       }
 
-      this.onResize = _.debounce(this.onResize, 50);
-
       if (this.filterView) {
-        this.filterView.moreMenu.on('itemClick', this.onMoreMenuItemClick.bind(this));
+        this.setFilterView(this.filterView);
       }
+
+      this.onResize = _.debounce(this.onResize, 50);
     },
 
     delegateEvents: function(events) {
@@ -13988,7 +14048,21 @@ define('view/grid/GridView',[
     },
 
     setSelection: function(selection) {
+      if (this.selection) {
+        this.selection.off('all', this.onSelectionChanged, this);
+      }
+      this.selection = selection;
+      this.selection.on('all', this.onSelectionChanged, this);
+
       this.grid.setSelectionModel(new GridSelection(selection));
+    },
+
+    setFilterView: function(filterView) {
+      if (this.filterView) {
+        this.filterView.moreMenu.off('itemClick', this.onMoreMenuItemClick, this);
+      }
+      this.filterView = filterView;
+      this.filterView.moreMenu.on('itemClick', this.onMoreMenuItemClick, this);
     },
 
     /**
@@ -14063,6 +14137,7 @@ define('view/grid/GridView',[
         this.onDoneLoad();
         this.grid.invalidate();
         this.updateNoData();
+        this.grid.scrollRowToTop(0);
       }
       if (models && models.get && models.get('sortField')) {
         this.grid.setSortColumn(models.get('sortField'), String(models.get('sortDir')) === '1');
@@ -14091,7 +14166,7 @@ define('view/grid/GridView',[
       $(this.gridEl).detach();
     },
 
-    onGridClick: function(e) {
+    onGridClick: function(e, args) {
       var target = e.target;
 
       if (target.tagName === 'A' && $(target).attr('href')) {
@@ -14102,15 +14177,35 @@ define('view/grid/GridView',[
         return false;
       }
 
-      var cell = this.grid.getCellFromEvent(e);
-      if (!cell || !this.grid.canCellBeActive(cell.row, cell.cell)) {
-        return false;
+      if (this.grid.getColumns()[args.cell].id === 'checkbox-select') {
+        if (this.selection) {
+          this.toggleRowSelected(args.row);
+        }
+        e.stopPropagation();
+        return;
       }
+
+      var cell = this.grid.getCellFromEvent(e);
       var id = this.grid.getDataItem(cell.row).id,
         data = this.grid.getData(),
         model = data.getItem(data.getIndexForId(id));
 
       this.trigger('itemSelected',  model);
+    },
+
+    toggleRowSelected: function(index) {
+      this.selection.toggleIndex(index);
+    },
+
+    onSelectionChanged: function(event, selection, model, options) {
+      if (event === 'add' || event === 'remove') {
+        this.grid.invalidateRow(this.grid.getData().getIndexForId(model.id));
+      } else if (event === 'reset') {
+        this.grid.invalidate();
+      }
+      if (this.rendered) {
+        this.grid.render();
+      }
     },
 
     onResize: function() {
@@ -14454,7 +14549,7 @@ define('view/ListAndDetailView',[
   });
 });
 
-define('text!view/templates/ModalDialog.html',[],function () { return '<div class="modal hide fade" tabindex="-1" role="dialog" aria-hidden="true">\n  <div class="modal-header">\n    <button type="button" class="close" data-dismiss="modal" aria-hidden="true">x</button>\n    <h3 id="myModalLabel">{{header}}</h3>\n  </div>\n  <div class="modal-body">\n  </div>\n  <div class="modal-footer">\n    {{#if showCancel}}\n      <a class="cancel" data-dismiss="modal" aria-hidden="true">Cancel</a>\n    {{else}}\n      <button class="btn" data-dismiss="modal" aria-hidden="true">Close</button>\n    {{/if}}\n    {{#if showSubmit}}\n      <button class="btn submit">Submit</button>\n    {{/if}}\n  </div>\n</div>';});
+define('text!view/templates/ModalDialog.html',[],function () { return '<div class="modal hide fade" tabindex="-1" role="dialog" aria-hidden="true">\n  <div class="modal-header">\n    <button type="button" class="close" data-dismiss="modal" aria-hidden="true">x</button>\n    <h3 id="myModalLabel">{{header}}</h3>\n  </div>\n  <div class="modal-body">\n    <div class="modal-content"></div>\n  </div>\n  <div class="modal-footer">\n    {{#if showCancel}}\n      <a class="cancel" data-dismiss="modal" aria-hidden="true">Cancel</a>\n    {{else}}\n      <button class="btn" data-dismiss="modal" aria-hidden="true">Close</button>\n    {{/if}}\n    {{#if showSubmit}}\n      <button class="btn submit">Submit</button>\n    {{/if}}\n  </div>\n</div>';});
 
 define('view/ModalDialog',[
   'jquery',
@@ -14494,7 +14589,7 @@ define('view/ModalDialog',[
     onRender: function() {
       ModelView.prototype.onRender.apply(this, arguments);
       if (this.contentView) {
-        this.$('.modal-body').html(this.contentView.render().el);
+        this.$('.modal-content').html(this.contentView.render().el);
       }
 
       if (this.$el.closest('html').length === 0) {
@@ -14513,14 +14608,20 @@ define('view/ModalDialog',[
     },
 
     show: function() {
-      if (!this.isRendered) {
-        this.render();
-      }
+      this.render();
       this.$('.modal').modal('show');
+      this.onShow();
+      if (this.contentView) {
+        this.contentView.onShow();
+      }
     },
 
     hide: function() {
       this.$('.modal').modal('hide');
+      if (this.contentView) {
+        this.contentView.onHide();
+      }
+      this.onHide();
     },
 
     onSubmitClick: function() {
@@ -14531,7 +14632,83 @@ define('view/ModalDialog',[
 
 
 
-define('text!view/templates/ConfirmationDialog.html',[],function () { return '<div class="modal hide fade" tabindex="-1" role="dialog" aria-hidden="true">\n  <div class="modal-header">\n    <button type="button" class="close" data-dismiss="modal" aria-hidden="true">x</button>\n    <h3 id="myModalLabel">{{{headerTemplate}}}</h3>\n  </div>\n  <div class="modal-body">\n    {{{bodyTemplate}}}\n  </div>\n  <div class="modal-footer">\n  <button class="btn" data-dismiss="modal" aria-hidden="true">Cancel</button>\n    <button class="btn confirm {{buttonCls}}">{{buttonText}}</button>\n  </div>\n</div>';});
+define('text!view/templates/MessageView.html',[],function () { return '\n{{#body}}\n<div class="message-body {{../cls}}">\n{{{.}}}\n</div>\n{{/body}}\n';});
+
+define('view/MessageView',[
+  'jquery',
+  'backbone',
+  'handlebars',
+  'PlumageRoot',
+  'view/ModelView',
+  'text!view/templates/MessageView.html'
+], function($, Backbone, Handlebars, Plumage, ModelView, template) {
+
+  /**
+   * lists with selections need two models:
+   *  - one for list contents
+   *  - one for list selection
+   *
+   * The selection model, populated by the model hierarchy. The list model needs to be populated manually.
+   */
+  return Plumage.view.MessageView = ModelView.extend({
+
+    className: 'message',
+
+    template: template,
+
+    updateOnMessage: true,
+
+    events: {
+      'click a': 'onLinkClick'
+    },
+
+    initialize: function() {
+      ModelView.prototype.initialize.apply(this, arguments);
+      if (this.updateOnMessage) {
+        theApp.dispatch.on('message', this.setMessage.bind(this));
+      }
+    },
+
+    onRender: function() {
+      ModelView.prototype.onRender.apply(this, arguments);
+      this.updateClass();
+    },
+
+    getTemplateData: function() {
+      var data = {
+        body: this.messageBody,
+        cls: this.messageCls
+      };
+      return data;
+    },
+
+    updateClass: function() {
+      this.$el.toggleClass('show', Boolean(this.messageBody));
+    },
+
+    setMessage: function(messageBody, messageCls) {
+      this.messageBody = messageBody;
+      this.messageCls = messageCls;
+      if (this.shown) {
+        this.render();
+      }
+    },
+
+    onShow: function() {
+      ModelView.prototype.onShow.apply(this, arguments);
+      this.render();
+
+    },
+
+    setModel: function() {
+      this.messageBody = undefined;
+      this.messageCls = undefined;
+      ModelView.prototype.setModel.apply(this, arguments);
+    }
+  });
+});
+
+define('text!view/templates/ConfirmationDialog.html',[],function () { return '<div class="modal hide fade" tabindex="-1" role="dialog" aria-hidden="true">\n  <div class="modal-header">\n    <button type="button" class="close" data-dismiss="modal" aria-hidden="true">x</button>\n    <h3 id="myModalLabel">{{{headerTemplate}}}</h3>\n  </div>\n  <div class="modal-body">\n    <div class="message"></div>\n    <div class="modal-content">\n\t    {{{bodyTemplate}}}\n    </div>\n  </div>\n  <div class="modal-footer">\n  <button class="btn" data-dismiss="modal" aria-hidden="true">Cancel</button>\n    <button class="btn confirm {{buttonCls}}">{{buttonText}}</button>\n  </div>\n</div>';});
 
 define('view/ConfirmationDialog',[
   'jquery',
@@ -14540,14 +14717,19 @@ define('view/ConfirmationDialog',[
   'handlebars',
   'PlumageRoot',
   'view/ModalDialog',
+  'view/MessageView',
   'text!view/templates/ConfirmationDialog.html'
-], function($, _, Backbone, Handlebars, Plumage, ModalDialog, template) {
+], function($, _, Backbone, Handlebars, Plumage, ModalDialog, MessageView, template) {
 
   return Plumage.view.ConfirmationDialog = ModalDialog.extend({
 
     template: template,
 
     headerTemplate: 'Confirmation Dialog',
+
+    message: undefined,
+
+    messageCls: undefined,
 
     bodyTemplate: 'Are you sure you want to do this?',
 
@@ -14558,6 +14740,14 @@ define('view/ConfirmationDialog',[
     events: {
       'click .confirm': 'onConfirmClick'
     },
+
+    subViews: [{
+      viewCls: MessageView,
+      name: 'message',
+      selector: '.message',
+      updateOnMessage: false,
+      replaceEl: true,
+    }],
 
     initialize: function(options) {
       options = options || {};
@@ -14572,13 +14762,19 @@ define('view/ConfirmationDialog',[
         headerTemplate: this.headerTemplate(data),
         bodyTemplate: this.bodyTemplate(data),
         buttonText: this.buttonText,
-        buttonCls: this.buttonCls
+        buttonCls: this.buttonCls,
+        message:  this.message,
+        messageCls: this.messageCls
       });
     },
 
-    onConfirmClick: function() {
+    setMessage: function(message, messageCls) {
+      this.getSubView('message').setMessage(message, messageCls);
+    },
+
+    onConfirmClick: function(e) {
+      $(e.target).attr('disabled', '');
       this.trigger('confirm');
-      this.hide();
     }
   });
 });
@@ -14674,79 +14870,7 @@ define('view/DisplayField',[
 });
 
 
-define('text!view/templates/MessageView.html',[],function () { return '\n{{#body}}\n<div class="message-body {{../cls}}">\n{{{.}}}\n</div>\n{{/body}}\n';});
-
-define('view/MessageView',[
-  'jquery',
-  'backbone',
-  'handlebars',
-  'PlumageRoot',
-  'view/ModelView',
-  'text!view/templates/MessageView.html'
-], function($, Backbone, Handlebars, Plumage, ModelView, template) {
-
-  /**
-   * lists with selections need two models:
-   *  - one for list contents
-   *  - one for list selection
-   *
-   * The selection model, populated by the model hierarchy. The list model needs to be populated manually.
-   */
-  return Plumage.view.MessageView = ModelView.extend({
-
-    className: 'message',
-
-    template: template,
-
-    events: {
-      'click a': 'onLinkClick'
-    },
-
-    initialize: function() {
-      ModelView.prototype.initialize.apply(this, arguments);
-      theApp.dispatch.on('message', this.onMessage.bind(this));
-    },
-
-    onRender: function() {
-      ModelView.prototype.onRender.apply(this, arguments);
-      this.updateClass();
-    },
-
-    getTemplateData: function() {
-      var data = {
-        body: this.messageBody,
-        cls: this.messageCls
-      };
-      return data;
-    },
-
-    updateClass: function() {
-      this.$el.toggleClass('show', Boolean(this.messageBody));
-    },
-
-    onMessage: function(messageBody, messageCls) {
-      this.messageBody = messageBody;
-      this.messageCls = messageCls;
-      if (this.shown) {
-        this.render();
-      }
-    },
-
-    onShow: function() {
-      ModelView.prototype.onShow.apply(this, arguments);
-      this.render();
-
-    },
-
-    setModel: function() {
-      this.messageBody = undefined;
-      this.messageCls = undefined;
-      ModelView.prototype.setModel.apply(this, arguments);
-    }
-  });
-});
-
-define('text!view/templates/NavView.html',[],function () { return '\n<div id="nav-top">\n  <a class="brand" href="/">\n    <span class="nav-title">{{title}}</span>\n    {{#subtitle}}<span class="nav-subtitle">{{.}}</span>{{/subtitle}}\n  </a>\n  <div id="extra-links">\n  {{#aboutUrl}}\n    <a class="outlink" href="{{.}}" target="_">about</a>\n  {{/aboutUrl}}\n\n  {{#helpUrl}}\n    <a class="outlink" href="{{.}}" target="_">help</a>\n  {{/helpUrl}}\n  </div>\n\n  <div id="nav-top-right" class="nav pull-right">\n    <div class="nav-search"></div>\n  </div>\n  <div class="clear"></div>\n</div>\n\n{{#if navItems}}\n<div id="main-nav" class="navbar">\n  <div class="navbar-inner">\n    <ul class="nav-menu nav menu">\n      {{#navItems}}\n      <li class="{{className}}"><a href="{{url}}">{{label}}</a></li>\n      {{/navItems}}\n    </ul>\n\n    <ul class="nav right-nav pull-right">\n      <li class="user-menu"></li>\n    </ul>\n  </div>\n</div>\n{{/if}}';});
+define('text!view/templates/NavView.html',[],function () { return '\n<div id="nav-top">\n  <a class="brand" href="/">\n    <span class="nav-title">{{title}}</span>\n    {{#subtitle}}<span class="nav-subtitle">{{.}}</span>{{/subtitle}}\n  </a>\n  <div id="extra-links">\n  {{#if aboutUrl}}\n    <a class="outlink" href="{{aboutUrl}}" target="_">{{aboutLabel}}</a>\n  {{/if}}\n\n  {{#if helpUrl}}\n    <a class="outlink" href="{{helpUrl}}" target="_">{{helpLabel}}</a>\n  {{/if}}\n  </div>\n\n  <div id="nav-top-right" class="nav pull-right">\n    <div class="nav-search"></div>\n  </div>\n  <div class="clear"></div>\n</div>\n\n{{#if navItems}}\n<div id="main-nav" class="navbar">\n  <div class="navbar-inner">\n    <ul class="nav-menu nav menu">\n      {{#navItems}}\n      <li class="{{className}}"><a href="{{url}}">{{label}}</a></li>\n      {{/navItems}}\n    </ul>\n\n    <ul class="nav right-nav pull-right">\n      <li class="user-menu"></li>\n    </ul>\n  </div>\n</div>\n{{/if}}';});
 
 define('view/NavView',[
   'jquery',
@@ -14792,6 +14916,12 @@ define('view/NavView',[
     logoutUrl: '/logout',
 
     aboutUrl: undefined,
+
+    aboutLabel: 'About',
+
+    helpUrl: undefined,
+
+    helpLabel: 'Help',
 
     events: {
       'click .nav-menu a': 'onNavClick',
@@ -14859,7 +14989,9 @@ define('view/NavView',[
         showAbout: this.aboutTemplate !== undefined,
         showSearch: this.showSearch,
         aboutUrl: this.aboutUrl,
-        helpUrl: this.helpUrl
+        aboutLabel: this.aboutLabel,
+        helpUrl: this.helpUrl,
+        helpLabel: this.helpLabel
       };
     },
 
@@ -15224,6 +15356,124 @@ define('view/Popover',[
 
 define('text!view/templates/TabView.html',[],function () { return '<div class="tabs">\n  <ul>\n    {{#tabs}}\n    <li class="{{id}} {{#active}}active{{/active}}"><a data-tab="#{{id}}-tab">{{label}}</a></li>\n    {{/tabs}}\n  </ul>\n</div>\n\n<div class="tab-content">\n  {{#tabs}}\n  <div class="tab-pane {{#active}}active{{/active}}" id="{{id}}-tab"></div>\n  {{/tabs}}\n</div>';});
 
+/*!
+ * jQuery Cookie Plugin v1.4.1
+ * https://github.com/carhartl/jquery-cookie
+ *
+ * Copyright 2013 Klaus Hartl
+ * Released under the MIT license
+ */
+(function (factory) {
+	if (typeof define === 'function' && define.amd) {
+		// AMD
+		define('jquery.cookie',['jquery'], factory);
+	} else if (typeof exports === 'object') {
+		// CommonJS
+		factory(require('jquery'));
+	} else {
+		// Browser globals
+		factory(jQuery);
+	}
+}(function ($) {
+
+	var pluses = /\+/g;
+
+	function encode(s) {
+		return config.raw ? s : encodeURIComponent(s);
+	}
+
+	function decode(s) {
+		return config.raw ? s : decodeURIComponent(s);
+	}
+
+	function stringifyCookieValue(value) {
+		return encode(config.json ? JSON.stringify(value) : String(value));
+	}
+
+	function parseCookieValue(s) {
+		if (s.indexOf('"') === 0) {
+			// This is a quoted cookie as according to RFC2068, unescape...
+			s = s.slice(1, -1).replace(/\\"/g, '"').replace(/\\\\/g, '\\');
+		}
+
+		try {
+			// Replace server-side written pluses with spaces.
+			// If we can't decode the cookie, ignore it, it's unusable.
+			// If we can't parse the cookie, ignore it, it's unusable.
+			s = decodeURIComponent(s.replace(pluses, ' '));
+			return config.json ? JSON.parse(s) : s;
+		} catch(e) {}
+	}
+
+	function read(s, converter) {
+		var value = config.raw ? s : parseCookieValue(s);
+		return $.isFunction(converter) ? converter(value) : value;
+	}
+
+	var config = $.cookie = function (key, value, options) {
+
+		// Write
+
+		if (value !== undefined && !$.isFunction(value)) {
+			options = $.extend({}, config.defaults, options);
+
+			if (typeof options.expires === 'number') {
+				var days = options.expires, t = options.expires = new Date();
+				t.setTime(+t + days * 864e+5);
+			}
+
+			return (document.cookie = [
+				encode(key), '=', stringifyCookieValue(value),
+				options.expires ? '; expires=' + options.expires.toUTCString() : '', // use expires attribute, max-age is not supported by IE
+				options.path    ? '; path=' + options.path : '',
+				options.domain  ? '; domain=' + options.domain : '',
+				options.secure  ? '; secure' : ''
+			].join(''));
+		}
+
+		// Read
+
+		var result = key ? undefined : {};
+
+		// To prevent the for loop in the first place assign an empty array
+		// in case there are no cookies at all. Also prevents odd result when
+		// calling $.cookie().
+		var cookies = document.cookie ? document.cookie.split('; ') : [];
+
+		for (var i = 0, l = cookies.length; i < l; i++) {
+			var parts = cookies[i].split('=');
+			var name = decode(parts.shift());
+			var cookie = parts.join('=');
+
+			if (key && key === name) {
+				// If second argument (value) is a function it's a converter...
+				result = read(cookie, value);
+				break;
+			}
+
+			// Prevent storing a cookie that we couldn't decode.
+			if (!key && (cookie = read(cookie)) !== undefined) {
+				result[name] = cookie;
+			}
+		}
+
+		return result;
+	};
+
+	config.defaults = {};
+
+	$.removeCookie = function (key, options) {
+		if ($.cookie(key) === undefined) {
+			return false;
+		}
+
+		// Must not alter options, thus extending a fresh object...
+		$.cookie(key, '', $.extend({}, options, { expires: -1 }));
+		return !$.cookie(key);
+	};
+
+}));
+
 define('view/TabView',[
   'jquery',
   'underscore',
@@ -15232,7 +15482,8 @@ define('view/TabView',[
   'PlumageRoot',
   'view/View',
   'view/ModelView',
-  'text!view/templates/TabView.html'
+  'text!view/templates/TabView.html',
+  'jquery.cookie'
 ], function($, _, Backbone, Handlebars, Plumage, View, ModelView, template) {
 
   return Plumage.view.TabView = ModelView.extend({
@@ -15242,6 +15493,8 @@ define('view/TabView',[
     template: Handlebars.compile(template),
 
     viewStateAttr: 'tab',
+
+    cookieName: undefined,
 
     events: {
       'click .tabs a': 'onTabClick'
@@ -15262,9 +15515,13 @@ define('view/TabView',[
 
     setModel: function() {
       ModelView.prototype.setModel.apply(this, arguments);
-      if (this.model.get(this.viewStateAttr) === undefined) {
-        var firstTabView = _.find(this.subViews, function(subView){ return subView.tabId !== undefined;});
-        this.model.set(this.viewStateAttr, firstTabView.tabId);
+      var tab = this.model.get(this.viewStateAttr);
+      if (tab === undefined) {
+        tab = this.getTabCookie();
+        if (tab === undefined) {
+          tab = _.find(this.subViews, function(subView){ return subView.tabId !== undefined;}).tabId;
+        }
+        this.model.set(this.viewStateAttr, tab);
       }
     },
 
@@ -15278,6 +15535,7 @@ define('view/TabView',[
       if (this.model) {
         this.model.set(this.viewStateAttr, tabId);
         this.model.updateUrl();
+        this.updateTabCookie();
       }
     },
 
@@ -15321,6 +15579,18 @@ define('view/TabView',[
             }
           }
         }, this);
+      }
+    },
+
+    getTabCookie: function() {
+      if (this.cookieName) {
+        return $.cookie('tabview.' + this.cookieName);
+      }
+    },
+
+    updateTabCookie: function() {
+      if (this.cookieName) {
+        $.cookie('tabview.' + this.cookieName, this.getActiveTab(), { expires: 7 });
       }
     },
 
@@ -15432,6 +15702,7 @@ define('plumage',[
   'view/form/fields/DropdownSelect',
   'view/form/fields/Field',
   'view/form/fields/FieldWithPicker',
+  'view/form/fields/FilterCheckbox',
   'view/form/fields/FilterTypeAhead',
   'view/form/fields/HourSelect',
   'view/form/fields/InPlaceTextField',

@@ -322,20 +322,50 @@ h2.title .light {
   .typeahead-select .dropdown-menu {
     margin-top: 10px; }
 
-.dropdown-multiselect a .values {
+.dropdown-multiselect .dropdown-menu > li > a {
+  display: block;
+  padding: 0 10px; }
+.dropdown-multiselect a.item .values {
   display: inline; }
-  .dropdown-multiselect a .values span:after {
+  .dropdown-multiselect a.item .values span:after {
     content: ','; }
-  .dropdown-multiselect a .values span:last-child:after {
+  .dropdown-multiselect a.item .values span:last-child:after {
     content: ''; }
 .dropdown-multiselect .dropdown-menu li {
   background: none; }
+  .dropdown-multiselect .dropdown-menu li.active {
+    background: #0081c2; }
   .dropdown-multiselect .dropdown-menu li a, .dropdown-multiselect .dropdown-menu li a:hover {
     cursor: pointer;
-    padding: 4px 10px;
     background-image: none; }
   .dropdown-multiselect .dropdown-menu li input {
     margin: -4px 6px 0 0; }
+.dropdown-multiselect .show-select-only li {
+  position: relative;
+  padding-right: 50px; }
+  .dropdown-multiselect .show-select-only li a.only-link {
+    display: none;
+    text-decoration: underline;
+    color: #fff;
+    position: absolute;
+    right: 0;
+    width: 30px;
+    padding: 4px 10px; }
+  .dropdown-multiselect .show-select-only li a.item {
+    width: 100%;
+    display: block;
+    padding: 4px 10px;
+    background: transparent;
+    box-sizing: border-box; }
+.dropdown-multiselect .show-select-only li:hover {
+  background: #0081c2; }
+  .dropdown-multiselect .show-select-only li:hover a.item {
+    background: transparent;
+    color: #fff; }
+  .dropdown-multiselect .show-select-only li:hover a.only-link {
+    display: block; }
+.dropdown-multiselect .show-select-only li.active {
+  background: #0081c2; }
 
 .inplace-field .field-value {
   padding-top: 5px;
@@ -628,6 +658,13 @@ div.comment-wrapper .item-author-header {
   z-index: 10;
   pointer-events: none; }
 
+/****** Checkbox select *******/
+.grid-view .checkbox-select {
+  text-align: center;
+  cursor: pointer; }
+  .grid-view .checkbox-select input {
+    margin: 0; }
+
 /**
  *   Filter View
  */
@@ -664,6 +701,11 @@ div.comment-wrapper .item-author-header {
   float: left; }
 
 .filter-view .search, .filter-view .more-menu {
+  float: right; }
+
+.filter-view .actions span, .filter-view .actions-right span {
+  margin: 0 5px; }
+.filter-view .actions-right {
   float: right; }
 
 .filter-view .more-menu {
@@ -803,7 +845,7 @@ ul.pager {
 .typeahead li.active > a, .typeahead li.active > a:hover {
   color: #fff; }
 
-.dropdown-multiselect li.select-all a {
+.dropdown-multiselect li.select-all {
   font-weight: bold;
   border-bottom: 1px solid #ddd; }
 
@@ -1068,14 +1110,12 @@ ul.pager {
     padding-left: 10px; }
 
 /** dropdown-menu positioning */
-.date-range-field .date-picker-dropdown {
+.date-range-field .picker-dropdown {
   float: left; }
-  .date-range-field .date-picker-dropdown .dropdown-menu {
-    margin-top: -8px; }
-  .date-range-field .date-picker-dropdown .opensleft {
+  .date-range-field .picker-dropdown .opensleft {
     right: 0;
     left: auto; }
-  .date-range-field .date-picker-dropdown .dropdown-menu:before {
+  .date-range-field .picker-dropdown .dropdown-menu:before {
     position: absolute;
     top: -7px;
     left: 40px;
@@ -1086,7 +1126,7 @@ ul.pager {
     border-left: 7px solid transparent;
     border-bottom-color: rgba(0, 0, 0, 0.2);
     content: ''; }
-  .date-range-field .date-picker-dropdown .dropdown-menu:after {
+  .date-range-field .picker-dropdown .dropdown-menu:after {
     position: absolute;
     top: -6px;
     left: 40px;
@@ -1096,10 +1136,10 @@ ul.pager {
     border-bottom: 6px solid #fff;
     border-left: 6px solid transparent;
     content: ''; }
-  .date-range-field .date-picker-dropdown .dropdown-menu.opensleft:before {
+  .date-range-field .picker-dropdown .dropdown-menu.opensleft:before {
     left: auto;
     right: 40px; }
-  .date-range-field .date-picker-dropdown .dropdown-menu.opensleft:after {
+  .date-range-field .picker-dropdown .dropdown-menu.opensleft:after {
     left: auto;
     right: 41px; }
 
@@ -1145,6 +1185,12 @@ ul.pager {
     background: #E3C205;
     color: white; }
 
+.date-field .hour-select {
+  display: none; }
+.date-field .input-prepend input[type=text] {
+  width: 181px; }
+.date-field.show-hour-select .hour-select {
+  display: inline; }
 .date-field.show-hour-select input[type=text] {
   width: 103px; }
 .date-field.show-hour-select .hour-select a {

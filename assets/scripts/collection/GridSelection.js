@@ -39,6 +39,8 @@ function($, _, Backbone, Plumage, Selection, Slick) {
       _.extend(this, options);
 
       this.selection.on('change', this.onSelectionChange, this);
+      this.selection.on('add', this.onSelectionChange, this);
+      this.selection.on('remove', this.onSelectionChange, this);
       this.selection.on('reset', this.onSelectionChange, this);
     },
 

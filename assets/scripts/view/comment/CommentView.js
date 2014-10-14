@@ -24,7 +24,7 @@ define([
       if (this.model) {
         var result = this.model.toViewJSON();
         result.body = result.body.replace(/\n/g, '<br/>');
-        result.created_at = moment(result.created_at*1000).fromNow();
+        result.created_at = moment(result.created_at).fromNow();
         result.can_delete = result.user.account === window.currentUser;
         return result;
       }

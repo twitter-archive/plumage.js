@@ -36,6 +36,17 @@ define([
 
     infiniteScroll: true,
 
+    checkboxSelect: false,
+
+    checkboxColumn: {
+      id: 'checkbox-select',
+      cssClass: 'checkbox-select',
+      field: 'sel',
+      width: 30,
+      resizable: false,
+      sortable: false
+    },
+
     noDataText: 'No Rows Found',
 
     saveViewState: true,
@@ -45,6 +56,21 @@ define([
     initialize: function () {
       var me = this;
       ModelView.prototype.initialize.apply(this, arguments);
+
+      //checkbox select
+      if (this.checkboxSelect) {
+        this.columns = _.clone(this.columns);
+        this.columns.unshift(_.extend({
+          formatter: function(row, cell, value, columnDef, dataContext) {
+            if (dataContext) {
+              var selected = this.selection.isSelectedId(dataContext.id);
+              return selected ? '<input type="checkbox" checked="checked">' : '<input type="checkbox">';
+            }
+            return null;
+          }.bind(this)
+        }, this.checkboxColumn));
+      }
+
       var gridData = this.createGridData();
 
       this.gridEl = $('<div class="grid"></div>');
@@ -60,11 +86,11 @@ define([
         }.bind(this));
       }
 
-      this.onResize = _.debounce(this.onResize, 50);
-
       if (this.filterView) {
-        this.filterView.moreMenu.on('itemClick', this.onMoreMenuItemClick.bind(this));
+        this.setFilterView(this.filterView);
       }
+
+      this.onResize = _.debounce(this.onResize, 50);
     },
 
     delegateEvents: function(events) {
@@ -97,7 +123,21 @@ define([
     },
 
     setSelection: function(selection) {
+      if (this.selection) {
+        this.selection.off('all', this.onSelectionChanged, this);
+      }
+      this.selection = selection;
+      this.selection.on('all', this.onSelectionChanged, this);
+
       this.grid.setSelectionModel(new GridSelection(selection));
+    },
+
+    setFilterView: function(filterView) {
+      if (this.filterView) {
+        this.filterView.moreMenu.off('itemClick', this.onMoreMenuItemClick, this);
+      }
+      this.filterView = filterView;
+      this.filterView.moreMenu.on('itemClick', this.onMoreMenuItemClick, this);
     },
 
     /**
@@ -172,6 +212,7 @@ define([
         this.onDoneLoad();
         this.grid.invalidate();
         this.updateNoData();
+        this.grid.scrollRowToTop(0);
       }
       if (models && models.get && models.get('sortField')) {
         this.grid.setSortColumn(models.get('sortField'), String(models.get('sortDir')) === '1');
@@ -200,7 +241,7 @@ define([
       $(this.gridEl).detach();
     },
 
-    onGridClick: function(e) {
+    onGridClick: function(e, args) {
       var target = e.target;
 
       if (target.tagName === 'A' && $(target).attr('href')) {
@@ -211,15 +252,35 @@ define([
         return false;
       }
 
-      var cell = this.grid.getCellFromEvent(e);
-      if (!cell || !this.grid.canCellBeActive(cell.row, cell.cell)) {
-        return false;
+      if (this.grid.getColumns()[args.cell].id === 'checkbox-select') {
+        if (this.selection) {
+          this.toggleRowSelected(args.row);
+        }
+        e.stopPropagation();
+        return;
       }
+
+      var cell = this.grid.getCellFromEvent(e);
       var id = this.grid.getDataItem(cell.row).id,
         data = this.grid.getData(),
         model = data.getItem(data.getIndexForId(id));
 
       this.trigger('itemSelected',  model);
+    },
+
+    toggleRowSelected: function(index) {
+      this.selection.toggleIndex(index);
+    },
+
+    onSelectionChanged: function(event, selection, model, options) {
+      if (event === 'add' || event === 'remove') {
+        this.grid.invalidateRow(this.grid.getData().getIndexForId(model.id));
+      } else if (event === 'reset') {
+        this.grid.invalidate();
+      }
+      if (this.rendered) {
+        this.grid.render();
+      }
     },
 
     onResize: function() {

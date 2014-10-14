@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="utf-8">
-    <title>JSDoc: Source: model/Filter.js</title>
+    <title>JSDoc: Source: collection/Selection.js</title>
 
     <script src="scripts/prettify/prettify.js"> </script>
     <script src="scripts/prettify/lang-css.js"> </script>
@@ -44,86 +44,162 @@
 <div class="container">
   <div class="row">
 <div id="main" class="span8">
-    <h1 class="page-title">Source: model/Filter.js</h1>
+    <h1 class="page-title">Source: collection/Selection.js</h1>
     
 
 
     
     <section>
         <article>
-            <pre class="prettyprint source"><code>define(['jquery', 'underscore', 'backbone', 'PlumageRoot', 'model/Model'],
-function($, _, Backbone, Plumage, Model) {
+            <pre class="prettyprint source"><code>define(['jquery', 'underscore', 'backbone',
+        'PlumageRoot', 'collection/Collection'],
+function($, _, Backbone, Plumage, Collection) {
 
-  return Plumage.model.Filter = Model.extend(
-  /** @lends Plumage.model.Filter.prototype */
+  return Plumage.collection.Selection = Collection.extend(
+  /** @lends Plumage.collection.Selection.prototype */
   {
+    /** multiselect? */
+    multi: true,
+
+    model: Plumage.model.Model.extend({idAttribute: 'id'}),
+
+    /** parent collection being selected from */
+    collection: undefined,
+
     /**
-     * Model for a Filter on a [Collection]{@link Plumage.collection.Collection}.
+     * A selection of models from a Collection.
      *
-     * Attributes are:
-     *  - key: The key of the attribute being filtered on.
-     *  - value: The filter value
-     *  - comparison: A string or function that compares the model value with the filter value.
+     * Contains a set of selected ids (stored as models with a single 'id' field).
      *
-     * eg model's 'name'[key] equals[comaprison] 'foo'[value]
-     *
-     * For client side filtering, also contains a [compare]{@link Plumage.model.Filter} predicate for testing if Models pass the specified filter.
+     * Includes a number of methods for selecting and deselecting items.
      *
      * @constructs
-     * @extends Plumage.model.Model
+     * @extends Plumage.collection.Collection
      */
-    initialize: function() {
-      //filters exist only on client, so give them all unique ids
-      this.set('id', _.uniqueId('filter'));
+    initialize: function(data, options) {
+      Plumage.collection.Collection.prototype.initialize.apply(this, arguments);
+      if (options && options.collection) {
+        this.collection = options.collection;
+        this.collection.on('load', this.onCollectionLoad, this);
+      }
     },
 
-    /** Map of built in comparison names to comparison functions */
-    comparisons: {
-      equals: function(filterValue, value, key) {
-        return String(filterValue).toLowerCase() === String(value).toLowerCase();
-      },
-      contains: function(filterValue, value, key) {
-        return String(value).toLowerCase().indexOf(String(filterValue).toLowerCase()) !== -1;
-      },
-      startswith: function(filterValue, value, key) {
-        return String(value).indexOf(String(filterValue)) === 0;
-      },
-      endswith: function(filterValue, value, key) {
-        return String(value).toLowerCase().indexOf(String(filterValue)).toLowerCase() === String(value).length;
+    /** total number of items in the parent collection */
+    getTotalSize: function() {
+      return this.collection.size();
+    },
+
+    /** Is id selected? */
+    isSelectedId: function(id) {
+      return this.getById(id) !== undefined;
+    },
+
+    /** Is index selected? */
+    isSelectedIndex: function(index) {
+      return this.getById(this.collection.at(index).id) !== undefined;
+    },
+
+    /**
+     * @returns {Array} array of selected indices
+     */
+    getSelectedIndices: function() {
+      return this.map(function(selectionItem) {
+        var item = this.collection.getById(selectionItem.id);
+        return this.collection.indexOf(item);
+      }.bind(this));
+    },
+
+    /**
+     * Select a array of indices
+     * @param {Array} indices Array of indices to select
+     */
+    setSelectedIndices: function(indices) {
+      var ids = _.map(indices, function(index) {
+        return this.collection.at(index).id;
+      }.bind(this));
+      this.setSelectedIds(ids);
+    },
+
+    /**
+     * @returns {Array} array of selected ids
+     */
+    getSelectedIds: function(ids) {
+      return this.map(function(item) {return item.id;});
+    },
+
+    /**
+     * Select a array of ids
+     * @param {Array} ids Array of ids to select
+     */
+    setSelectedIds: function(ids) {
+      var data = _.map(ids, function(id) {return {id: id};});
+      this.reset(data);
+    },
+
+    /**
+     * Select a single index
+     * @param {Number} index index to select
+     */
+    selectIndex: function(index) {
+      var item = this.collection.at(index);
+      if (this.getById(item.id) === undefined) {
+        if (this.multi) {
+          this.add(new this.model({id: item.id}));
+        } else {
+          this.setSelectedIds([item.id]);
+        }
       }
     },
 
     /**
-     * Predicate testing whether the given model passes this filter
-     * @param {Plumage.model.Model} model Model to test
+     * Deselect a single index
+     * @param {Number} index index to dsselect
      */
-    compare: function(model) {
-      var key = this.get('key'), value;
-      if (model.get) {
-        value = model.get(key);
-      } else {
-        value = model[key];
+    deselectIndex: function(index) {
+      var item = this.collection.at(index),
+        selectionItem = this.getById(item.id);
+
+      if (selectionItem) {
+        this.remove(selectionItem);
       }
-      var filterValue = this.get('value');
-      if (filterValue === undefined) {
-        return true;
-      }
-      var comparison = this.get('comparison');
-      if (typeof(comparison) === 'string') {
-        comparison = this.comparisons[comparison];
-        if (comparison) {
-          return comparison(filterValue, value, key);
-        }
-        return true;
-      }
-      return comparison(filterValue, value, key);
     },
 
-    toJSON: function(){
-      //don't include arbitrary id in json
-      var json = Model.prototype.toJSON.apply(this, arguments);
-      delete json.id;
-      return json;
+    toggleIndex: function(index) {
+      if (this.isSelectedIndex(index)) {
+        this.deselectIndex(index);
+      } else {
+        this.selectIndex(index);
+      }
+    },
+
+    /**
+     * Select all items in the parent collection
+     */
+    selectAll: function() {
+      var data = this.collection.map(function(item) {
+        return {id: item.id};
+      });
+      this.reset(data);
+    },
+
+    /**
+     * Clears this selection
+     */
+    deselectAll: function() {
+      this.reset([]);
+    },
+
+    // Event handlers
+
+    onCollectionLoad: function() {
+      // reset with only ids still in the collection after load
+      var data = [];
+      this.each(function(item){
+        if (this.collection.getById(item.id) !== undefined) {
+          data.push(item);
+        }
+      }.bind(this));
+      this.reset(data);
     }
   });
 });</code></pre>

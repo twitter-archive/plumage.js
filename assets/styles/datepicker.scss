@@ -113,12 +113,8 @@
 
 /** dropdown-menu positioning */
 
-.date-range-field .date-picker-dropdown {
+.date-range-field .picker-dropdown {
   float: left;
-
-  .dropdown-menu {
-    margin-top: -8px;
-  }
 
   .opensleft {
     right: 0;
@@ -231,7 +227,19 @@
 }
 
 .date-field {
+
+  .hour-select {
+    display: none;
+  }
+
+  .input-prepend input[type=text] {
+    width: 181px;
+  }
+
   &.show-hour-select {
+    .hour-select {
+      display: inline;
+    }
     input[type=text] {
       width: 103px;
     }

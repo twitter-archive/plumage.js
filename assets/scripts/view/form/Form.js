@@ -43,17 +43,16 @@ define([
       return this.actionLabel ? this.actionLabel : 'Submit';
     },
 
-    onChange: function(e) {
-      if (this.updateModelOnChange) {
-        this.onSubmit(e);
+    setMessage: function(message, messageCls) {
+      var messageView = this.getSubView('message');
+      if (messageView) {
+        messageView.setMessage(message, messageCls);
       }
-      this.trigger('change', this, e);
     },
 
-    onSubmit: function(e) {
-      e.preventDefault();
-      this.submit();
-    },
+    //
+    // actions
+    //
 
     submit: function() {
       if (!this.model) {
@@ -72,8 +71,36 @@ define([
       }
     },
 
+    //
+    // Events
+    //
+
+    onChange: function(e) {
+      if (this.updateModelOnChange) {
+        this.onSubmit(e);
+      }
+      this.trigger('change', this, e);
+    },
+
+    onSubmit: function(e) {
+      e.preventDefault();
+      this.submit();
+    },
+
     onSaveSuccess: function(model, resp, xhr) {
-      this.trigger('save', this, model);
+      if (resp.meta.success) {
+        this.trigger('save', this, model);
+      } else {
+        if (resp.meta.message_body) {
+          this.setMessage(resp.meta.message_body, resp.meta.message_class);
+        }
+      }
+    },
+
+    onModelInvalid: function(model, validationError, message, messageCls) {
+      if (message) {
+        this.setMessage(message, messageCls);
+      }
     }
   });
 });

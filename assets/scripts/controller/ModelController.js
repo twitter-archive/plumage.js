@@ -80,7 +80,7 @@ function($, _, Backbone, Plumage, BaseController, ModelUtil) {
       view.setModel(this.indexModel);
       this.showView(view);
 
-      this.loadModel(this.indexModel).then(function() {
+      this.loadModel(this.indexModel, {reset: true}).then(function() {
         view.setModel(model);
       });
 
@@ -217,7 +217,7 @@ function($, _, Backbone, Plumage, BaseController, ModelUtil) {
       if (updateUrl) {
         collection.updateUrl();
       }
-      collection.load();
+      collection.load({reset: true});
     }, 200)
   });
 });

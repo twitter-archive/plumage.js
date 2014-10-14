@@ -155,6 +155,10 @@ define([
       });
     },
 
+    onLinkClick: function(e) {
+      View.prototype.onLinkClick.apply(this, arguments);
+    },
+
     //
     // Util
     //

@@ -23,11 +23,8 @@ define([
     pickerOptions: undefined,
 
     events: {
-      'focus input:first': 'onFocus',
-      'blur input:first': 'onBlur',
       'click input:first': 'onInputClick',
       'click button:first': 'onButtonClick',
-      'keydown input:first': 'onKeyDown'
     },
 
     /**

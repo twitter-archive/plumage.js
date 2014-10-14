@@ -24,8 +24,6 @@ define([
     format: 'MMM D, YYYY',
 
     events: {
-      'focus input': 'onFocus',
-      'blur input': 'onBlur',
       'click input': 'onInputClick',
       'click button': 'onButtonClick',
     },
@@ -138,10 +136,10 @@ define([
 
     processDomValue: function(value) {
       if (value) {
-        var m = moment(value);
+        var m = this.utc ? moment.utc(value) : moment(value);
         var oldValue = this.getValue();
         if (oldValue && this.keepTime) {
-          var oldM = moment(oldValue);
+          var oldM = this.utc ? moment.utc(oldValue) : moment(oldValue);
           m.hour(oldM.hour()).minute(oldM.minute()).second(oldM.second()).millisecond(oldM.millisecond());
         }
         return m.valueOf();

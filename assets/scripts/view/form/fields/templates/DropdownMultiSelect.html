@@ -19,7 +19,7 @@
   {{/if}}
   <span class="caret"></span>
 </a>
-<ul class="dropdown-menu">
+<ul class="dropdown-menu {{#if showSelectOnly}}show-select-only{{/if}}">
   {{#if showSelectAll}}
   <li class="select-all {{#allSelected}}active{{/allSelected}}">
       <a><input type="checkbox" {{#allSelected}} checked{{/allSelected}}/>Select All</a>
@@ -27,7 +27,10 @@
   {{/if}}
   {{#listValues}}
   <li data-value="{{value}}" class="{{value}}{{#selected}} active{{/selected}}">
-      <a><input type="checkbox" {{#selected}} checked{{/selected}}/>{{label}}</a>
+      {{#if ../showSelectOnly}}
+        <a href="#" class="only-link">only</a>
+      {{/if}}
+      <a class="item"><input type="checkbox" {{#selected}} checked{{/selected}}/>{{label}}</a>
   </li>
   {{/listValues}}
 </ul>

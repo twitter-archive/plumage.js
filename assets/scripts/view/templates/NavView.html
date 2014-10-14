@@ -5,13 +5,13 @@
     {{#subtitle}}<span class="nav-subtitle">{{.}}</span>{{/subtitle}}
   </a>
   <div id="extra-links">
-  {{#aboutUrl}}
-    <a class="outlink" href="{{.}}" target="_">about</a>
-  {{/aboutUrl}}
+  {{#if aboutUrl}}
+    <a class="outlink" href="{{aboutUrl}}" target="_">{{aboutLabel}}</a>
+  {{/if}}
 
-  {{#helpUrl}}
-    <a class="outlink" href="{{.}}" target="_">help</a>
-  {{/helpUrl}}
+  {{#if helpUrl}}
+    <a class="outlink" href="{{helpUrl}}" target="_">{{helpLabel}}</a>
+  {{/if}}
   </div>
 
   <div id="nav-top-right" class="nav pull-right">

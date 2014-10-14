@@ -43,6 +43,12 @@ define([
 
     aboutUrl: undefined,
 
+    aboutLabel: 'About',
+
+    helpUrl: undefined,
+
+    helpLabel: 'Help',
+
     events: {
       'click .nav-menu a': 'onNavClick',
       'click a.brand': 'onLinkClick'
@@ -109,7 +115,9 @@ define([
         showAbout: this.aboutTemplate !== undefined,
         showSearch: this.showSearch,
         aboutUrl: this.aboutUrl,
-        helpUrl: this.helpUrl
+        aboutLabel: this.aboutLabel,
+        helpUrl: this.helpUrl,
+        helpLabel: this.helpLabel
       };
     },
 

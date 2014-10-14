@@ -372,6 +372,13 @@ define('util/ModelUtil',[
       return typeof(cls) === 'string' ? require(cls) : cls;
     },
 
+    /**
+     * Merge options arguments with class values, including deeper prototypes if specified
+     * @param {string} name Name of option to merge
+     * @param {Model} model Model to set the option on
+     * @param {object} options Options argument
+     * @param {boolean} deep Merge deeper prototype values?
+     */
     mergeOption: function(name, model, options, deep) {
 
       var args = [options[name] || {}];
@@ -11637,11 +11644,8 @@ define('view/form/fields/FieldWithPicker',[
     pickerOptions: undefined,
 
     events: {
-      'focus input:first': 'onFocus',
-      'blur input:first': 'onBlur',
       'click input:first': 'onInputClick',
       'click button:first': 'onButtonClick',
-      'keydown input:first': 'onKeyDown'
     },
 
     /**
@@ -12061,8 +12065,6 @@ define('view/form/fields/DateField',[
     format: 'MMM D, YYYY',
 
     events: {
-      'focus input': 'onFocus',
-      'blur input': 'onBlur',
       'click input': 'onInputClick',
       'click button': 'onButtonClick',
     },
@@ -12175,10 +12177,10 @@ define('view/form/fields/DateField',[
 
     processDomValue: function(value) {
       if (value) {
-        var m = moment(value);
+        var m = this.utc ? moment.utc(value) : moment(value);
         var oldValue = this.getValue();
         if (oldValue && this.keepTime) {
-          var oldM = moment(oldValue);
+          var oldM = this.utc ? moment.utc(oldValue) : moment(oldValue);
           m.hour(oldM.hour()).minute(oldM.minute()).second(oldM.second()).millisecond(oldM.millisecond());
         }
         return m.valueOf();
@@ -12670,7 +12672,7 @@ define('view/form/fields/MultiSelect',[
 
     getValue: function() {
       var value = Select.prototype.getValue.apply(this, arguments);
-      if (value) {
+      if (value !== undefined) {
         return $.isArray(value) ? _.clone(value) : [value];
       }
       return [];
@@ -12758,7 +12760,7 @@ define('view/form/fields/MultiSelect',[
 });
 
 
-define('text!view/form/fields/templates/DropdownMultiSelect.html',[],function () { return '<div class="dropdown-multiselect dropdown">\n<select {{#if fieldName}}name="{{fieldName}}"{{/if}} style="display: none">\n{{#if noSelectionText}}\n<option value="{{noSelectionValue}}" {{^hasSelection}}selected="true"{{/hasSelection}}>{{noSelectionText}}</option>\n{{/if}}\n{{#listValues}}\n<option value="{{value}}" {{#selected}}selected{{/selected}}>{{label}}</option>\n{{/listValues}}\n</select>\n\n<a class="btn dropdown-toggle {{buttonCls}}" data-toggle="dropdown" href="#">\n  {{#iconCls}}\n    <i class="{{.}} icon-white"></i>\n  {{/iconCls}}\n  {{#if hasSelection}}\n    {{valueLabel}}\n  {{else}}\n    {{noSelectionText}}\n  {{/if}}\n  <span class="caret"></span>\n</a>\n<ul class="dropdown-menu">\n  {{#if showSelectAll}}\n  <li class="select-all {{#allSelected}}active{{/allSelected}}">\n      <a><input type="checkbox" {{#allSelected}} checked{{/allSelected}}/>Select All</a>\n  </li>\n  {{/if}}\n  {{#listValues}}\n  <li data-value="{{value}}" class="{{value}}{{#selected}} active{{/selected}}">\n      <a><input type="checkbox" {{#selected}} checked{{/selected}}/>{{label}}</a>\n  </li>\n  {{/listValues}}\n</ul>\n</div>';});
+define('text!view/form/fields/templates/DropdownMultiSelect.html',[],function () { return '<div class="dropdown-multiselect dropdown">\n<select {{#if fieldName}}name="{{fieldName}}"{{/if}} style="display: none">\n{{#if noSelectionText}}\n<option value="{{noSelectionValue}}" {{^hasSelection}}selected="true"{{/hasSelection}}>{{noSelectionText}}</option>\n{{/if}}\n{{#listValues}}\n<option value="{{value}}" {{#selected}}selected{{/selected}}>{{label}}</option>\n{{/listValues}}\n</select>\n\n<a class="btn dropdown-toggle {{buttonCls}}" data-toggle="dropdown" href="#">\n  {{#iconCls}}\n    <i class="{{.}} icon-white"></i>\n  {{/iconCls}}\n  {{#if hasSelection}}\n    {{valueLabel}}\n  {{else}}\n    {{noSelectionText}}\n  {{/if}}\n  <span class="caret"></span>\n</a>\n<ul class="dropdown-menu {{#if showSelectOnly}}show-select-only{{/if}}">\n  {{#if showSelectAll}}\n  <li class="select-all {{#allSelected}}active{{/allSelected}}">\n      <a><input type="checkbox" {{#allSelected}} checked{{/allSelected}}/>Select All</a>\n  </li>\n  {{/if}}\n  {{#listValues}}\n  <li data-value="{{value}}" class="{{value}}{{#selected}} active{{/selected}}">\n      {{#if ../showSelectOnly}}\n        <a href="#" class="only-link">only</a>\n      {{/if}}\n      <a class="item"><input type="checkbox" {{#selected}} checked{{/selected}}/>{{label}}</a>\n  </li>\n  {{/listValues}}\n</ul>\n</div>';});
 
 define('view/form/fields/DropdownMultiSelect',[
   'jquery',
@@ -12776,12 +12778,13 @@ define('view/form/fields/DropdownMultiSelect',[
 
     template: template,
 
+    showSelectOnly: true,
+
     events:{
       'click li a': 'onItemClick',
       'click li input': 'onItemClick',
       'click li.select-all a': 'onSelectAllClick',
       'click li.select-all input': 'onSelectAllClick'
-
     },
 
     initialize: function() {
@@ -12790,6 +12793,12 @@ define('view/form/fields/DropdownMultiSelect',[
     },
 
     /** overrides **/
+
+    getTemplateData: function() {
+      var data = MultiSelect.prototype.getTemplateData.apply(this, arguments);
+      data.showSelectOnly = this.showSelectOnly;
+      return data;
+    },
 
     onRender: function() {
       MultiSelect.prototype.onRender.apply(this, arguments);
@@ -12806,13 +12815,18 @@ define('view/form/fields/DropdownMultiSelect',[
     /** Event Handlers **/
 
     onItemClick: function(e) {
+
       var li = $(e.target).closest('li'),
         value = li && li.data('value');
 
       if (value !== undefined) {
         e.preventDefault();
         e.stopPropagation();
-        this.toggleValue(value);
+        if ($(e.target).hasClass('only-link')) {
+          this.setValue(value);
+        } else {
+          this.toggleValue(value);
+        }
       }
     },
 
@@ -13666,7 +13680,7 @@ define('view/menu/DropdownMenu',[
 });
 
 
-define('text!view/grid/templates/FilterView.html',[],function () { return '\n{{#if hasFilters}}<span>Filter by:</span>{{/if}}\n\n<span class="filters"></span>\n\n<span class="actions"></span>\n\n<span class="more-menu"></span>\n\n<span class="search"></span>\n';});
+define('text!view/grid/templates/FilterView.html',[],function () { return '\n{{#if hasFilters}}<span>Filter by:</span>{{/if}}\n\n<span class="filters"></span>\n\n<span class="actions"></span>\n\n\n<span class="more-menu"></span>\n\n<span class="actions-right"></span>\n\n<span class="search"></span>\n';});
 
 define('view/grid/FilterView',[
   'jquery',
@@ -14855,7 +14869,7 @@ define('view/DisplayField',[
 });
 
 
-define('text!view/templates/NavView.html',[],function () { return '\n<div id="nav-top">\n  <a class="brand" href="/">\n    <span class="nav-title">{{title}}</span>\n    {{#subtitle}}<span class="nav-subtitle">{{.}}</span>{{/subtitle}}\n  </a>\n  <div id="extra-links">\n  {{#aboutUrl}}\n    <a class="outlink" href="{{.}}" target="_">about</a>\n  {{/aboutUrl}}\n\n  {{#helpUrl}}\n    <a class="outlink" href="{{.}}" target="_">help</a>\n  {{/helpUrl}}\n  </div>\n\n  <div id="nav-top-right" class="nav pull-right">\n    <div class="nav-search"></div>\n  </div>\n  <div class="clear"></div>\n</div>\n\n{{#if navItems}}\n<div id="main-nav" class="navbar">\n  <div class="navbar-inner">\n    <ul class="nav-menu nav menu">\n      {{#navItems}}\n      <li class="{{className}}"><a href="{{url}}">{{label}}</a></li>\n      {{/navItems}}\n    </ul>\n\n    <ul class="nav right-nav pull-right">\n      <li class="user-menu"></li>\n    </ul>\n  </div>\n</div>\n{{/if}}';});
+define('text!view/templates/NavView.html',[],function () { return '\n<div id="nav-top">\n  <a class="brand" href="/">\n    <span class="nav-title">{{title}}</span>\n    {{#subtitle}}<span class="nav-subtitle">{{.}}</span>{{/subtitle}}\n  </a>\n  <div id="extra-links">\n  {{#if aboutUrl}}\n    <a class="outlink" href="{{aboutUrl}}" target="_">{{aboutLabel}}</a>\n  {{/if}}\n\n  {{#if helpUrl}}\n    <a class="outlink" href="{{helpUrl}}" target="_">{{helpLabel}}</a>\n  {{/if}}\n  </div>\n\n  <div id="nav-top-right" class="nav pull-right">\n    <div class="nav-search"></div>\n  </div>\n  <div class="clear"></div>\n</div>\n\n{{#if navItems}}\n<div id="main-nav" class="navbar">\n  <div class="navbar-inner">\n    <ul class="nav-menu nav menu">\n      {{#navItems}}\n      <li class="{{className}}"><a href="{{url}}">{{label}}</a></li>\n      {{/navItems}}\n    </ul>\n\n    <ul class="nav right-nav pull-right">\n      <li class="user-menu"></li>\n    </ul>\n  </div>\n</div>\n{{/if}}';});
 
 define('view/NavView',[
   'jquery',
@@ -14901,6 +14915,12 @@ define('view/NavView',[
     logoutUrl: '/logout',
 
     aboutUrl: undefined,
+
+    aboutLabel: 'About',
+
+    helpUrl: undefined,
+
+    helpLabel: 'Help',
 
     events: {
       'click .nav-menu a': 'onNavClick',
@@ -14968,7 +14988,9 @@ define('view/NavView',[
         showAbout: this.aboutTemplate !== undefined,
         showSearch: this.showSearch,
         aboutUrl: this.aboutUrl,
-        helpUrl: this.helpUrl
+        aboutLabel: this.aboutLabel,
+        helpUrl: this.helpUrl,
+        helpLabel: this.helpLabel
       };
     },
 

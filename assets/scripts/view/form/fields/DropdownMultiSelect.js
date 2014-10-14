@@ -14,12 +14,13 @@ define([
 
     template: template,
 
+    showSelectOnly: true,
+
     events:{
       'click li a': 'onItemClick',
       'click li input': 'onItemClick',
       'click li.select-all a': 'onSelectAllClick',
       'click li.select-all input': 'onSelectAllClick'
-
     },
 
     initialize: function() {
@@ -28,6 +29,12 @@ define([
     },
 
     /** overrides **/
+
+    getTemplateData: function() {
+      var data = MultiSelect.prototype.getTemplateData.apply(this, arguments);
+      data.showSelectOnly = this.showSelectOnly;
+      return data;
+    },
 
     onRender: function() {
       MultiSelect.prototype.onRender.apply(this, arguments);
@@ -44,13 +51,18 @@ define([
     /** Event Handlers **/
 
     onItemClick: function(e) {
+
       var li = $(e.target).closest('li'),
         value = li && li.data('value');
 
       if (value !== undefined) {
         e.preventDefault();
         e.stopPropagation();
-        this.toggleValue(value);
+        if ($(e.target).hasClass('only-link')) {
+          this.setValue(value);
+        } else {
+          this.toggleValue(value);
+        }
       }
     },
 

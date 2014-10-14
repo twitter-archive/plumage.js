@@ -35,7 +35,12 @@
 
 .dropdown-multiselect {
 
-  a .values {
+  .dropdown-menu > li > a {
+    display: block;
+    padding: 0 10px;
+  }
+
+  a.item .values {
     display: inline;
     span:after {
       content: ',';
@@ -48,6 +53,8 @@
   .dropdown-menu li {
     background: none;
     &.active {
+      background: #0081c2;
+
       a {
 
       }
@@ -55,7 +62,6 @@
 
     a, a:hover {
       cursor: pointer;
-      padding: 4px 10px;
       background-image: none;
     }
 
@@ -63,6 +69,47 @@
       margin: -4px 6px 0 0;
     }
   }
+
+  .show-select-only {
+    li {
+      position: relative;
+      padding-right: 50px;
+      a.only-link {
+        display: none;
+        text-decoration: underline;
+        color: #fff;
+        position: absolute;
+        right: 0;
+        width: 30px;
+        padding: 4px 10px;
+      }
+      a.item {
+        width: 100%;
+        display: block;
+        padding: 4px 10px;
+        background: transparent;
+        box-sizing: border-box;
+      }
+    }
+    li:hover {
+      background: #0081c2;
+      a.item {
+        background: transparent;
+        color: #fff;
+      }
+      a.only-link {
+        display: block;
+      }
+    }
+
+    li.active {
+      background: #0081c2;
+      a.only-link {
+
+      }
+    }
+  }
+
 }
 
 .inplace-field {

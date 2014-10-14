@@ -322,20 +322,50 @@ h2.title .light {
   .typeahead-select .dropdown-menu {
     margin-top: 10px; }
 
-.dropdown-multiselect a .values {
+.dropdown-multiselect .dropdown-menu > li > a {
+  display: block;
+  padding: 0 10px; }
+.dropdown-multiselect a.item .values {
   display: inline; }
-  .dropdown-multiselect a .values span:after {
+  .dropdown-multiselect a.item .values span:after {
     content: ','; }
-  .dropdown-multiselect a .values span:last-child:after {
+  .dropdown-multiselect a.item .values span:last-child:after {
     content: ''; }
 .dropdown-multiselect .dropdown-menu li {
   background: none; }
+  .dropdown-multiselect .dropdown-menu li.active {
+    background: #0081c2; }
   .dropdown-multiselect .dropdown-menu li a, .dropdown-multiselect .dropdown-menu li a:hover {
     cursor: pointer;
-    padding: 4px 10px;
     background-image: none; }
   .dropdown-multiselect .dropdown-menu li input {
     margin: -4px 6px 0 0; }
+.dropdown-multiselect .show-select-only li {
+  position: relative;
+  padding-right: 50px; }
+  .dropdown-multiselect .show-select-only li a.only-link {
+    display: none;
+    text-decoration: underline;
+    color: #fff;
+    position: absolute;
+    right: 0;
+    width: 30px;
+    padding: 4px 10px; }
+  .dropdown-multiselect .show-select-only li a.item {
+    width: 100%;
+    display: block;
+    padding: 4px 10px;
+    background: transparent;
+    box-sizing: border-box; }
+.dropdown-multiselect .show-select-only li:hover {
+  background: #0081c2; }
+  .dropdown-multiselect .show-select-only li:hover a.item {
+    background: transparent;
+    color: #fff; }
+  .dropdown-multiselect .show-select-only li:hover a.only-link {
+    display: block; }
+.dropdown-multiselect .show-select-only li.active {
+  background: #0081c2; }
 
 .inplace-field .field-value {
   padding-top: 5px;
@@ -673,6 +703,11 @@ div.comment-wrapper .item-author-header {
 .filter-view .search, .filter-view .more-menu {
   float: right; }
 
+.filter-view .actions span, .filter-view .actions-right span {
+  margin: 0 5px; }
+.filter-view .actions-right {
+  float: right; }
+
 .filter-view .more-menu {
   margin-left: 10px; }
   .filter-view .more-menu .dropdown-toggle {
@@ -810,7 +845,7 @@ ul.pager {
 .typeahead li.active > a, .typeahead li.active > a:hover {
   color: #fff; }
 
-.dropdown-multiselect li.select-all a {
+.dropdown-multiselect li.select-all {
   font-weight: bold;
   border-bottom: 1px solid #ddd; }
 

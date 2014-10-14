@@ -38,7 +38,7 @@ define([
 
     getValue: function() {
       var value = Select.prototype.getValue.apply(this, arguments);
-      if (value) {
+      if (value !== undefined) {
         return $.isArray(value) ? _.clone(value) : [value];
       }
       return [];

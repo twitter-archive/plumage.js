@@ -6,6 +6,13 @@ define([
       return typeof(cls) === 'string' ? require(cls) : cls;
     },
 
+    /**
+     * Merge options arguments with class values, including deeper prototypes if specified
+     * @param {string} name Name of option to merge
+     * @param {Model} model Model to set the option on
+     * @param {object} options Options argument
+     * @param {boolean} deep Merge deeper prototype values?
+     */
     mergeOption: function(name, model, options, deep) {
 
       var args = [options[name] || {}];

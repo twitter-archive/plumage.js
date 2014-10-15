@@ -58,6 +58,10 @@ define([
       //do nothing. commit on hide instead of change.
     },
 
+    onInput: function(e) {
+      //do nothing. commit on hide instead of change.
+    },
+
     onFieldValueClick: function() {
       this.showField();
     },

@@ -51,12 +51,14 @@ function($, _, Backbone, Plumage, History, ModelUtil) {
         }
       });
 
-      for (var i = 0; i < this.controllerRoutes.length; i++) {
-        var route = this.controllerRoutes[i];
-        var routeOptions = route[1],
-          name = routeOptions.controller + '.' + routeOptions.method,
-          handler = _.bind(this.routeToController, this, routeOptions);
-        this.route(route[0], name, handler);
+      if (this.controllerRoutes) {
+        for (var i = 0; i < this.controllerRoutes.length; i++) {
+          var route = this.controllerRoutes[i];
+          var routeOptions = route[1],
+            name = routeOptions.controller + '.' + routeOptions.method,
+            handler = _.bind(this.routeToController, this, routeOptions);
+          this.route(route[0], name, handler);
+        }
       }
     },
 

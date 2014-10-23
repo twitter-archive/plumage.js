@@ -22,11 +22,14 @@ function($, _, Backbone, Plumage, BaseController, ModelUtil) {
     /** Options to pass into index model constructor */
     indexModelOptions: {},
 
-    /** Top level View class for index. Override this */
+    /** View class for index. Override this */
     indexViewCls: undefined,
 
-    /** Top level View class for detail. Override this */
+    /** View class for detail. Override this */
     detailViewCls: undefined,
+
+    /** View class for editing. Override this */
+    editViewCls: undefined,
 
     /**
      * Controller with general index and detail handlers.
@@ -73,6 +76,12 @@ function($, _, Backbone, Plumage, BaseController, ModelUtil) {
       this.showDetailModel(model);
     },
 
+    /** handler for showing the new view. Override this to accept more url params*/
+    showNew: function(params){
+      var model = this.createModel(this.modelCls);
+      this.showEditModel(model);
+    },
+
     /** Logic for binding a model to, and then showing the index view */
     showIndexModel: function(model) {
       this.indexModel = model;
@@ -115,6 +124,24 @@ function($, _, Backbone, Plumage, BaseController, ModelUtil) {
       });
     },
 
+    showEditModel: function(model) {
+      var view = this.getEditView();
+
+      view.setModel(model);
+      this.showView(view);
+
+      return this.loadModel(model).then(function() {
+        // call setModel again, so subviews can get newly loaded related models
+        if (model.related) {
+          view.setModel(model);
+        }
+      });
+    },
+
+    //
+    // View getters
+    //
+
     /** Get and lazy create the index view */
     getIndexView: function() {
       if (!this.indexView) {
@@ -130,6 +157,13 @@ function($, _, Backbone, Plumage, BaseController, ModelUtil) {
         this.detailView = this.createDetailView();
       }
       return this.detailView;
+    },
+
+    getEditView: function() {
+      if (!this.editView) {
+        this.editView = this.createEditView();
+      }
+      return this.editView;
     },
 
     // Hooks
@@ -185,13 +219,17 @@ function($, _, Backbone, Plumage, BaseController, ModelUtil) {
       return new this.detailViewCls();
     },
 
+    /** Create the detail view. Feel free to override */
+    createEditView: function () {
+      return new this.editViewCls();
+    },
 
     // Event Handlers
 
     /** Show detail view on index item select */
     onIndexItemSelected: function(selection) {
       if(selection) {
-        var model = this.createDetailModel(selection.id);
+        var model = this.createDetailModel(selection.id, selection.attributes);
         model.navigate();
       }
     },

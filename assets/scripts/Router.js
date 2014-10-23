@@ -3,7 +3,7 @@ function($, _, Backbone, Plumage, History, ModelUtil) {
   return Plumage.Router = Backbone.Router.extend(
   /** @lends Plumage.Router.prototype */
   {
-    /** Routes config. Map from route pattern to a route options object. Options must include controller and method */
+    /** Routes config. Array of pairs [pattern, options]. Options must include controller and method */
     controllerRoutes: undefined,
 
     /** reference to the controllerManager for access to Controller instances*/
@@ -51,14 +51,12 @@ function($, _, Backbone, Plumage, History, ModelUtil) {
         }
       });
 
-      for (var route in this.controllerRoutes) {
-        if (!this.controllerRoutes.hasOwnProperty(route)) {
-          continue;
-        }
-        var routeOptions = this.controllerRoutes[route],
+      for (var i = 0; i < this.controllerRoutes.length; i++) {
+        var route = this.controllerRoutes[i];
+        var routeOptions = route[1],
           name = routeOptions.controller + '.' + routeOptions.method,
           handler = _.bind(this.routeToController, this, routeOptions);
-        this.route(route, name, handler);
+        this.route(route[0], name, handler);
       }
     },
 

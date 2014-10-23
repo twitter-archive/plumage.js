@@ -33,6 +33,10 @@
   }
 }
 
+.date-range-field {
+  @include clearfix();
+}
+
 .date-range-field .dropdown-menu {
   max-width: none;
   width: 636px;

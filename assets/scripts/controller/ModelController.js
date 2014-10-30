@@ -78,7 +78,7 @@ function($, _, Backbone, Plumage, BaseController, ModelUtil) {
 
     /** handler for showing the new view. Override this to accept more url params*/
     showNew: function(params){
-      var model = this.createModel(this.modelCls);
+      var model = this.createEditModel();
       this.showEditModel(model);
     },
 
@@ -178,6 +178,14 @@ function($, _, Backbone, Plumage, BaseController, ModelUtil) {
      * Override to add default attributes, eg empty relationships.
      */
     createDetailModel: function(id, attributes, viewState) {
+      return this.createModel(this.modelCls, id, attributes, viewState);
+    },
+
+    /**
+     * Create the edit model from specified attributes.
+     * Override to add default attributes, eg empty relationships.
+     */
+    createEditModel: function(id, attributes, viewState) {
       return this.createModel(this.modelCls, id, attributes, viewState);
     },
 

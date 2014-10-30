@@ -130,6 +130,11 @@ function($, _, Backbone, Plumage, requestManager, ModelUtil, BufferedCollection)
       window.router.navigateWithQueryParams(this.urlWithParams(), options);
     },
 
+    navigateToIndex: function(options) {
+      options = _.extend({trigger: true}, options);
+      window.router.navigateWithQueryParams(this.urlRoot, options);
+    },
+
     /**
      * Convenience function to update the location bar when the view state has changed.
      * Does not trigger routes.
@@ -549,7 +554,7 @@ function($, _, Backbone, Plumage, requestManager, ModelUtil, BufferedCollection)
      * @returns {string} Url or null
      */
     urlFromAttributes: function() {
-      return Backbone.Model.prototype.url.apply(this, arguments);
+      return Backbone.Model.prototype.url.apply(this, arguments) + '/new';
     },
 
     /**

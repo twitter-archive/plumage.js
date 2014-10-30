@@ -742,6 +742,11 @@ function($, _, Backbone, Plumage, requestManager, ModelUtil, BufferedCollection)
       window.router.navigateWithQueryParams(this.urlWithParams(), options);
     },
 
+    navigateToIndex: function(options) {
+      options = _.extend({trigger: true}, options);
+      window.router.navigateWithQueryParams(this.urlRoot, options);
+    },
+
     /**
      * Convenience function to update the location bar when the view state has changed.
      * Does not trigger routes.
@@ -1161,7 +1166,7 @@ function($, _, Backbone, Plumage, requestManager, ModelUtil, BufferedCollection)
      * @returns {string} Url or null
      */
     urlFromAttributes: function() {
-      return Backbone.Model.prototype.url.apply(this, arguments);
+      return Backbone.Model.prototype.url.apply(this, arguments) + '/new';
     },
 
     /**
@@ -8031,7 +8036,7 @@ function($, _, Backbone, Plumage, BaseController, ModelUtil) {
 
     /** handler for showing the new view. Override this to accept more url params*/
     showNew: function(params){
-      var model = this.createModel(this.modelCls);
+      var model = this.createEditModel();
       this.showEditModel(model);
     },
 
@@ -8131,6 +8136,14 @@ function($, _, Backbone, Plumage, BaseController, ModelUtil) {
      * Override to add default attributes, eg empty relationships.
      */
     createDetailModel: function(id, attributes, viewState) {
+      return this.createModel(this.modelCls, id, attributes, viewState);
+    },
+
+    /**
+     * Create the edit model from specified attributes.
+     * Override to add default attributes, eg empty relationships.
+     */
+    createEditModel: function(id, attributes, viewState) {
       return this.createModel(this.modelCls, id, attributes, viewState);
     },
 
@@ -8385,12 +8398,14 @@ function($, _, Backbone, Plumage, History, ModelUtil) {
         }
       });
 
-      for (var i = 0; i < this.controllerRoutes.length; i++) {
-        var route = this.controllerRoutes[i];
-        var routeOptions = route[1],
-          name = routeOptions.controller + '.' + routeOptions.method,
-          handler = _.bind(this.routeToController, this, routeOptions);
-        this.route(route[0], name, handler);
+      if (this.controllerRoutes) {
+        for (var i = 0; i < this.controllerRoutes.length; i++) {
+          var route = this.controllerRoutes[i];
+          var routeOptions = route[1],
+            name = routeOptions.controller + '.' + routeOptions.method,
+            handler = _.bind(this.routeToController, this, routeOptions);
+          this.route(route[0], name, handler);
+        }
       }
     },
 
@@ -9331,6 +9346,8 @@ define('view/ModelView',[
         this.model.on('beginLoad', this.onModelBeginLoad, this);
         this.model.on('change', this.onModelChange, this);
         this.model.on('load', this.onModelLoad, this);
+        this.model.on('add', this.onModelAdd, this);
+        this.model.on('remove', this.onModelRemove, this);
         this.model.on('destroy', this.onModelDestroy, this);
         this.model.on('invalid', this.onModelInvalid, this);
         this.model.on('error', this.onModelError, this);
@@ -9433,6 +9450,14 @@ define('view/ModelView',[
       this.updateViewState(model);
       this.update(true);
       this.hideLoadingAnimation();
+    },
+
+    onModelAdd: function(event, model) {
+      this.onModelChange(event, model);
+    },
+
+    onModelRemove: function(event, model) {
+      this.onModelChange(event, model);
     },
 
     onModelDestroy: function(event, model) {
@@ -9552,14 +9577,6 @@ define('view/CollectionView',[
     //
     // overrides
     //
-
-    setModel: function() {
-      ModelView.prototype.setModel.apply(this, arguments);
-      if (this.model) {
-        this.model.on('add', this.onModelAdd, this);
-        this.model.on('remove', this.onModelRemove, this);
-      }
-    },
 
     getTemplateData: function() {
       var moreUrl;
@@ -13355,7 +13372,7 @@ define('view/form/fields/FilterTypeAhead',[
   });
 });
 
-define('text!view/form/fields/templates/InPlaceTextField.html',[],function () { return '{{#if label}}\n<div class="control-group">\n  <label class="control-label" for="{{valueAttr}}">{{label}}</label>\n  <div class="controls">\n{{/if}}\n    <div class="field-value {{#unless hasValue}}no-value{{/unless}}">\n      <i class="icon-pencil"></i>\n      <span>{{#if hasValue}}{{value}}{{else}}{{placeholder}}{{/if}}</span>\n\t  </div>\n    {{> field}}\n{{#if label}}\n  </div>\n</div>\n{{/if}}\n';});
+define('text!view/form/fields/templates/InPlaceTextField.html',[],function () { return '<div class="control-group {{#if validationState}}{{validationState}}{{/if}}">\n{{#if label}}\n  <label class="control-label" for="{{valueAttr}}">{{label}}</label>\n  <div class="controls">\n{{/if}}\n    <div class="field-value {{#unless hasValue}}no-value{{/unless}}">\n      <i class="icon-pencil"></i>\n      <span>{{#if hasValue}}{{value}}{{else}}{{placeholder}}{{/if}}</span>\n\t  </div>\n    {{> field}}\n    <span class="help-inline">{{#if message}}{{message}}{{/if}}</span>\n{{#if label}}\n  </div>\n{{/if}}\n</div>\n';});
 
 define('view/form/fields/InPlaceTextField',[
   'jquery',
@@ -13746,7 +13763,7 @@ define('view/grid/FilterView',[
    */
   return Plumage.view.grid.FilterView = Form.extend({
 
-    className: 'form-inline',
+    className: 'form-inline filter-view',
 
     template: Handlebars.compile(template),
 

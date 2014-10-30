@@ -115,8 +115,7 @@
 .inplace-field {
 
   .field-value {
-    padding-top: 5px;
-    padding-left: 8px;
+    padding: 5px 0 5px 8px;
     margin-left: -8px;
     cursor: pointer;
 
@@ -150,6 +149,15 @@
     .field-value {
       display: none;
     }
+  }
+
+  .help-inline {
+    float: right;
+  }
+
+  .error .field-value {
+    padding: 4x 0 4px 7px;
+    border: 1px solid #b94a48;
   }
 }
 

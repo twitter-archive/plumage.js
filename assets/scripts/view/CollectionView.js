@@ -61,14 +61,6 @@ define([
     // overrides
     //
 
-    setModel: function() {
-      ModelView.prototype.setModel.apply(this, arguments);
-      if (this.model) {
-        this.model.on('add', this.onModelAdd, this);
-        this.model.on('remove', this.onModelRemove, this);
-      }
-    },
-
     getTemplateData: function() {
       var moreUrl;
       if (this.moreUrl && this.model && this.model.hasMore()) {

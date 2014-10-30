@@ -173,6 +173,8 @@ define([
         this.model.on('beginLoad', this.onModelBeginLoad, this);
         this.model.on('change', this.onModelChange, this);
         this.model.on('load', this.onModelLoad, this);
+        this.model.on('add', this.onModelAdd, this);
+        this.model.on('remove', this.onModelRemove, this);
         this.model.on('destroy', this.onModelDestroy, this);
         this.model.on('invalid', this.onModelInvalid, this);
         this.model.on('error', this.onModelError, this);
@@ -275,6 +277,14 @@ define([
       this.updateViewState(model);
       this.update(true);
       this.hideLoadingAnimation();
+    },
+
+    onModelAdd: function(event, model) {
+      this.onModelChange(event, model);
+    },
+
+    onModelRemove: function(event, model) {
+      this.onModelChange(event, model);
     },
 
     onModelDestroy: function(event, model) {

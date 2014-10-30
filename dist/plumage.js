@@ -1166,7 +1166,11 @@ function($, _, Backbone, Plumage, requestManager, ModelUtil, BufferedCollection)
      * @returns {string} Url or null
      */
     urlFromAttributes: function() {
-      return Backbone.Model.prototype.url.apply(this, arguments) + '/new';
+      var url = Backbone.Model.prototype.url.apply(this, arguments);
+      if (!this.id) {
+        url = url + '/new';
+      }
+      return url;
     },
 
     /**

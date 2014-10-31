@@ -82,6 +82,12 @@ function($, _, Backbone, Plumage, BaseController, ModelUtil) {
       this.showEditModel(model);
     },
 
+    /** handler for showing the new view. Override this to accept more url params*/
+    showEdit: function(id, params){
+      var model = this.createEditModel(id, {}, params);
+      this.showEditModel(model);
+    },
+
     /** Logic for binding a model to, and then showing the index view */
     showIndexModel: function(model) {
       this.indexModel = model;

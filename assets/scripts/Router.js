@@ -103,6 +103,10 @@ function($, _, Backbone, Plumage, History, ModelUtil) {
     },
 
     navigate: function(url, options) {
+      if (url === null || url === undefined) {
+        throw new Error('A "url" must be specified');
+      }
+
       //remove host and protocol if it's local
       if (url.indexOf(window.location.origin) === 0) {
         url = url.slice(window.location.origin.length);

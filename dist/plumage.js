@@ -1159,13 +1159,17 @@ function($, _, Backbone, Plumage, requestManager, ModelUtil, BufferedCollection)
 
     /**
      * Generate the url for this model from its attributes. By default this returns
-     * urlRoot/id
+     * urlRoot/id. If no urlRoot is specified it returns null. This is so prevent loading models
+     * whose urls' can't be derived from attributed. (eg when url depends a parent model's url)
      *
      * Override this method if you have custom urls.
      * Return null if attributes for url are not yet available.
      * @returns {string} Url or null
      */
     urlFromAttributes: function() {
+      if (!this.urlRoot) {
+        return null;
+      }
       var url = Backbone.Model.prototype.url.apply(this, arguments);
       if (!this.id) {
         url = url + '/new';
@@ -8044,6 +8048,12 @@ function($, _, Backbone, Plumage, BaseController, ModelUtil) {
       this.showEditModel(model);
     },
 
+    /** handler for showing the new view. Override this to accept more url params*/
+    showEdit: function(id, params){
+      var model = this.createEditModel(id, {}, params);
+      this.showEditModel(model);
+    },
+
     /** Logic for binding a model to, and then showing the index view */
     showIndexModel: function(model) {
       this.indexModel = model;
@@ -8454,6 +8464,10 @@ function($, _, Backbone, Plumage, History, ModelUtil) {
     },
 
     navigate: function(url, options) {
+      if (url === null || url === undefined) {
+        throw new Error('A "url" must be specified');
+      }
+
       //remove host and protocol if it's local
       if (url.indexOf(window.location.origin) === 0) {
         url = url.slice(window.location.origin.length);

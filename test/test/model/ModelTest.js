@@ -35,6 +35,12 @@ define([
     equal(model.url(), '/foo');
   });
 
+  test('return null if no href and no urlRoot', function(){
+    var model = new Post();
+    model.urlRoot = false;
+    equal(model.url(), null);
+  });
+
   test('combines query params from href and view state', function(){
     var model = new Post({href: '/foo?a=1', bar: 'baz'});
     model.viewAttrs = ['bar'];

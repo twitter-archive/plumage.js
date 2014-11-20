@@ -261,11 +261,13 @@ define([
       }
 
       var cell = this.grid.getCellFromEvent(e);
-      var id = this.grid.getDataItem(cell.row).id,
+      var item = this.grid.getDataItem(cell.row);
+      if (item) {
+        var id = this.grid.getDataItem(cell.row).id,
         data = this.grid.getData(),
         model = data.getItem(data.getIndexForId(id));
-
-      this.trigger('itemSelected',  model);
+        this.trigger('itemSelected',  model);
+      }
     },
 
     toggleRowSelected: function(index) {

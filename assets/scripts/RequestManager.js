@@ -31,7 +31,7 @@ function($, _, Backbone, Plumage) {
 
     /** Load the given model, keeping a reference to the request. */
     loadModel: function(model, options) {
-      options = options || {};
+      options = _.defaults({}, options, {reset: true});
       var success = options.success;
       options.success = function(model, resp, options) {
         this.onSuccess(model, resp, options);

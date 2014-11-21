@@ -6,7 +6,7 @@ define([
   'PlumageRoot',
   'view/ModelView',
   'view/form/fields/Field',
-  'text!view/form/fields/templates/Select.html',
+  'text!view/form/fields/templates/Select.html'
 ], function($, _, Backbone, Handlebars, Plumage, ModelView, Field, template) {
 
 
@@ -15,7 +15,7 @@ define([
   {
     /**
      * List of {label:"", value:""} objects to use as select choices.
-     * Use either this, or listModel, or listRelationship
+     * Use either this, listModel or listRelationship
      */
     listValues: undefined,
 
@@ -91,50 +91,40 @@ define([
         noSelectionText: this.noSelectionText,
         noItemsText: this.noItemsText,
         hasSelection: this.hasSelection(),
-        defaultToFirst: this.defaultToFirst
+        defaultToFirst: this.defaultToFirst,
+        listValues: this.getListValues(this.model)
       });
 
-      if (data.value === undefined || data.value === null) {
-        if (this.listModel && this.listModel.size() > 0) {
-          data.valueLabel = this.noSelectionText;
-          data.value = this.noSelectionValue;
-        } else {
-          data.valueLabel = this.noItemsText;
-        }
-      }
-
-      if (this.listModel) {
-        data.listValues = this.listModel.map(function(model){
-          return this.getItemData(model);
-        }, this);
-      } else {
-        data.listValues = this.listValues;
-      }
       return data;
     },
 
-    getValueLabel: function(value) {
-      var i;
+    getListValues: function(model) {
       if (this.listModel) {
-        for (i=0;i<this.listModel.size();i++) {
-          var listItem = this.listModel.at(i);
-          if (this.getListItemValue(listItem) === value) {
-            return this.getListItemLabel(listItem);
-          }
-        }
-      } else if (this.listValues) {
-        for (i = 0; i < this.listValues.length; i++) {
-          if (this.listValues[i].value === value) {
-            return this.listValues[i].label;
-          }
+        return this.listModel.map(function(model){
+          return this.getItemData(model);
+        }, this);
+      } else {
+        return this.listValues;
+      }
+    },
+
+    getValueLabel: function(value) {
+      var i,
+        listValues = this.getListValues(this.model);
+      for (i=0;i<listValues.length;i++) {
+        if (listValues[i].value === value) {
+          return listValues[i].label;
         }
       }
     },
 
     getValueFromModel: function() {
       var value = Plumage.view.form.fields.Field.prototype.getValueFromModel.apply(this, arguments);
-      if (!value && this.defaultToFirst && this.listModel && this.listModel.size() > 0) {
-        return this.getListItemValue(this.listModel.at(0));
+      if (!value && this.defaultToFirst) {
+        var values = this.getListValues(this.model);
+        if (values && values.length > 0) {
+          return values[0];
+        }
       }
       return value;
     },

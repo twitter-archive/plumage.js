@@ -320,7 +320,7 @@ function($, _, Backbone, Plumage) {
 
     /** Load the given model, keeping a reference to the request. */
     loadModel: function(model, options) {
-      options = options || {};
+      options = _.defaults({}, options, {reset: true});
       var success = options.success;
       options.success = function(model, resp, options) {
         this.onSuccess(model, resp, options);
@@ -539,6 +539,7 @@ function($, _, Backbone, Plumage) {
         success: function (resp) {
           //silent because so we don't trigger this.onLoad
           this.collection.reset(resp, {parse: true, silent: true});
+          this.collection.onLoad({silent: true});
           this.onBufferLoad(this.collection, pageIndex);
         }.bind(this)
       };
@@ -1159,18 +1160,26 @@ function($, _, Backbone, Plumage, requestManager, ModelUtil, BufferedCollection)
 
     /**
      * Generate the url for this model from its attributes. By default this returns
-     * urlRoot/id
+     * urlRoot/id. If urlRoot doesn't exist, return null to
+     * prevent loading.
      *
      * Override this method if you have custom urls.
      * Return null if attributes for url are not yet available.
      * @returns {string} Url or null
      */
     urlFromAttributes: function() {
-      var url = Backbone.Model.prototype.url.apply(this, arguments);
-      if (!this.id) {
-        url = url + '/new';
+      if (!this.id && this.collection) {
+        var a = document.createElement('a');
+        a.href = this.collection.url();
+        return a.pathname + '/new' + a.search;
       }
-      return url;
+
+      //no url so do nothing
+      if (!this.urlRoot) {
+        return null;
+      }
+
+      return Backbone.Model.prototype.url.apply(this, arguments);
     },
 
     /**
@@ -9639,6 +9648,18 @@ define('view/CollectionView',[
       ModelView.prototype.update.apply(this, arguments);
     },
 
+    updateModel: function(rootModel, parentModel) {
+      ModelView.prototype.updateModel.apply(this, arguments);
+      var collection = this.getModelFromRoot(this.relationship, rootModel, parentModel);
+      if (collection) {
+        collection.each(function(model, index) {
+          if (index < this.itemViews.length) {
+            this.itemViews[index].updateModel(model);
+          }
+        }.bind(this));
+      }
+    },
+
     //
     // Helpers
     //
@@ -10780,7 +10801,7 @@ define('view/form/fields/Select',[
   'PlumageRoot',
   'view/ModelView',
   'view/form/fields/Field',
-  'text!view/form/fields/templates/Select.html',
+  'text!view/form/fields/templates/Select.html'
 ], function($, _, Backbone, Handlebars, Plumage, ModelView, Field, template) {
 
 
@@ -10789,7 +10810,7 @@ define('view/form/fields/Select',[
   {
     /**
      * List of {label:"", value:""} objects to use as select choices.
-     * Use either this, or listModel, or listRelationship
+     * Use either this, listModel or listRelationship
      */
     listValues: undefined,
 
@@ -10865,41 +10886,30 @@ define('view/form/fields/Select',[
         noSelectionText: this.noSelectionText,
         noItemsText: this.noItemsText,
         hasSelection: this.hasSelection(),
-        defaultToFirst: this.defaultToFirst
+        defaultToFirst: this.defaultToFirst,
+        listValues: this.getListValues(this.model)
       });
 
-      if (data.value === undefined || data.value === null) {
-        if (this.listModel && this.listModel.size() > 0) {
-          data.valueLabel = this.noSelectionText;
-          data.value = this.noSelectionValue;
-        } else {
-          data.valueLabel = this.noItemsText;
-        }
-      }
-
-      if (this.listModel) {
-        data.listValues = this.listModel.map(function(model){
-          return this.getItemData(model);
-        }, this);
-      } else {
-        data.listValues = this.listValues;
-      }
       return data;
     },
 
-    getValueLabel: function(value) {
-      var i;
+    getListValues: function(model) {
       if (this.listModel) {
-        for (i=0;i<this.listModel.size();i++) {
-          var listItem = this.listModel.at(i);
-          if (this.getListItemValue(listItem) === value) {
-            return this.getListItemLabel(listItem);
-          }
-        }
-      } else if (this.listValues) {
-        for (i = 0; i < this.listValues.length; i++) {
-          if (this.listValues[i].value === value) {
-            return this.listValues[i].label;
+        return this.listModel.map(function(model){
+          return this.getItemData(model);
+        }, this);
+      } else {
+        return this.listValues;
+      }
+    },
+
+    getValueLabel: function(value) {
+      var i,
+        listValues = this.getListValues(this.model);
+      if (listValues) {
+        for (i=0;i<listValues.length;i++) {
+          if (listValues[i].value === value) {
+            return listValues[i].label;
           }
         }
       }
@@ -10907,8 +10917,11 @@ define('view/form/fields/Select',[
 
     getValueFromModel: function() {
       var value = Plumage.view.form.fields.Field.prototype.getValueFromModel.apply(this, arguments);
-      if (!value && this.defaultToFirst && this.listModel && this.listModel.size() > 0) {
-        return this.getListItemValue(this.listModel.at(0));
+      if (!value && this.defaultToFirst) {
+        var values = this.getListValues(this.model);
+        if (values && values.length > 0) {
+          return values[0];
+        }
       }
       return value;
     },
@@ -13636,6 +13649,8 @@ define('view/form/fields/FilterField',[
 
   return Plumage.view.form.fields.FilterField = Field.extend({
 
+    className: 'filter-text-field',
+
     filterKey: undefined,
 
     comparison: 'contains',
@@ -14247,11 +14262,13 @@ define('view/grid/GridView',[
       }
 
       var cell = this.grid.getCellFromEvent(e);
-      var id = this.grid.getDataItem(cell.row).id,
+      var item = this.grid.getDataItem(cell.row);
+      if (item) {
+        var id = this.grid.getDataItem(cell.row).id,
         data = this.grid.getData(),
         model = data.getItem(data.getIndexForId(id));
-
-      this.trigger('itemSelected',  model);
+        this.trigger('itemSelected',  model);
+      }
     },
 
     toggleRowSelected: function(index) {

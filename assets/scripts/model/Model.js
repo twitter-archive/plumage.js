@@ -547,18 +547,26 @@ function($, _, Backbone, Plumage, requestManager, ModelUtil, BufferedCollection)
 
     /**
      * Generate the url for this model from its attributes. By default this returns
-     * urlRoot/id
+     * urlRoot/id. If urlRoot doesn't exist, return null to
+     * prevent loading.
      *
      * Override this method if you have custom urls.
      * Return null if attributes for url are not yet available.
      * @returns {string} Url or null
      */
     urlFromAttributes: function() {
-      var url = Backbone.Model.prototype.url.apply(this, arguments);
-      if (!this.id) {
-        url = url + '/new';
+      if (!this.id && this.collection) {
+        var a = document.createElement('a');
+        a.href = this.collection.url();
+        return a.pathname + '/new' + a.search;
       }
-      return url;
+
+      //no url so do nothing
+      if (!this.urlRoot) {
+        return null;
+      }
+
+      return Backbone.Model.prototype.url.apply(this, arguments);
     },
 
     /**

@@ -111,9 +111,11 @@ define([
     getValueLabel: function(value) {
       var i,
         listValues = this.getListValues(this.model);
-      for (i=0;i<listValues.length;i++) {
-        if (listValues[i].value === value) {
-          return listValues[i].label;
+      if (listValues) {
+        for (i=0;i<listValues.length;i++) {
+          if (listValues[i].value === value) {
+            return listValues[i].label;
+          }
         }
       }
     },

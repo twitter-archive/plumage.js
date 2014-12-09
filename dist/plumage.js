@@ -9840,7 +9840,7 @@ define('view/form/Form',[
         this.model = new ModelCls();
       }
       if(this.isValid()) {
-        this.updateModel(this.model);
+        this.updateModel(this.rootModel);
         var error;
         if (this.model.validate) {
           error = this.model.validate(this.model.attributes);
@@ -11539,7 +11539,7 @@ define('view/form/fields/Calendar',[
   });
 });
 
-define('text!view/form/fields/templates/Checkbox.html',[],function () { return '<label class="checkbox {{cls}}">\n  <input type="checkbox" name="{{../fieldName}}" {{#selected}}checked="true"{{/selected}} value="true">\n  <span>{{checkboxLabel}}</span>\n</label>\n';});
+define('text!view/form/fields/templates/Checkbox.html',[],function () { return '{{#if checkboxLabel}}\n<label class="{{cls}}">\n{{/if}}\n  <input type="checkbox" name="{{../fieldName}}" {{#selected}}checked="true"{{/selected}} value="true">\n{{#if checkboxLabel}}\n  <span>{{checkboxLabel}}</span>\n</label>\n{{/if}}\n';});
 
 define('view/form/fields/Checkbox',[
   'jquery',

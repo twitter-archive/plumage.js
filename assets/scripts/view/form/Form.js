@@ -60,7 +60,7 @@ define([
         this.model = new ModelCls();
       }
       if(this.isValid()) {
-        this.updateModel(this.model);
+        this.updateModel(this.rootModel);
         var error;
         if (this.model.validate) {
           error = this.model.validate(this.model.attributes);

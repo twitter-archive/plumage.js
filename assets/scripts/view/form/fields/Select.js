@@ -44,6 +44,7 @@ define([
 
     noSelectionText: undefined,
     noSelectionValue: '',
+
     noItemsText: 'No Items',
 
     fieldTemplate: template,
@@ -66,9 +67,7 @@ define([
      */
     initialize: function() {
       Field.prototype.initialize.apply(this, arguments);
-      if (this.listValues && this.defaultToFirst) {
-        this.setValue(this.listValues[0].value);
-      }
+      this.updateDefault();
     },
 
     /**
@@ -85,6 +84,7 @@ define([
 
     getTemplateData: function() {
       var data = Field.prototype.getTemplateData.apply(this, arguments);
+
       _.extend(data, {
         valueLabel: this.getValueLabel(data.value),
         noSelectionValue: this.noSelectionValue,
@@ -118,17 +118,6 @@ define([
           }
         }
       }
-    },
-
-    getValueFromModel: function() {
-      var value = Plumage.view.form.fields.Field.prototype.getValueFromModel.apply(this, arguments);
-      if (!value && this.defaultToFirst) {
-        var values = this.getListValues(this.model);
-        if (values && values.length > 0) {
-          return values[0];
-        }
-      }
-      return value;
     },
 
     setValue: function(value) {
@@ -167,6 +156,14 @@ define([
       return value !== null && value !== undefined && value !== this.noSelectionValue;
     },
 
+    updateDefault: function() {
+      var listValues = this.getListValues(this.model);
+      if (!this.hasSelection() && this.defaultToFirst && listValues && listValues.length) {
+        this.setValue(listValues[0].value, {silent: true});
+      }
+    },
+
+
     /**
      * List Model
      **************/
@@ -179,6 +176,7 @@ define([
           this.setListModel(listModel);
         }
       }
+      this.updateDefault();
     },
 
     setListModel: function(listModel) {

@@ -49,7 +49,7 @@ define([
     updateModelOnChange: false,
 
     /**
-     * The view value. It's seperate from the model value, and used for rerendering.
+     * The view value. It's separate from the model value, and used for rerendering.
      *
      * Because it comes from the dom, value is always a string.
      */
@@ -356,6 +356,7 @@ define([
     },
 
     updateValueFromModel: function() {
+      this.value = '';
       if (this.model) {
         this.value = this.getValueFromModel();
         this.valueChanged();

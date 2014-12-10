@@ -9938,7 +9938,7 @@ define('view/form/fields/Field',[
     updateModelOnChange: false,
 
     /**
-     * The view value. It's seperate from the model value, and used for rerendering.
+     * The view value. It's separate from the model value, and used for rerendering.
      *
      * Because it comes from the dom, value is always a string.
      */
@@ -10245,6 +10245,7 @@ define('view/form/fields/Field',[
     },
 
     updateValueFromModel: function() {
+      this.value = '';
       if (this.model) {
         this.value = this.getValueFromModel();
         this.valueChanged();
@@ -10839,6 +10840,7 @@ define('view/form/fields/Select',[
 
     noSelectionText: undefined,
     noSelectionValue: '',
+
     noItemsText: 'No Items',
 
     fieldTemplate: template,
@@ -10861,9 +10863,7 @@ define('view/form/fields/Select',[
      */
     initialize: function() {
       Field.prototype.initialize.apply(this, arguments);
-      if (this.listValues && this.defaultToFirst) {
-        this.setValue(this.listValues[0].value);
-      }
+      this.updateDefault();
     },
 
     /**
@@ -10880,6 +10880,7 @@ define('view/form/fields/Select',[
 
     getTemplateData: function() {
       var data = Field.prototype.getTemplateData.apply(this, arguments);
+
       _.extend(data, {
         valueLabel: this.getValueLabel(data.value),
         noSelectionValue: this.noSelectionValue,
@@ -10913,17 +10914,6 @@ define('view/form/fields/Select',[
           }
         }
       }
-    },
-
-    getValueFromModel: function() {
-      var value = Plumage.view.form.fields.Field.prototype.getValueFromModel.apply(this, arguments);
-      if (!value && this.defaultToFirst) {
-        var values = this.getListValues(this.model);
-        if (values && values.length > 0) {
-          return values[0];
-        }
-      }
-      return value;
     },
 
     setValue: function(value) {
@@ -10962,6 +10952,14 @@ define('view/form/fields/Select',[
       return value !== null && value !== undefined && value !== this.noSelectionValue;
     },
 
+    updateDefault: function() {
+      var listValues = this.getListValues(this.model);
+      if (!this.hasSelection() && this.defaultToFirst && listValues && listValues.length) {
+        this.setValue(listValues[0].value, {silent: true});
+      }
+    },
+
+
     /**
      * List Model
      **************/
@@ -10974,6 +10972,7 @@ define('view/form/fields/Select',[
           this.setListModel(listModel);
         }
       }
+      this.updateDefault();
     },
 
     setListModel: function(listModel) {

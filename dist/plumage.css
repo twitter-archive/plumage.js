@@ -1167,6 +1167,8 @@ ul.pager {
   text-align: left; }
 .date-range-field .show-hour-select .date-field .from-date input, .date-range-field .show-hour-select .date-field .to-date input {
   width: 100px; }
+.date-range-field .show-hour-select .hour-select {
+  display: inline; }
 .date-range-field .show-hour-select .hour-select .dropdown-toggle {
   width: 48px;
   padding: 4px 9px;

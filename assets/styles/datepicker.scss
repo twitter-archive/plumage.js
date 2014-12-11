@@ -159,7 +159,6 @@
     left: auto;
     right: 41px;
   }
-
 }
 
 
@@ -175,6 +174,10 @@
 
   .date-field .from-date input, .date-field .to-date input {
     width: 100px;
+  }
+
+  .hour-select {
+    display: inline;
   }
 
   .hour-select .dropdown-toggle {

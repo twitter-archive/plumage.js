@@ -33,8 +33,8 @@ function($, _, Backbone, Plumage, requestManager, ModelUtil, BufferedCollection)
     /** Path where to find the response data in the response JSON.*/
     resultsPath: 'results',
 
-    /** Attribute to use as a label/title when shown in a general View */
-    labelAttr: 'name',
+    /** Attribute to display when shown in a general View, like a title */
+    displayNameAttr: undefined,
 
     /** Has this Model been loaded yet? */
     fetched: false,
@@ -698,11 +698,13 @@ function($, _, Backbone, Plumage, requestManager, ModelUtil, BufferedCollection)
     },
 
     /**
-     * Gets a label/title for this model
+     * Gets a 'display name'/title for this model
      * @returns {string}
      */
-    getLabel: function() {
-      return this.get(this.labelAttr);
+    getDisplayName: function() {
+      if (this.displayNameAttr !== undefined) {
+        return this.get(this.displayNameAttr);
+      }
     },
 
     /**
@@ -726,6 +728,10 @@ function($, _, Backbone, Plumage, requestManager, ModelUtil, BufferedCollection)
       var result = _.clone(this.attributes);
       if (result.url === undefined && this.hasUrl()) {
         result.url = this.url();
+      }
+      var displayName = this.getDisplayName();
+      if (displayName !== undefined) {
+        result.displayName = displayName;
       }
       _.each(this.relationships, function(relationship, key) {
         var related = this.getRelated(key);

@@ -38,8 +38,8 @@ function($, _, Backbone, Handlebars, Plumage, moment, Model) {
       if (modelType) {
         var modelCls = require('model/' + modelType);
         var model = new modelCls(data);
-        var label = model.getLabel();
-        return '<a href="'+model.url()+'" class="name" title="'+label+'">'+label+'</a>';
+        var displayName = model.getDisplayName();
+        return '<a href="'+model.url()+'" class="name" title="'+displayName+'">'+displayName+'</a>';
       }
       return '';
     },

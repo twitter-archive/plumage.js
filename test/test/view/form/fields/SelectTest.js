@@ -88,6 +88,21 @@ define([
     equal(view.getValue(), listModel.at(0).get('name'), 'set value to default after listModel load');
   });
 
+  test('defaultToFirst overridden getListValues', function() {
+    var view = createView({
+      defaultToFirst: true,
+      updateModelOnChange: true,
+      getListValues: function() {return  [{label: '1', value: 1}];}
+    });
+
+    equal(view.getValue(), 1, 'view should have default value on create');
+
+    var model = new Post();
+    view.setModel(model);
+
+    equal(model.get(view.valueAttr), 1, 'update model with default because of updateModelOnChange');
+  });
+
   test('listRelationship', function() {
     var view = createView({defaultToFirst: true, listRelationship: 'categories'});
     var model = new Post(ExampleData.POST_WITH_CATEGORIES);

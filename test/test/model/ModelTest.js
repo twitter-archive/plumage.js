@@ -346,6 +346,18 @@ define([
     equal(post.urlWithParams({foo: 'bar', tab: 'foo'}), '/posts/1?tab=foo&foo=bar', 'should override view params');
   });
 
+  test('display name', function() {
+
+    var post = new Post({name: 'foo'});
+    equal(post.getDisplayName(), undefined);
+    equal(post.toViewJSON().displayName, undefined);
+
+    var PostWithDisplayName = Post.extend({displayNameAttr: 'name'});
+    post = new PostWithDisplayName({name: 'foo'});
+    equal(post.getDisplayName(), 'foo');
+    equal(post.toViewJSON().displayName, 'foo', 'should include displayName in view json');
+  });
+
   //
   // Saving
   //

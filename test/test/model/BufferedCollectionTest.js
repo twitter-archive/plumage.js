@@ -53,8 +53,21 @@ define([
     buffered.ensureData(1,5);
 
     equal(buffered.buffer.length, 6, 'should load 2 pages');
-    equal(buffered.buffer.length, 6, 'should load 2 pages');
     equal(eventLog.counts.pageLoad, 2, 'should 2 pages pageLoad');
+  });
+
+  test('loaded models have fetched set', function() {
+    this.ajaxResponse = {results: ExampleData.POSTS, meta: {total: 6}};
+    var collection = new PostCollection(null);
+    collection.set('pageSize', 3);
+
+    var buffered = new BufferedCollection(collection);
+    var eventLog = new EventLog(buffered);
+
+    buffered.ensureData(0,3);
+    equal(buffered.at(0).fetched, true, 'should set fetched');
+    buffered.ensureData(3,6);
+    equal(buffered.at(5).fetched, true, 'should set fetched');
   });
 
 

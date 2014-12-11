@@ -1,4 +1,8 @@
-<label class="checkbox {{cls}}">
+{{#if checkboxLabel}}
+<label class="{{cls}}">
+{{/if}}
   <input type="checkbox" name="{{../fieldName}}" {{#selected}}checked="true"{{/selected}} value="true">
+{{#if checkboxLabel}}
   <span>{{checkboxLabel}}</span>
 </label>
+{{/if}}

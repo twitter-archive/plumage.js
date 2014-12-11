@@ -7,6 +7,9 @@
 .project
 .settings
 
+#idea
+.idea
+
 #test output
 /reports
 /log

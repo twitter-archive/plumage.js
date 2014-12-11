@@ -10,8 +10,9 @@ define([
   'test/EventLog',
   'example/ExampleData',
   'example/collection/PostCollection',
+  'example/model/Post',
   'model/Filter'
-], function($, _, Backbone, sinon, Environment, EventLog, ExampleData, PostCollection, Filter) {
+], function($, _, Backbone, sinon, Environment, EventLog, ExampleData, PostCollection, Post, Filter) {
 
 
   //use Environment to mock ajax
@@ -316,5 +317,15 @@ define([
     equal(collection.size(), 1, 'should apply multiple filters');
 
     equal(JSON.parse(collection.getQueryParams().filters)[0].value, 'my body', 'should include filters in query params');
+  });
+
+  test('new model url', function() {
+    var collection = new PostCollection();
+    collection.add(new Post());
+    equal(collection.at(0).url(), collection.url() + '/new');
+
+    collection = new PostCollection();
+    collection.add(new Post({href: 'foo'}));
+    equal(collection.at(0).url(), 'foo');
   });
 });

@@ -99,4 +99,16 @@ define([
     field.getPicker().setValue(moment([2014, 1, 1]).valueOf());
     equal(field.getValue(), moment([2014, 1, 1, 12]).valueOf(), 'ignore hour from picker value');
   });
+
+  test('hour select with relationship', function() {
+    var field = createView({showHourSelect: true, valueAttr: 'my_date', relationship: 'author'});
+
+    var m = moment([2014, 1, 1, 12]);
+    var model = new Post(ExampleData.POST_DATA_WITH_RELATED);
+    model.getRelated('author').set('my_date', m.valueOf());
+    field.setModel(model);
+
+    equal(field.getSubView('hourSelect').getValue(), m.hour(), 'hour select should get value from relationship');
+  });
+
 });

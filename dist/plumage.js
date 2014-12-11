@@ -12168,7 +12168,7 @@ define('view/form/fields/DateField',[
       viewCls: HourSelect,
       name: 'hourSelect',
       selector: '.field',
-      opens: 'left',
+      opens: 'right',
       tagName: 'span'
     }],
 
@@ -12204,6 +12204,7 @@ define('view/form/fields/DateField',[
       hourSelect.utc = this.utc;
       hourSelect.valueAttr = this.valueAttr;
       hourSelect.updateModelOnChange = this.updateModelOnChange;
+      hourSelect.relationship = this.relationship;
       this.setShowHourSelect(this.showHourSelect);
 
       if (this.minDate) {

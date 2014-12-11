@@ -42,7 +42,7 @@ define([
       viewCls: HourSelect,
       name: 'hourSelect',
       selector: '.field',
-      opens: 'left',
+      opens: 'right',
       tagName: 'span'
     }],
 
@@ -78,6 +78,7 @@ define([
       hourSelect.utc = this.utc;
       hourSelect.valueAttr = this.valueAttr;
       hourSelect.updateModelOnChange = this.updateModelOnChange;
+      hourSelect.relationship = this.relationship;
       this.setShowHourSelect(this.showHourSelect);
 
       if (this.minDate) {

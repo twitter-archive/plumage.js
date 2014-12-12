@@ -88,7 +88,7 @@ define([
     equal(moment(field.getValue()).format(field.format), 'Mar 1, 2014', 'should not update on invalid');
   });
 
-  test('keep time', function() {
+  test('keepTime', function() {
     var field = createView();
     field.setValue(moment([2014, 1, 1, 12]).valueOf());
     field.getPicker().setValue(moment([2014, 1, 1]).valueOf());
@@ -98,5 +98,13 @@ define([
     field.setValue(moment([2014, 1, 1, 12]).valueOf());
     field.getPicker().setValue(moment([2014, 1, 1]).valueOf());
     equal(field.getValue(), moment([2014, 1, 1, 12]).valueOf(), 'ignore hour from picker value');
+  });
+
+
+  test('showHourSelect implies keepTime', function() {
+    var field = createView({showHourSelect: true});
+    field.setValue(moment([2014, 1, 1, 12]).valueOf());
+    field.getPicker().setValue(moment([2014, 1, 1]).valueOf());
+    equal(field.getValue(), moment([2014, 1, 1, 12]).valueOf(), 'keep hour on date change when hour select is shown');
   });
 });

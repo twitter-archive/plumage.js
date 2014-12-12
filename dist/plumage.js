@@ -11703,7 +11703,7 @@ define('view/form/fields/FieldWithPicker',[
   'PlumageRoot',
   'view/form/fields/Field',
   'view/form/fields/picker/Picker',
-  'text!view/form/fields/templates/FieldWithPicker.html',
+  'text!view/form/fields/templates/FieldWithPicker.html'
 ], function($, _, Backbone, Handlebars, moment, Plumage, Field, Picker, template) {
 
   return  Plumage.view.form.fields.FieldWithPicker = Field.extend(
@@ -12254,7 +12254,7 @@ define('view/form/fields/DateField',[
       if (value) {
         var m = this.utc ? moment.utc(value) : moment(value);
         var oldValue = this.getValue();
-        if (oldValue && this.keepTime) {
+        if (oldValue && (this.keepTime || this.showHourSelect)) {
           var oldM = this.utc ? moment.utc(oldValue) : moment(oldValue);
           m.hour(oldM.hour()).minute(oldM.minute()).second(oldM.second()).millisecond(oldM.millisecond());
         }

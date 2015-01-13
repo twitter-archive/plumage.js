@@ -19,6 +19,9 @@ define([
   module('TabView', _.extend(new Environment(), {
     setup: function() {
       Environment.prototype.setup.apply(this, arguments);
+    },
+    afterEach: function() {
+      window.router = undefined;
     }
   }));
 
@@ -42,5 +45,25 @@ define([
 
     view.setActiveTab('tab2');
     equal(view.model.get('tab'), 'tab2', 'should set model tab');
+  });
+
+  test('logTabNavigation', function() {
+
+    var view = createView();
+    view.setModel(new Post());
+    view.model.updateUrl = sinon.stub();
+    view.setActiveTab('tab2'); //ok with no router?
+
+    window.router = {logNavigationAction: sinon.spy()};
+
+    view.setActiveTab('tab1');
+    ok(window.router.logNavigationAction.notCalled);
+
+    view.logTabNavigation = true;
+    view.setActiveTab('tab2');
+    ok(window.router.logNavigationAction.calledOnce);
+
+    view.setActiveTab('tab2');
+    ok(window.router.logNavigationAction.calledOnce, 'log only on tab change');
   });
 });

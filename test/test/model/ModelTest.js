@@ -18,6 +18,9 @@ define([
   module('Model', _.extend(new Environment(), {
     setup: function() {
       Environment.prototype.setup.apply(this, arguments);
+    },
+    afterEach: function() {
+      window.router = undefined;
     }
   }));
 

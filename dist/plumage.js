@@ -8478,7 +8478,9 @@ function($, _, Backbone, Plumage, History, ModelUtil) {
         router.trigger.apply(router, ['route:' + name].concat(args));
         router.trigger('route', name, args);
         router.history.trigger('route', router, name, args);
+        router.logNavigationAction(window.location.href, window.location.pathname);
       });
+
       return this;
     },
 
@@ -8503,6 +8505,13 @@ function($, _, Backbone, Plumage, History, ModelUtil) {
       }
 
       this.navigate(url, options);
+    },
+
+    /**
+     * Template method hook for logging, eg post to google analytics
+     */
+    logNavigationAction: function(url, pageName) {
+      // do nothing
     },
 
     /**
@@ -15584,6 +15593,7 @@ define('view/TabView',[
 ], function($, _, Backbone, Handlebars, Plumage, View, ModelView, template) {
 
   return Plumage.view.TabView = ModelView.extend({
+    /** @lends Plumage.view.ModelView.prototype */
 
     className: 'tab-view tab-theme',
 
@@ -15597,6 +15607,19 @@ define('view/TabView',[
       'click .tabs a': 'onTabClick'
     },
 
+    /**
+     * If set, call [router.logNavigationAction]{@link Plumage.Router#logNavigationAction}nAction on tab change.
+     */
+    logTabNavigation: false,
+
+    /**
+     * Tabbed view with subviews as tab panes.
+     *
+     * Tabs are generated from subViews with the tabId and tabLabel attributes.
+     *
+     * @extends Plumage.view.ModelView
+     * @constructs
+     */
     initialize: function() {
       ModelView.prototype.initialize.apply(this, arguments);
       this.eachTabSubView(function(subView) {
@@ -15629,10 +15652,15 @@ define('view/TabView',[
     },
 
     setActiveTab: function(tabId) {
-      if (this.model) {
+      if (this.model && tabId !== this.getActiveTab()) {
         this.model.set(this.viewStateAttr, tabId);
         this.model.updateUrl();
         this.updateTabCookie();
+        if (this.logTabNavigation) {
+          if (window.router) {
+            window.router.logNavigationAction(window.location.href, window.location.pathname);
+          }
+        }
       }
     },
 

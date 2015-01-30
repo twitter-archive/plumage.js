@@ -202,6 +202,10 @@ define([
       this.updateValueFromModel();
     },
 
+    ensureData: function() {
+      ModelView.prototype.ensureData.apply(this, arguments);
+    },
+
     //
     // Attributes
     //
@@ -254,6 +258,10 @@ define([
 
     blur: function() {
       this.$el.blur();
+    },
+
+    onShow: function() {
+      ModelView.prototype.onShow.apply(this, arguments);
     },
 
     //

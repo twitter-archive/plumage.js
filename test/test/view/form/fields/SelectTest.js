@@ -11,9 +11,10 @@ define([
   'example/ExampleData',
   'view/form/fields/Select',
   'example/model/Post',
+  'example/collection/CommentCollection',
   'collection/DataCollection'
 ], function($, _, Backbone, sinon, Environment, EventLog, ExampleData, Select,
-    Post, DataCollection) {
+    Post, CommentCollection, DataCollection) {
 
 
   //use Environment to mock ajax
@@ -22,6 +23,12 @@ define([
       Environment.prototype.setup.apply(this, arguments);
     }
   }));
+
+  var PostRemote = Post.extend({relationships: _.clone(Post.prototype.relationships)});
+  PostRemote.prototype.relationships.comments = _.extend({}, PostRemote.prototype.relationships.comments, {
+    remote: true,
+    deferLoad: true
+  });
 
   function createView(options) {
     options = options || {};
@@ -109,5 +116,17 @@ define([
     view.setModel(model);
 
     ok(view.listModel === model.getRelated('categories'));
+  });
+
+  test('ensure ListModel data', function() {
+    var view = createView({listRelationship: 'comments'});
+
+    var post = new PostRemote({comments: []});
+    sinon.spy(post.getRelated('comments'), 'fetchIfAvailable');
+    view.setModel(post);
+    ok(post.getRelated('comments').fetchIfAvailable.notCalled, 'should not call until show');
+
+    view.onShow();
+    ok(post.getRelated('comments').fetchIfAvailable.calledOnce, 'should ensure list on show');
   });
 });

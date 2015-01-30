@@ -124,6 +124,18 @@ define([
       Field.prototype.setValue.apply(this, arguments);
     },
 
+    onShow: function() {
+      Field.prototype.onShow.apply(this, arguments);
+      this.ensureListData();
+    },
+
+    /** Ensure listModel is loaded */
+    ensureListData: function() {
+      if (this.listModel && this.listModel.deferLoad && !this.listModel.fetched) {
+        this.listModel.fetchIfAvailable();
+      }
+    },
+
     /**
      * Rendering Helpers/Hooks
      * - override these as needed
@@ -174,6 +186,9 @@ define([
         var listModel = this.getModelFromRoot(this.listRelationship, rootModel, parentModel);
         if (listModel) {
           this.setListModel(listModel);
+          if (this.shown) {
+            this.ensureListData();
+          }
         }
       }
       this.updateDefault();

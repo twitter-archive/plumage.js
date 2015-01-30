@@ -54,12 +54,13 @@ define([
     setModel: function() {
       ModelView.prototype.setModel.apply(this, arguments);
       var tab = this.model.get(this.viewStateAttr);
-      if (tab === undefined) {
+      if (!tab) {
         tab = this.getTabCookie();
         if (tab === undefined) {
           tab = _.find(this.subViews, function(subView){ return subView.tabId !== undefined;}).tabId;
         }
         this.model.set(this.viewStateAttr, tab);
+        this.model.updateUrl();
       }
     },
 

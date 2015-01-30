@@ -10130,6 +10130,10 @@ define('view/form/fields/Field',[
       this.updateValueFromModel();
     },
 
+    ensureData: function() {
+      ModelView.prototype.ensureData.apply(this, arguments);
+    },
+
     //
     // Attributes
     //
@@ -10182,6 +10186,10 @@ define('view/form/fields/Field',[
 
     blur: function() {
       this.$el.blur();
+    },
+
+    onShow: function() {
+      ModelView.prototype.onShow.apply(this, arguments);
     },
 
     //
@@ -10959,6 +10967,18 @@ define('view/form/fields/Select',[
       Field.prototype.setValue.apply(this, arguments);
     },
 
+    onShow: function() {
+      Field.prototype.onShow.apply(this, arguments);
+      this.ensureListData();
+    },
+
+    /** Ensure listModel is loaded */
+    ensureListData: function() {
+      if (this.listModel && this.listModel.deferLoad && !this.listModel.fetched) {
+        this.listModel.fetchIfAvailable();
+      }
+    },
+
     /**
      * Rendering Helpers/Hooks
      * - override these as needed
@@ -11009,6 +11029,9 @@ define('view/form/fields/Select',[
         var listModel = this.getModelFromRoot(this.listRelationship, rootModel, parentModel);
         if (listModel) {
           this.setListModel(listModel);
+          if (this.shown) {
+            this.ensureListData();
+          }
         }
       }
       this.updateDefault();
@@ -15647,12 +15670,13 @@ define('view/TabView',[
     setModel: function() {
       ModelView.prototype.setModel.apply(this, arguments);
       var tab = this.model.get(this.viewStateAttr);
-      if (tab === undefined) {
+      if (!tab) {
         tab = this.getTabCookie();
         if (tab === undefined) {
           tab = _.find(this.subViews, function(subView){ return subView.tabId !== undefined;}).tabId;
         }
         this.model.set(this.viewStateAttr, tab);
+        this.model.updateUrl();
       }
     },
 

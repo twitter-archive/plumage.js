@@ -127,7 +127,7 @@ function($, _, Backbone, Plumage, requestManager, ModelUtil, BufferedCollection)
      */
     navigate: function(options) {
       options = _.extend({trigger: true}, options);
-      window.router.navigateWithQueryParams(this.urlWithParams(), options);
+      window.router.navigateWithQueryParams(this.viewUrlWithParams(), options);
     },
 
     navigateToIndex: function(options) {
@@ -142,7 +142,7 @@ function($, _, Backbone, Plumage, requestManager, ModelUtil, BufferedCollection)
      */
     updateUrl: function(options) {
       options = _.extend({replace: true, trigger: false}, options);
-      window.router.navigateWithQueryParams(this.urlWithParams(), options);
+      window.router.navigateWithQueryParams(this.viewUrlWithParams(), options);
     },
 
     /**
@@ -583,15 +583,17 @@ function($, _, Backbone, Plumage, requestManager, ModelUtil, BufferedCollection)
       }
       var params = this.getQueryParams();
       params = _.extend({}, params, extras);
-      if (params && !$.isEmptyObject(params)) {
-        params = $.param(params, true);
-        if (url.indexOf('?') >= 0) {
-          return url + '&' + params;
-        } else {
-          return url + '?' + params;
-        }
-      }
-      return url;
+      return this._appendParamsToUrl(url, params);
+    },
+
+    /**
+     * Sometimes you want the view url to be different than the server resource url (eg appending a subview nav id).
+     * Called by navigate and updateUrl.
+     *
+     * By default just calls urlWithParams.
+     */
+    viewUrlWithParams: function(extras) {
+      return this.urlWithParams(extras);
     },
 
     /**
@@ -753,6 +755,18 @@ function($, _, Backbone, Plumage, requestManager, ModelUtil, BufferedCollection)
     //
     // Helpers
     //
+
+    _appendParamsToUrl: function(url, params) {
+      if (params && !$.isEmptyObject(params)) {
+        params = $.param(params, true);
+        if (url.indexOf('?') >= 0) {
+          return url + '&' + params;
+        } else {
+          return url + '?' + params;
+        }
+      }
+      return url;
+    },
 
     _wrapHandlers: function(options) {
       var success = options.success,

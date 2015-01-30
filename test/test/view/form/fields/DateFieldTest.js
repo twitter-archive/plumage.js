@@ -88,7 +88,7 @@ define([
     equal(moment(field.getValue()).format(field.format), 'Mar 1, 2014', 'should not update on invalid');
   });
 
-  test('keep time', function() {
+  test('keepTime', function() {
     var field = createView();
     field.setValue(moment([2014, 1, 1, 12]).valueOf());
     field.getPicker().setValue(moment([2014, 1, 1]).valueOf());
@@ -111,4 +111,10 @@ define([
     equal(field.getSubView('hourSelect').getValue(), m.hour(), 'hour select should get value from relationship');
   });
 
+  test('showHourSelect implies keepTime', function() {
+    var field = createView({showHourSelect: true});
+    field.setValue(moment([2014, 1, 1, 12]).valueOf());
+    field.getPicker().setValue(moment([2014, 1, 1]).valueOf());
+    equal(field.getValue(), moment([2014, 1, 1, 12]).valueOf(), 'keep hour on date change when hour select is shown');
+  });
 });

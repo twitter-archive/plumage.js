@@ -18,6 +18,9 @@ define([
   module('Model', _.extend(new Environment(), {
     setup: function() {
       Environment.prototype.setup.apply(this, arguments);
+    },
+    afterEach: function() {
+      window.router = undefined;
     }
   }));
 
@@ -29,6 +32,11 @@ define([
     model.set({id: 1, body: 'my body'});
     equal(model.get('body'), 'my body');
   });
+
+  //
+  // Url
+  //
+
 
   test('uses href for url', function(){
     var model = new Post({href: '/foo'});
@@ -45,6 +53,24 @@ define([
     var model = new Post({href: '/foo?a=1', bar: 'baz'});
     model.viewAttrs = ['bar'];
     equal(model.urlWithParams(), '/foo?a=1&bar=baz');
+  });
+
+  test('navigate and updateUrl use viewUrl', function() {
+    var PostWithViewUrl = Post.extend({
+      viewUrlWithParams: function() {return '/bar';}
+    });
+
+    var model = new PostWithViewUrl({
+      href: '/foo'
+    });
+
+    window.router = {navigateWithQueryParams: sinon.spy()};
+
+    model.navigate();
+    equal(window.router.navigateWithQueryParams.getCall(0).args[0], '/bar');
+
+    model.updateUrl();
+    equal(window.router.navigateWithQueryParams.getCall(1).args[0], '/bar');
   });
 
   //

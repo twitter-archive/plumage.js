@@ -139,7 +139,7 @@ define([
       if (value) {
         var m = this.utc ? moment.utc(value) : moment(value);
         var oldValue = this.getValue();
-        if (oldValue && this.keepTime) {
+        if (oldValue && (this.keepTime || this.showHourSelect)) {
           var oldM = this.utc ? moment.utc(oldValue) : moment(oldValue);
           m.hour(oldM.hour()).minute(oldM.minute()).second(oldM.second()).millisecond(oldM.millisecond());
         }

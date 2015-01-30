@@ -740,7 +740,7 @@ function($, _, Backbone, Plumage, requestManager, ModelUtil, BufferedCollection)
      */
     navigate: function(options) {
       options = _.extend({trigger: true}, options);
-      window.router.navigateWithQueryParams(this.urlWithParams(), options);
+      window.router.navigateWithQueryParams(this.viewUrlWithParams(), options);
     },
 
     navigateToIndex: function(options) {
@@ -755,7 +755,7 @@ function($, _, Backbone, Plumage, requestManager, ModelUtil, BufferedCollection)
      */
     updateUrl: function(options) {
       options = _.extend({replace: true, trigger: false}, options);
-      window.router.navigateWithQueryParams(this.urlWithParams(), options);
+      window.router.navigateWithQueryParams(this.viewUrlWithParams(), options);
     },
 
     /**
@@ -1196,15 +1196,17 @@ function($, _, Backbone, Plumage, requestManager, ModelUtil, BufferedCollection)
       }
       var params = this.getQueryParams();
       params = _.extend({}, params, extras);
-      if (params && !$.isEmptyObject(params)) {
-        params = $.param(params, true);
-        if (url.indexOf('?') >= 0) {
-          return url + '&' + params;
-        } else {
-          return url + '?' + params;
-        }
-      }
-      return url;
+      return this._appendParamsToUrl(url, params);
+    },
+
+    /**
+     * Sometimes you want the view url to be different than the server resource url (eg appending a subview nav id).
+     * Called by navigate and updateUrl.
+     *
+     * By default just calls urlWithParams.
+     */
+    viewUrlWithParams: function(extras) {
+      return this.urlWithParams(extras);
     },
 
     /**
@@ -1366,6 +1368,18 @@ function($, _, Backbone, Plumage, requestManager, ModelUtil, BufferedCollection)
     //
     // Helpers
     //
+
+    _appendParamsToUrl: function(url, params) {
+      if (params && !$.isEmptyObject(params)) {
+        params = $.param(params, true);
+        if (url.indexOf('?') >= 0) {
+          return url + '&' + params;
+        } else {
+          return url + '?' + params;
+        }
+      }
+      return url;
+    },
 
     _wrapHandlers: function(options) {
       var success = options.success,
@@ -8470,7 +8484,9 @@ function($, _, Backbone, Plumage, History, ModelUtil) {
         router.trigger.apply(router, ['route:' + name].concat(args));
         router.trigger('route', name, args);
         router.history.trigger('route', router, name, args);
+        router.logNavigationAction(window.location.href, window.location.pathname);
       });
+
       return this;
     },
 
@@ -8499,6 +8515,13 @@ function($, _, Backbone, Plumage, History, ModelUtil) {
       }
 
       this.navigate(url, options);
+    },
+
+    /**
+     * Template method hook for logging, eg post to google analytics
+     */
+    logNavigationAction: function(url, pageName) {
+      // do nothing
     },
 
     /**
@@ -11713,7 +11736,7 @@ define('view/form/fields/FieldWithPicker',[
   'PlumageRoot',
   'view/form/fields/Field',
   'view/form/fields/picker/Picker',
-  'text!view/form/fields/templates/FieldWithPicker.html',
+  'text!view/form/fields/templates/FieldWithPicker.html'
 ], function($, _, Backbone, Handlebars, moment, Plumage, Field, Picker, template) {
 
   return  Plumage.view.form.fields.FieldWithPicker = Field.extend(
@@ -12265,7 +12288,7 @@ define('view/form/fields/DateField',[
       if (value) {
         var m = this.utc ? moment.utc(value) : moment(value);
         var oldValue = this.getValue();
-        if (oldValue && this.keepTime) {
+        if (oldValue && (this.keepTime || this.showHourSelect)) {
           var oldM = this.utc ? moment.utc(oldValue) : moment(oldValue);
           m.hour(oldM.hour()).minute(oldM.minute()).second(oldM.second()).millisecond(oldM.millisecond());
         }
@@ -15581,6 +15604,7 @@ define('view/TabView',[
 ], function($, _, Backbone, Handlebars, Plumage, View, ModelView, template) {
 
   return Plumage.view.TabView = ModelView.extend({
+    /** @lends Plumage.view.ModelView.prototype */
 
     className: 'tab-view tab-theme',
 
@@ -15594,6 +15618,19 @@ define('view/TabView',[
       'click .tabs a': 'onTabClick'
     },
 
+    /**
+     * If set, call [router.logNavigationAction]{@link Plumage.Router#logNavigationAction}nAction on tab change.
+     */
+    logTabNavigation: false,
+
+    /**
+     * Tabbed view with subviews as tab panes.
+     *
+     * Tabs are generated from subViews with the tabId and tabLabel attributes.
+     *
+     * @extends Plumage.view.ModelView
+     * @constructs
+     */
     initialize: function() {
       ModelView.prototype.initialize.apply(this, arguments);
       this.eachTabSubView(function(subView) {
@@ -15626,10 +15663,15 @@ define('view/TabView',[
     },
 
     setActiveTab: function(tabId) {
-      if (this.model) {
+      if (this.model && tabId !== this.getActiveTab()) {
         this.model.set(this.viewStateAttr, tabId);
         this.model.updateUrl();
         this.updateTabCookie();
+        if (this.logTabNavigation) {
+          if (window.router) {
+            window.router.logNavigationAction(window.location.href, window.location.pathname);
+          }
+        }
       }
     },
 

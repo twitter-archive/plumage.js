@@ -98,7 +98,9 @@ function($, _, Backbone, Plumage, History, ModelUtil) {
         router.trigger.apply(router, ['route:' + name].concat(args));
         router.trigger('route', name, args);
         router.history.trigger('route', router, name, args);
+        router.logNavigationAction(window.location.href, window.location.pathname);
       });
+
       return this;
     },
 
@@ -127,6 +129,13 @@ function($, _, Backbone, Plumage, History, ModelUtil) {
       }
 
       this.navigate(url, options);
+    },
+
+    /**
+     * Template method hook for logging, eg post to google analytics
+     */
+    logNavigationAction: function(url, pageName) {
+      // do nothing
     },
 
     /**

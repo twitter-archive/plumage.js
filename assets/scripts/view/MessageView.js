@@ -61,7 +61,6 @@ define([
     onShow: function() {
       ModelView.prototype.onShow.apply(this, arguments);
       this.render();
-
     },
 
     setModel: function() {

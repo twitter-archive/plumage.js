@@ -31,6 +31,8 @@ function($, _, Backbone, Plumage, BaseController, ModelUtil) {
     /** View class for editing. Override this */
     editViewCls: undefined,
 
+    notFoundMessage: '404 Not Found',
+
     /**
      * Controller with general index and detail handlers.
      *
@@ -79,12 +81,6 @@ function($, _, Backbone, Plumage, BaseController, ModelUtil) {
     /** handler for showing the new view. Override this to accept more url params*/
     showNew: function(params){
       var model = this.createEditModel();
-      this.showEditModel(model);
-    },
-
-    /** handler for showing the new view. Override this to accept more url params*/
-    showEdit: function(id, params){
-      var model = this.createEditModel(id, {}, params);
       this.showEditModel(model);
     },
 
@@ -255,7 +251,11 @@ function($, _, Backbone, Plumage, BaseController, ModelUtil) {
 
     onModelError: function(model, response, options) {
       if (response.status === 404) {
+
         this.createIndexModel().navigate({replace: true});
+        setTimeout(function() {
+          theApp.dispatch.trigger('message', this.notFoundMessage, 'bad');
+        }.bind(this), 500);
       }
     },
 

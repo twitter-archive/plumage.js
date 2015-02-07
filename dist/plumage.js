@@ -8022,6 +8022,8 @@ function($, _, Backbone, Plumage, BaseController, ModelUtil) {
     /** View class for editing. Override this */
     editViewCls: undefined,
 
+    notFoundMessage: '404 Not Found',
+
     /**
      * Controller with general index and detail handlers.
      *
@@ -8070,12 +8072,6 @@ function($, _, Backbone, Plumage, BaseController, ModelUtil) {
     /** handler for showing the new view. Override this to accept more url params*/
     showNew: function(params){
       var model = this.createEditModel();
-      this.showEditModel(model);
-    },
-
-    /** handler for showing the new view. Override this to accept more url params*/
-    showEdit: function(id, params){
-      var model = this.createEditModel(id, {}, params);
       this.showEditModel(model);
     },
 
@@ -8246,7 +8242,11 @@ function($, _, Backbone, Plumage, BaseController, ModelUtil) {
 
     onModelError: function(model, response, options) {
       if (response.status === 404) {
+
         this.createIndexModel().navigate({replace: true});
+        setTimeout(function() {
+          theApp.dispatch.trigger('message', this.notFoundMessage, 'bad');
+        }.bind(this), 500);
       }
     },
 
@@ -10764,13 +10764,89 @@ define('view/comment/ExpandableComments',[
   });
 });
 
+
+define('text!view/templates/MessageView.html',[],function () { return '\n{{#body}}\n<div class="message-body {{../cls}}">\n{{{.}}}\n</div>\n{{/body}}\n';});
+
+define('view/MessageView',[
+  'jquery',
+  'backbone',
+  'handlebars',
+  'PlumageRoot',
+  'view/ModelView',
+  'text!view/templates/MessageView.html'
+], function($, Backbone, Handlebars, Plumage, ModelView, template) {
+
+  /**
+   * lists with selections need two models:
+   *  - one for list contents
+   *  - one for list selection
+   *
+   * The selection model, populated by the model hierarchy. The list model needs to be populated manually.
+   */
+  return Plumage.view.MessageView = ModelView.extend({
+
+    className: 'message',
+
+    template: template,
+
+    updateOnMessage: true,
+
+    events: {
+      'click a': 'onLinkClick'
+    },
+
+    initialize: function() {
+      ModelView.prototype.initialize.apply(this, arguments);
+      if (this.updateOnMessage) {
+        theApp.dispatch.on('message', this.setMessage.bind(this));
+      }
+    },
+
+    onRender: function() {
+      ModelView.prototype.onRender.apply(this, arguments);
+      this.updateClass();
+    },
+
+    getTemplateData: function() {
+      var data = {
+        body: this.messageBody,
+        cls: this.messageCls
+      };
+      return data;
+    },
+
+    updateClass: function() {
+      this.$el.toggleClass('show', Boolean(this.messageBody));
+    },
+
+    setMessage: function(messageBody, messageCls) {
+      this.messageBody = messageBody;
+      this.messageCls = messageCls;
+      if (this.shown) {
+        this.render();
+      }
+    },
+
+    onShow: function() {
+      ModelView.prototype.onShow.apply(this, arguments);
+      this.render();
+    },
+
+    setModel: function() {
+      this.messageBody = undefined;
+      this.messageCls = undefined;
+      ModelView.prototype.setModel.apply(this, arguments);
+    }
+  });
+});
 define('view/controller/IndexView',[
   'jquery',
   'underscore',
   'backbone',
   'PlumageRoot',
-  'view/ModelView'
-], function($, _, Backbone, Plumage, ModelView) {
+  'view/ModelView',
+  'view/MessageView'
+], function($, _, Backbone, Plumage, ModelView, MessageView) {
 
   return Plumage.view.controller.IndexView = ModelView.extend({
 
@@ -10783,6 +10859,13 @@ define('view/controller/IndexView',[
     filterViewCls: undefined,
 
     gridOptions: undefined,
+
+    subViews: [{
+      viewCls: MessageView,
+      selector: '.message',
+      updateOnMessage: true,
+      replaceEl: true
+    }],
 
     initialize:function (options) {
       ModelView.prototype.initialize.apply(this, arguments);
@@ -14771,82 +14854,6 @@ define('view/ModalDialog',[
 });
 
 
-
-define('text!view/templates/MessageView.html',[],function () { return '\n{{#body}}\n<div class="message-body {{../cls}}">\n{{{.}}}\n</div>\n{{/body}}\n';});
-
-define('view/MessageView',[
-  'jquery',
-  'backbone',
-  'handlebars',
-  'PlumageRoot',
-  'view/ModelView',
-  'text!view/templates/MessageView.html'
-], function($, Backbone, Handlebars, Plumage, ModelView, template) {
-
-  /**
-   * lists with selections need two models:
-   *  - one for list contents
-   *  - one for list selection
-   *
-   * The selection model, populated by the model hierarchy. The list model needs to be populated manually.
-   */
-  return Plumage.view.MessageView = ModelView.extend({
-
-    className: 'message',
-
-    template: template,
-
-    updateOnMessage: true,
-
-    events: {
-      'click a': 'onLinkClick'
-    },
-
-    initialize: function() {
-      ModelView.prototype.initialize.apply(this, arguments);
-      if (this.updateOnMessage) {
-        theApp.dispatch.on('message', this.setMessage.bind(this));
-      }
-    },
-
-    onRender: function() {
-      ModelView.prototype.onRender.apply(this, arguments);
-      this.updateClass();
-    },
-
-    getTemplateData: function() {
-      var data = {
-        body: this.messageBody,
-        cls: this.messageCls
-      };
-      return data;
-    },
-
-    updateClass: function() {
-      this.$el.toggleClass('show', Boolean(this.messageBody));
-    },
-
-    setMessage: function(messageBody, messageCls) {
-      this.messageBody = messageBody;
-      this.messageCls = messageCls;
-      if (this.shown) {
-        this.render();
-      }
-    },
-
-    onShow: function() {
-      ModelView.prototype.onShow.apply(this, arguments);
-      this.render();
-
-    },
-
-    setModel: function() {
-      this.messageBody = undefined;
-      this.messageCls = undefined;
-      ModelView.prototype.setModel.apply(this, arguments);
-    }
-  });
-});
 
 define('text!view/templates/ConfirmationDialog.html',[],function () { return '<div class="modal hide fade" tabindex="-1" role="dialog" aria-hidden="true">\n  <div class="modal-header">\n    <button type="button" class="close" data-dismiss="modal" aria-hidden="true">x</button>\n    <h3 id="myModalLabel">{{{headerTemplate}}}</h3>\n  </div>\n  <div class="modal-body">\n    <div class="message"></div>\n    <div class="modal-content">\n\t    {{{bodyTemplate}}}\n    </div>\n  </div>\n  <div class="modal-footer">\n  <button class="btn" data-dismiss="modal" aria-hidden="true">Cancel</button>\n    <button class="btn confirm {{buttonCls}}">{{buttonText}}</button>\n  </div>\n</div>';});
 

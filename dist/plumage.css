@@ -403,6 +403,11 @@ h2.title .light {
 .form-horizontal .dropdown-select .dropdown-toggle {
   margin-bottom: 0; }
 
+.duration-field select {
+  width: 85px; }
+.duration-field input {
+  width: 117px; }
+
 .comments-count-icon {
   background: transparent url(comment-icon.png) no-repeat 50% 0;
   padding: 3px 7px 7px;

@@ -2,11 +2,10 @@ define([
   'jquery',
   'underscore',
   'backbone',
-  'handlebars',
   'PlumageRoot',
   'view/form/fields/Field',
   'text!view/form/fields/templates/Checkbox.html'
-], function($, _, Backbone, Handlebars, Plumage, Field, template) {
+], function($, _, Backbone, Plumage, Field, template) {
   return Plumage.view.form.fields.Checkbox = Field.extend({
 
     fieldTemplate: template,

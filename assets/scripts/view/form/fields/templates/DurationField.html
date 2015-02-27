@@ -1,0 +1,6 @@
+<input type="text" name="{{valueAttr}}" {{#placeholder}}placeholder="{{.}}"{{/placeholder}} value="{{value}}" {{#readonly}}readonly="readonly"{{/readonly}}/>
+<select>
+{{#units}}
+    <option value="{{value}}" class="{{value}}" {{#selected}}selected{{/selected}}>{{label}}</option>
+{{/units}}
+</select>

@@ -11606,11 +11606,10 @@ define('view/form/fields/Checkbox',[
   'jquery',
   'underscore',
   'backbone',
-  'handlebars',
   'PlumageRoot',
   'view/form/fields/Field',
   'text!view/form/fields/templates/Checkbox.html'
-], function($, _, Backbone, Handlebars, Plumage, Field, template) {
+], function($, _, Backbone, Plumage, Field, template) {
   return Plumage.view.form.fields.Checkbox = Field.extend({
 
     fieldTemplate: template,
@@ -12970,6 +12969,89 @@ define('view/form/fields/DropdownMultiSelect',[
   });
 
 
+});
+
+
+define('text!view/form/fields/templates/DurationField.html',[],function () { return '<input type="text" name="{{valueAttr}}" {{#placeholder}}placeholder="{{.}}"{{/placeholder}} value="{{value}}" {{#readonly}}readonly="readonly"{{/readonly}}/>\n<select>\n{{#units}}\n    <option value="{{value}}" class="{{value}}" {{#selected}}selected{{/selected}}>{{label}}</option>\n{{/units}}\n</select>';});
+
+define('view/form/fields/DurationField',[
+  'jquery',
+  'underscore',
+  'backbone',
+  'PlumageRoot',
+  'view/form/fields/Field',
+  'text!view/form/fields/templates/DurationField.html'
+], function($, _, Backbone, Plumage, Field, template) {
+  return Plumage.view.form.fields.DurationField = Field.extend({
+
+    className: 'duration-field',
+
+    fieldTemplate: template,
+
+    units: [
+      {label: 'minutes', value: 60000},
+      {label: 'hours', value: 3600000},
+      {label: 'days', value: 86400000}
+    ],
+
+    events: {
+      'change select': 'onUnitChange'
+    },
+
+    /**
+     * View state. Value of selected unit.
+     */
+    selectedUnit: undefined,
+
+    getTemplateData: function() {
+      var data = Field.prototype.getTemplateData.apply(this, arguments);
+
+      data.units = _.map(this.units, function (unit) {
+        var result =  _.clone(unit);
+        if (this.selectedUnit !== undefined && result.value === this.selectedUnit) {
+          result.selected = true;
+        }
+        return result;
+      }.bind(this));
+
+      return data;
+    },
+
+    getValueString: function(value) {
+      if (value && this.selectedUnit !== undefined) {
+        return value/this.selectedUnit;
+      }
+      return value;
+    },
+
+    valueChanged: function(){
+      this.selectedUnit = this.getUnitForValue(this.getValue());
+    },
+
+    getUnitForValue: function(value) {
+      var selectedIndex = 0;
+      for (var i = 0; i < this.units.length; i++) {
+        if (value % this.units[i].value === 0) {
+          selectedIndex = i;
+        }
+      }
+      return this.units[selectedIndex].value;
+    },
+
+    getValueFromDom: function() {
+      var value = Field.prototype.getValueFromDom.apply(this, arguments);
+      return value * this.selectedUnit;
+    },
+
+    //
+    // Events
+    //
+
+    onUnitChange: function() {
+      this.selectedUnit = Number($(arguments[0].target).val());
+      this.update();
+    }
+  });
 });
 
 define('view/form/fields/FilterCheckbox',[
@@ -15860,6 +15942,7 @@ define('plumage',[
   'view/form/fields/DateRangeField',
   'view/form/fields/DropdownMultiSelect',
   'view/form/fields/DropdownSelect',
+  'view/form/fields/DurationField',
   'view/form/fields/Field',
   'view/form/fields/FieldWithPicker',
   'view/form/fields/FilterCheckbox',

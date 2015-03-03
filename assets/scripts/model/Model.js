@@ -788,12 +788,16 @@ function($, _, Backbone, Plumage, requestManager, ModelUtil, BufferedCollection)
           model.trigger('invalid',
             model,
             model.validationError,
-            resp.meta.message_body,
+            resp.meta.message,
             resp.meta.message_class
           );
         } else {
           model.latestLoadParams = undefined;
           model.onLoad(options);
+          if (typeof theApp !== 'undefined' && resp.meta && resp.meta.message) {
+            theApp.dispatch.trigger('message', resp.meta.message, resp.meta.message_class);
+          }
+
           if (success) {
             success(model, resp, options);
           }

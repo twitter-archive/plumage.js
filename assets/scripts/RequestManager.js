@@ -32,11 +32,6 @@ function($, _, Backbone, Plumage) {
     /** Load the given model, keeping a reference to the request. */
     loadModel: function(model, options) {
       options = _.defaults({}, options, {reset: true});
-      var success = options.success;
-      options.success = function(model, resp, options) {
-        this.onSuccess(model, resp, options);
-        if (success) {success(model, resp, options);}
-      }.bind(this);
 
       var xhr = model.load(options);
       if (xhr) {
@@ -55,17 +50,6 @@ function($, _, Backbone, Plumage) {
         }
       }
       this.requests = [];
-    },
-
-    /**
-     * Event handler. Trigger's message on the App if response contains a message.
-     * @param resp {Object} XHR response
-     * @private
-     */
-    onSuccess: function(model, resp, options) {
-      if (resp.meta && resp.meta.message_body) {
-        theApp.dispatch.trigger('message', resp.meta.message_body, resp.meta.message_class);
-      }
     }
   });
 

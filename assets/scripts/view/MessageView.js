@@ -22,6 +22,8 @@ define([
 
     updateOnMessage: true,
 
+    fadeOutTime: 2500,
+
     events: {
       'click a': 'onLinkClick'
     },
@@ -47,9 +49,15 @@ define([
     },
 
     updateClass: function() {
-      this.$el.toggleClass('show', Boolean(this.messageBody));
+      var show = Boolean(this.messageBody);
+      this.$el.toggleClass('show', show);
+      if (this.fadeOutTime && show) {
+        setTimeout(function() {
+          this.$el.removeClass('show');
+          this.messageBody = undefined;
+        }.bind(this), this.fadeOutTime);
+      }
     },
-
     setMessage: function(messageBody, messageCls) {
       this.messageBody = messageBody;
       this.messageCls = messageCls;

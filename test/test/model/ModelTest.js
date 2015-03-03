@@ -402,7 +402,7 @@ define([
 
     // save failed
     this.ajaxResponse = {
-      meta: {success: false, message_body: 'oops', message_class: 'bad'}
+      meta: {success: false, message: 'oops', message_class: 'bad'}
     };
 
     post.save();

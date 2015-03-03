@@ -321,11 +321,6 @@ function($, _, Backbone, Plumage) {
     /** Load the given model, keeping a reference to the request. */
     loadModel: function(model, options) {
       options = _.defaults({}, options, {reset: true});
-      var success = options.success;
-      options.success = function(model, resp, options) {
-        this.onSuccess(model, resp, options);
-        if (success) {success(model, resp, options);}
-      }.bind(this);
 
       var xhr = model.load(options);
       if (xhr) {
@@ -344,17 +339,6 @@ function($, _, Backbone, Plumage) {
         }
       }
       this.requests = [];
-    },
-
-    /**
-     * Event handler. Trigger's message on the App if response contains a message.
-     * @param resp {Object} XHR response
-     * @private
-     */
-    onSuccess: function(model, resp, options) {
-      if (resp.meta && resp.meta.message_body) {
-        theApp.dispatch.trigger('message', resp.meta.message_body, resp.meta.message_class);
-      }
     }
   });
 
@@ -1401,12 +1385,16 @@ function($, _, Backbone, Plumage, requestManager, ModelUtil, BufferedCollection)
           model.trigger('invalid',
             model,
             model.validationError,
-            resp.meta.message_body,
+            resp.meta.message,
             resp.meta.message_class
           );
         } else {
           model.latestLoadParams = undefined;
           model.onLoad(options);
+          if (typeof theApp !== 'undefined' && resp.meta && resp.meta.message) {
+            theApp.dispatch.trigger('message', resp.meta.message, resp.meta.message_class);
+          }
+
           if (success) {
             success(model, resp, options);
           }
@@ -9918,8 +9906,8 @@ define('view/form/Form',[
       if (resp.meta.success) {
         this.trigger('save', this, model);
       } else {
-        if (resp.meta.message_body) {
-          this.setMessage(resp.meta.message_body, resp.meta.message_class);
+        if (resp.meta.message) {
+          this.setMessage(resp.meta.message, resp.meta.message_class);
         }
       }
     },
@@ -10799,6 +10787,8 @@ define('view/MessageView',[
 
     updateOnMessage: true,
 
+    fadeOutTime: 2500,
+
     events: {
       'click a': 'onLinkClick'
     },
@@ -10824,9 +10814,15 @@ define('view/MessageView',[
     },
 
     updateClass: function() {
-      this.$el.toggleClass('show', Boolean(this.messageBody));
+      var show = Boolean(this.messageBody);
+      this.$el.toggleClass('show', show);
+      if (this.fadeOutTime && show) {
+        setTimeout(function() {
+          this.$el.removeClass('show');
+          this.messageBody = undefined;
+        }.bind(this), this.fadeOutTime);
+      }
     },
-
     setMessage: function(messageBody, messageCls) {
       this.messageBody = messageBody;
       this.messageCls = messageCls;

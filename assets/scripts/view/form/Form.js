@@ -91,8 +91,8 @@ define([
       if (resp.meta.success) {
         this.trigger('save', this, model);
       } else {
-        if (resp.meta.message_body) {
-          this.setMessage(resp.meta.message_body, resp.meta.message_class);
+        if (resp.meta.message) {
+          this.setMessage(resp.meta.message, resp.meta.message_class);
         }
       }
     },

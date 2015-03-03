@@ -28,7 +28,7 @@ define([
 
     initialize: function() {
       ModelView.prototype.initialize.apply(this, arguments);
-      if (this.updateOnMessage) {
+      if (this.updateOnMessage && typeof theApp !== 'undefined') {
         theApp.dispatch.on('message', this.setMessage.bind(this));
       }
     },

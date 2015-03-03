@@ -1168,9 +1168,13 @@ function($, _, Backbone, Plumage, requestManager, ModelUtil, BufferedCollection)
      * @returns {string} Url or null
      */
     urlFromAttributes: function() {
-      if (!this.id && this.collection) {
+      var base =
+        _.result(this, 'urlRoot') ||
+        _.result(this.collection, 'url');
+
+      if (base && this.isNew()) {
         var a = document.createElement('a');
-        a.href = this.collection.url();
+        a.href = base;
         return a.pathname + '/new' + a.search;
       }
 
@@ -1207,6 +1211,10 @@ function($, _, Backbone, Plumage, requestManager, ModelUtil, BufferedCollection)
      */
     viewUrlWithParams: function(extras) {
       return this.urlWithParams(extras);
+    },
+
+    isNew: function() {
+      return !this.has(this.idAttribute) || this.get('href') && this.get('href').match(/\/new$/) !== null;
     },
 
     /**
@@ -10797,7 +10805,7 @@ define('view/MessageView',[
 
     initialize: function() {
       ModelView.prototype.initialize.apply(this, arguments);
-      if (this.updateOnMessage) {
+      if (this.updateOnMessage && typeof theApp !== 'undefined') {
         theApp.dispatch.on('message', this.setMessage.bind(this));
       }
     },

@@ -21,7 +21,7 @@ define([
      * Template for html input element.
      * This template is separate so that it can be reused by subclasses.
      */
-    fieldTemplate: '<input type="text" name="{{valueAttr}}" {{#placeholder}}placeholder="{{.}}"{{/placeholder}} value="{{value}}" {{#readonly}}readonly="readonly"{{/readonly}}/>',
+    fieldTemplate: '<input type="text" name="{{valueAttr}}" {{#placeholder}}placeholder="{{.}}"{{/placeholder}} value="{{value}}" {{#readonly}}readonly="readonly"{{/readonly}} {{#disabled}}disabled=1{{/disabled}}/>',
 
     /**
      * optional. model attribute to display as label
@@ -190,6 +190,7 @@ define([
         hasValue: this.hasValue(),
         placeholder: this.placeholder,
         readonly: this.readonly,
+        disabled: this.disabled,
         validationState: this.validationState,
         message: this.message
       };
@@ -359,7 +360,7 @@ define([
 
     updateModel: function(rootModel, parentModel) {
       var model = this.getModelFromRoot(this.relationship, rootModel, parentModel),
-        value = this.getValue();
+        value = this.disabled ? null : this.getValue();
       return model.set(this.valueAttr, value) !== false;
     },
 

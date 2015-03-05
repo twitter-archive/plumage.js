@@ -78,6 +78,16 @@ define([
     equal(model.get('body'), 'new value2', 'model value should update on change when using updateModelOnChange');
   });
 
+  test('disabled', function() {
+    var field = createViewWithModel({label: 'field', valueAttr: 'body'}),
+      model = field.model;
+
+    field.setValue('new value');
+    field.disabled = true;
+    field.updateModel(model);
+    ok(model.get('body') === null, 'disabled field should set null model value');
+  });
+
   test('validation error', function() {
     var field = createViewWithModel({label: 'field', valueAttr: 'body'}),
       model = field.model;

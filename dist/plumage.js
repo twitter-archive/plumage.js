@@ -9945,7 +9945,7 @@ define('view/form/fields/Field',[
      * Template for html input element.
      * This template is separate so that it can be reused by subclasses.
      */
-    fieldTemplate: '<input type="text" name="{{valueAttr}}" {{#placeholder}}placeholder="{{.}}"{{/placeholder}} value="{{value}}" {{#readonly}}readonly="readonly"{{/readonly}}/>',
+    fieldTemplate: '<input type="text" name="{{valueAttr}}" {{#placeholder}}placeholder="{{.}}"{{/placeholder}} value="{{value}}" {{#readonly}}readonly="readonly"{{/readonly}} {{#disabled}}disabled=1{{/disabled}}/>',
 
     /**
      * optional. model attribute to display as label
@@ -10114,6 +10114,7 @@ define('view/form/fields/Field',[
         hasValue: this.hasValue(),
         placeholder: this.placeholder,
         readonly: this.readonly,
+        disabled: this.disabled,
         validationState: this.validationState,
         message: this.message
       };
@@ -10283,7 +10284,7 @@ define('view/form/fields/Field',[
 
     updateModel: function(rootModel, parentModel) {
       var model = this.getModelFromRoot(this.relationship, rootModel, parentModel),
-        value = this.getValue();
+        value = this.disabled ? null : this.getValue();
       return model.set(this.valueAttr, value) !== false;
     },
 
@@ -13059,7 +13060,7 @@ define('view/form/fields/DropdownMultiSelect',[
 });
 
 
-define('text!view/form/fields/templates/DurationField.html',[],function () { return '<input type="text" name="{{valueAttr}}" {{#placeholder}}placeholder="{{.}}"{{/placeholder}} value="{{value}}" {{#readonly}}readonly="readonly"{{/readonly}}/>\n<select>\n{{#units}}\n    <option value="{{value}}" class="{{value}}" {{#selected}}selected{{/selected}}>{{label}}</option>\n{{/units}}\n</select>';});
+define('text!view/form/fields/templates/DurationField.html',[],function () { return '<input type="text" name="{{valueAttr}}" {{#placeholder}}placeholder="{{.}}"{{/placeholder}} value="{{value}}" {{#readonly}}readonly="readonly"{{/readonly}} {{#disabled}}disabled="true"{{/disabled}}/>\n<select {{#readonly}}readonly="readonly"{{/readonly}} {{#disabled}}disabled="true"{{/disabled}}>\n{{#units}}\n    <option value="{{value}}" class="{{value}}" {{#selected}}selected{{/selected}}>{{label}}</option>\n{{/units}}\n</select>';});
 
 define('view/form/fields/DurationField',[
   'jquery',

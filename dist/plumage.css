@@ -51,7 +51,7 @@ header {
     float: left;
     display: block;
     font-weight: 200;
-    color: #777777;
+    color: #777;
     background: transparent url(twitter-bird.png) no-repeat 20px 50%;
     padding: 0 0 0 20px;
     font-size: 30px;
@@ -284,11 +284,11 @@ h2.title .light {
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2); }
     .message .message-body.bad {
       background-color: #8e0121;
-      background-image: -webkit-gradient(linear, 0 0, 0 100%, from(#a90329), color-stop(44%, #8f0222), to(#8c0020));
-      background-image: -webkit-linear-gradient(#a90329, #8f0222 44%, #8c0020);
-      background-image: -moz-linear-gradient(top, #a90329, #8f0222 44%, #8c0020);
-      background-image: -o-linear-gradient(#a90329, #8f0222 44%, #8c0020);
-      background-image: linear-gradient(#a90329, #8f0222 44%, #8c0020);
+      background-image: -webkit-gradient(linear, 0 0, 0 100%, from(#a90329), color-stop(44%, #8f0222), to(#8C0020));
+      background-image: -webkit-linear-gradient(#a90329, #8f0222 44%, #8C0020);
+      background-image: -moz-linear-gradient(top, #a90329, #8f0222 44%, #8C0020);
+      background-image: -o-linear-gradient(#a90329, #8f0222 44%, #8C0020);
+      background-image: linear-gradient(#a90329, #8f0222 44%, #8C0020);
       background-repeat: no-repeat;
       filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#FFA90329', endColorstr='#FF8C0020', GradientType=0);
       color: white; }
@@ -635,7 +635,7 @@ div.comment-wrapper .item-author-header {
     margin: 0; }
 
 .grid-canvas .slick-cell a, .grid-canvas .slick-cell a:hover {
-  color: #0088cc; }
+  color: #08c; }
 
 .slick-row.odd {
   background: #F2F4F5; }
@@ -1467,12 +1467,12 @@ classes should alter those!
 @-moz-keyframes slickgrid-invalid-hilite {
   from {
     box-shadow: 0 0 6px red; }
-
   to {
     box-shadow: none; } }
 @-webkit-keyframes slickgrid-invalid-hilite {
   from {
     box-shadow: 0 0 6px red; }
-
   to {
     box-shadow: none; } }
+
+/*# sourceMappingURL=plumage.css.map */

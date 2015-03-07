@@ -42,6 +42,8 @@ define([
      */
     listLabelAttr: undefined,
 
+    selectSize: undefined,
+
     noSelectionText: undefined,
     noSelectionValue: '',
 
@@ -92,6 +94,7 @@ define([
         noItemsText: this.noItemsText,
         hasSelection: this.hasSelection(),
         defaultToFirst: this.defaultToFirst,
+        selectSize: this.selectSize,
         listValues: this.getListValues(this.model)
       });
 

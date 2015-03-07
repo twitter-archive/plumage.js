@@ -10102,6 +10102,13 @@ define('view/form/fields/Field',[
       this.getInputEl().focus();
     },
 
+    setDisabled: function(disabled) {
+      if (this.disabled !== disabled) {
+        this.disabled = disabled;
+        this.render();
+      }
+    },
+
     //
     // Overrides
     //
@@ -10927,7 +10934,7 @@ define('view/controller/IndexView',[
 });
 
 
-define('text!view/form/fields/templates/Select.html',[],function () { return '<select name="{{valueAttr}}">\n{{#if noSelectionText}}\n<option value="{{noSelectionValue}}" {{^hasSelection}}selected="true"{{/hasSelection}}>{{noSelectionText}}</option>\n{{/if}}\n\n{{#listValues}}\n<option value="{{value}}" class="{{value}}" {{#selected}}selected{{/selected}}>{{label}}</option>\n{{/listValues}}\n</select>';});
+define('text!view/form/fields/templates/Select.html',[],function () { return '<select name="{{valueAttr}}" {{#selectSize}}size="{{.}}"{{/selectSize}}>\n{{#if noSelectionText}}\n<option value="{{noSelectionValue}}" {{^hasSelection}}selected="true"{{/hasSelection}}>{{noSelectionText}}</option>\n{{/if}}\n\n{{#listValues}}\n<option value="{{value}}" class="{{value}}" {{#selected}}selected{{/selected}}>{{label}}</option>\n{{/listValues}}\n</select>';});
 
 define('view/form/fields/Select',[
   'jquery',
@@ -10972,6 +10979,8 @@ define('view/form/fields/Select',[
      * Attribute from listModel items to render as the item label
      */
     listLabelAttr: undefined,
+
+    selectSize: undefined,
 
     noSelectionText: undefined,
     noSelectionValue: '',
@@ -11023,6 +11032,7 @@ define('view/form/fields/Select',[
         noItemsText: this.noItemsText,
         hasSelection: this.hasSelection(),
         defaultToFirst: this.defaultToFirst,
+        selectSize: this.selectSize,
         listValues: this.getListValues(this.model)
       });
 
@@ -12855,17 +12865,16 @@ define('view/form/fields/MultiSelect',[
   'jquery',
   'underscore',
   'backbone',
-  'handlebars',
   'PlumageRoot',
   'view/form/fields/Select',
   'text!view/form/fields/templates/MultiSelect.html',
-], function($, _, Backbone, Handlebars, Plumage, Select, template) {
+], function($, _, Backbone, Plumage, Select, template) {
   /**
    * Like a normal field, except value is an array of selected values.
    */
   return Plumage.view.form.fields.MultiSelect = Select.extend({
 
-    template: Handlebars.compile(template),
+    template: template,
 
     showSelectAll: false,
 
@@ -14859,7 +14868,7 @@ define('view/ListAndDetailView',[
   });
 });
 
-define('text!view/templates/ModalDialog.html',[],function () { return '<div class="modal hide fade" tabindex="-1" role="dialog" aria-hidden="true">\n  <div class="modal-header">\n    <button type="button" class="close" data-dismiss="modal" aria-hidden="true">x</button>\n    <h3 id="myModalLabel">{{header}}</h3>\n  </div>\n  <div class="modal-body">\n    <div class="modal-content"></div>\n  </div>\n  <div class="modal-footer">\n    {{#if showCancel}}\n      <a class="cancel" data-dismiss="modal" aria-hidden="true">Cancel</a>\n    {{else}}\n      <button class="btn" data-dismiss="modal" aria-hidden="true">Close</button>\n    {{/if}}\n    {{#if showSubmit}}\n      <button class="btn submit">Submit</button>\n    {{/if}}\n  </div>\n</div>';});
+define('text!view/templates/ModalDialog.html',[],function () { return '<div class="modal hide fade" tabindex="-1" role="dialog" aria-hidden="true">\n  <div class="modal-header">\n    <button type="button" class="close" data-dismiss="modal" aria-hidden="true">x</button>\n    <h3 id="myModalLabel">{{header}}</h3>\n  </div>\n  <div class="modal-body">\n    <div class="modal-content"></div>\n  </div>\n  <div class="modal-footer">\n    {{#if showCancel}}\n      <a class="cancel" data-dismiss="modal" aria-hidden="true">Cancel</a>\n    {{else}}\n      <button class="btn" data-dismiss="modal" aria-hidden="true">Close</button>\n    {{/if}}\n    {{#if showSubmit}}\n      <button class="btn submit" {{#if canSubmit}}{{else}}disabled="true"{{/if}}>Submit</button>\n    {{/if}}\n  </div>\n</div>';});
 
 define('view/ModalDialog',[
   'jquery',
@@ -14893,15 +14902,17 @@ define('view/ModalDialog',[
     initialize: function(options) {
       options = options || {};
       options.modalOptions = _.extend(this.modalOptions, options.modalOptions || {});
+      this.subViews = [this.contentView].concat(options.subViews || []);
+      this.contentView.selector = '.modal-content';
+      this.contentView.name = 'contentView';
+
       ModelView.prototype.initialize.apply(this, arguments);
+
+      this.contentView = this.getSubView('contentView');
     },
 
     onRender: function() {
       ModelView.prototype.onRender.apply(this, arguments);
-      if (this.contentView) {
-        this.$('.modal-content').html(this.contentView.render().el);
-      }
-
       if (this.$el.closest('html').length === 0) {
         $('body').append(this.$el);
         this.$('.modal').modal(this.modalOptions);
@@ -14913,25 +14924,24 @@ define('view/ModalDialog',[
       return _.extend(data,{
         header: this.header,
         showCancel: this.showCancel,
-        showSubmit: this.showSubmit
+        showSubmit: this.showSubmit,
+        canSubmit: this.canSubmit()
       });
     },
 
     show: function() {
       this.render();
       this.$('.modal').modal('show');
-      this.onShow();
-      if (this.contentView) {
-        this.contentView.onShow();
-      }
+      ModelView.prototype.onShow.apply(this, arguments);
     },
 
     hide: function() {
       this.$('.modal').modal('hide');
-      if (this.contentView) {
-        this.contentView.onHide();
-      }
-      this.onHide();
+      ModelView.prototype.onHide.apply(this, arguments);
+    },
+
+    canSubmit: function(model) {
+      return true;
     },
 
     onSubmitClick: function() {

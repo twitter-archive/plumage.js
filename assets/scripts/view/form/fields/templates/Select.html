@@ -1,4 +1,4 @@
-<select name="{{valueAttr}}">
+<select name="{{valueAttr}}" {{#selectSize}}size="{{.}}"{{/selectSize}}>
 {{#if noSelectionText}}
 <option value="{{noSelectionValue}}" {{^hasSelection}}selected="true"{{/hasSelection}}>{{noSelectionText}}</option>
 {{/if}}

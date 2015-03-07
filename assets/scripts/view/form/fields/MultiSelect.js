@@ -2,17 +2,16 @@ define([
   'jquery',
   'underscore',
   'backbone',
-  'handlebars',
   'PlumageRoot',
   'view/form/fields/Select',
   'text!view/form/fields/templates/MultiSelect.html',
-], function($, _, Backbone, Handlebars, Plumage, Select, template) {
+], function($, _, Backbone, Plumage, Select, template) {
   /**
    * Like a normal field, except value is an array of selected values.
    */
   return Plumage.view.form.fields.MultiSelect = Select.extend({
 
-    template: Handlebars.compile(template),
+    template: template,
 
     showSelectAll: false,
 

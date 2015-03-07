@@ -178,6 +178,13 @@ define([
       this.getInputEl().focus();
     },
 
+    setDisabled: function(disabled) {
+      if (this.disabled !== disabled) {
+        this.disabled = disabled;
+        this.render();
+      }
+    },
+
     //
     // Overrides
     //

@@ -18,7 +18,7 @@ define([
       {label: 'days', value: 86400000}
     ],
 
-    validationRules: 'number',
+    validationRules: {number: true, minValue: 0},
 
     events: {
       'change select': 'onUnitChange'
@@ -51,16 +51,12 @@ define([
     },
 
     getValueString: function(value) {
-      if (this.validateValue(value)) {
+      if (!isNaN(Number(value))) {
         if (value && this.selectedUnit !== undefined) {
           return value/this.selectedUnit;
         }
       }
       return value;
-    },
-
-    valueChanged: function(){
-      this.selectedUnit = this.getUnitForValue(this.getValue());
     },
 
     getUnitForValue: function(value) {
@@ -79,6 +75,16 @@ define([
         return value * this.selectedUnit;
       }
       return value;
+    },
+
+    valueChanged: function(fromModel) {
+      if (fromModel) {
+        this.autoSelectUnit();
+      }
+    },
+
+    autoSelectUnit: function() {
+      this.selectedUnit = this.getUnitForValue(this.getValue());
     },
 
     //

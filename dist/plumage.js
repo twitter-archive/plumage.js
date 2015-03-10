@@ -9280,6 +9280,8 @@ define('view/ModelView',[
 
     defaultSubViewOptions: undefined,
 
+
+
     /**
      * Adding to the functionality of ConainerView, ModelView supports binding of Models to it.
      *
@@ -9935,9 +9937,10 @@ define('view/form/fields/Field',[
   'backbone',
   'handlebars',
   'PlumageRoot',
+  'view/View',
   'view/ModelView',
   'text!view/form/fields/templates/Field.html'
-], function($, _, Backbone, Handlebars, Plumage, ModelView, template) {
+], function($, _, Backbone, Handlebars, Plumage, View, ModelView, template) {
 
 
 
@@ -9998,7 +10001,9 @@ define('view/form/fields/Field',[
       minLength: 'Must be at least {{param0}} chars',
       maxLength: 'Must not be more than {{param0}} chars',
       email: 'Not a valid email address',
-      number: 'Must be a number'
+      number: 'Must be a number',
+      minValue: 'Must be >= {{param0}}',
+      maxValue: 'Must be <= {{param0}}'
     },
 
     /** error, warning, success. Cleared on model load */
@@ -10007,6 +10012,15 @@ define('view/form/fields/Field',[
     /** message to display next to field, eg error message */
     message: undefined,
 
+
+    constructor: function(options){
+      options = options || {};
+
+      this.validationMessages = _.extend({},this.validationMessages, options.validationMessages);
+      delete options.validationMessages;
+
+      View.apply(this, arguments);
+    },
 
     /**
      * An editable view for displaying and editing a single value of a model.
@@ -10028,7 +10042,10 @@ define('view/form/fields/Field',[
      * @constructs
      * @extends Plumage.view.ModelView
      */
-    initialize: function() {
+    initialize: function(options) {
+      this.validationMessages = _.extend({},this.validationMessages, options.validationMessages);
+      delete options.validationMessages;
+
       ModelView.prototype.initialize.apply(this, arguments);
       this.className = this.className ? this.className + ' field' : 'field';
     },
@@ -10220,11 +10237,17 @@ define('view/form/fields/Field',[
       maxLength: function(value, params) {
         return value.length <= params;
       },
+      email: function(value) {
+        return (/^([a-zA-Z0-9_.+-])+\@(([a-zA-Z0-9-])+\.)+([a-zA-Z0-9]{2,4})+$/).test(value);
+      },
       number: function(value) {
         return !isNaN(value) && !isNaN(Number(value));
       },
-      email: function(value) {
-        return (/^([a-zA-Z0-9_.+-])+\@(([a-zA-Z0-9-])+\.)+([a-zA-Z0-9]{2,4})+$/).test(value);
+      minValue: function(value, params) {
+        return value >= params[0];
+      },
+      maxValue: function(value, params) {
+        return value <= params[0];
       }
     },
 
@@ -10316,7 +10339,7 @@ define('view/form/fields/Field',[
       this.value = '';
       if (this.model) {
         this.value = this.getValueFromModel();
-        this.valueChanged();
+        this.valueChanged(true);
 
         if (this.isRendered) {
           this.update();
@@ -10387,8 +10410,11 @@ define('view/form/fields/Field',[
       }
     },
 
-    /** Hook called when value changes. Useful for keeping view state in sync */
-    valueChanged: function() {
+    /**
+     * Hook called when value changes. Useful for keeping view state in sync.
+     * @param {Boolean} fromModel Being called from updateValueFromModel?
+     */
+    valueChanged: function(fromModel) {
       return;
     },
 
@@ -13117,7 +13143,7 @@ define('view/form/fields/DurationField',[
       {label: 'days', value: 86400000}
     ],
 
-    validationRules: 'number',
+    validationRules: {number: true, minValue: 0},
 
     events: {
       'change select': 'onUnitChange'
@@ -13150,16 +13176,12 @@ define('view/form/fields/DurationField',[
     },
 
     getValueString: function(value) {
-      if (this.validateValue(value)) {
+      if (!isNaN(Number(value))) {
         if (value && this.selectedUnit !== undefined) {
           return value/this.selectedUnit;
         }
       }
       return value;
-    },
-
-    valueChanged: function(){
-      this.selectedUnit = this.getUnitForValue(this.getValue());
     },
 
     getUnitForValue: function(value) {
@@ -13180,12 +13202,23 @@ define('view/form/fields/DurationField',[
       return value;
     },
 
+    valueChanged: function(fromModel) {
+      if (fromModel) {
+        this.autoSelectUnit();
+      }
+    },
+
+    autoSelectUnit: function() {
+      this.selectedUnit = this.getUnitForValue(this.getValue());
+    },
+
     //
     // Events
     //
 
     onUnitChange: function() {
       this.selectedUnit = Number($(arguments[0].target).val());
+      console.log('selecetdUnit changed to ' + this.selectedUnit);
       this.update();
     }
   });

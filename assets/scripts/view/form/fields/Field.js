@@ -5,9 +5,10 @@ define([
   'backbone',
   'handlebars',
   'PlumageRoot',
+  'view/View',
   'view/ModelView',
   'text!view/form/fields/templates/Field.html'
-], function($, _, Backbone, Handlebars, Plumage, ModelView, template) {
+], function($, _, Backbone, Handlebars, Plumage, View, ModelView, template) {
 
 
 
@@ -68,7 +69,9 @@ define([
       minLength: 'Must be at least {{param0}} chars',
       maxLength: 'Must not be more than {{param0}} chars',
       email: 'Not a valid email address',
-      number: 'Must be a number'
+      number: 'Must be a number',
+      minValue: 'Must be >= {{param0}}',
+      maxValue: 'Must be <= {{param0}}'
     },
 
     /** error, warning, success. Cleared on model load */
@@ -77,6 +80,15 @@ define([
     /** message to display next to field, eg error message */
     message: undefined,
 
+
+    constructor: function(options){
+      options = options || {};
+
+      this.validationMessages = _.extend({},this.validationMessages, options.validationMessages);
+      delete options.validationMessages;
+
+      View.apply(this, arguments);
+    },
 
     /**
      * An editable view for displaying and editing a single value of a model.
@@ -98,7 +110,10 @@ define([
      * @constructs
      * @extends Plumage.view.ModelView
      */
-    initialize: function() {
+    initialize: function(options) {
+      this.validationMessages = _.extend({},this.validationMessages, options.validationMessages);
+      delete options.validationMessages;
+
       ModelView.prototype.initialize.apply(this, arguments);
       this.className = this.className ? this.className + ' field' : 'field';
     },
@@ -290,11 +305,17 @@ define([
       maxLength: function(value, params) {
         return value.length <= params;
       },
+      email: function(value) {
+        return (/^([a-zA-Z0-9_.+-])+\@(([a-zA-Z0-9-])+\.)+([a-zA-Z0-9]{2,4})+$/).test(value);
+      },
       number: function(value) {
         return !isNaN(value) && !isNaN(Number(value));
       },
-      email: function(value) {
-        return (/^([a-zA-Z0-9_.+-])+\@(([a-zA-Z0-9-])+\.)+([a-zA-Z0-9]{2,4})+$/).test(value);
+      minValue: function(value, params) {
+        return value >= params[0];
+      },
+      maxValue: function(value, params) {
+        return value <= params[0];
       }
     },
 
@@ -386,7 +407,7 @@ define([
       this.value = '';
       if (this.model) {
         this.value = this.getValueFromModel();
-        this.valueChanged();
+        this.valueChanged(true);
 
         if (this.isRendered) {
           this.update();
@@ -457,8 +478,11 @@ define([
       }
     },
 
-    /** Hook called when value changes. Useful for keeping view state in sync */
-    valueChanged: function() {
+    /**
+     * Hook called when value changes. Useful for keeping view state in sync.
+     * @param {Boolean} fromModel Being called from updateValueFromModel?
+     */
+    valueChanged: function(fromModel) {
       return;
     },
 

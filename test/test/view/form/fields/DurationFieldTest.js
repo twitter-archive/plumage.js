@@ -9,8 +9,9 @@ define([
   'test/environment',
   'test/EventLog',
   'example/ExampleData',
-  'view/form/fields/DurationField'
-], function($, _, Backbone, sinon, Environment, EventLog, ExampleData, DurationField) {
+  'view/form/fields/DurationField',
+  'model/Model'
+], function($, _, Backbone, sinon, Environment, EventLog, ExampleData, DurationField, Model) {
 
 
   //use Environment to mock ajax
@@ -28,14 +29,15 @@ define([
   }
 
   test('getTemplateData selects correct unit', function(){
-    var field = createView();
-    field.setValue(86400000);
+    var field = createView({valueAttr: 'duration'});
+    var model = new Model({duration: 86400000});
+    field.setModel(model);
 
     var data = field.getTemplateData();
     equal(data.units[2].selected, true);
     equal(data.value, 1);
 
-    field.setValue(3600000 * 12);
+    model.set('duration', 3600000 * 12);
 
     data = field.getTemplateData();
     equal(data.units[1].selected, true);
@@ -61,5 +63,17 @@ define([
     field.render();
     field.getInputEl().val(1);
     equal(field.getValueFromDom(), 60000);
+  });
+
+  test('can set large value as minutes', function(){
+    var field = createView();
+    field.render();
+
+    equal(field.selectedUnit, 60000);
+
+    field.getInputEl().val(14400); //10 days
+    field.onBlur();
+    equal(field.selectedUnit, 60000);
+    equal(field.getValue(), 14400*60000);
   });
 });

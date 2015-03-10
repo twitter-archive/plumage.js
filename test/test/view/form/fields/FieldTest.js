@@ -138,8 +138,12 @@ define([
     field.setValue('1.0');
     equal(field.validate(), true, 'should be valid for number');
     field.setValue('a1', false, 'should be invalid for letters');
+  });
 
-
+  test('options.validationMessages is merged', function() {
+    var field = createView({validationMessages: {maxValue: 'foo'}});
+    equal(field.validationMessages.maxValue, 'foo');
+    equal(field.validationMessages.required, Field.prototype.validationMessages.required);
   });
 
 });

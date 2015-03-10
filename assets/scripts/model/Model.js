@@ -127,12 +127,16 @@ function($, _, Backbone, Plumage, requestManager, ModelUtil, BufferedCollection)
      */
     navigate: function(options) {
       options = _.extend({trigger: true}, options);
-      window.router.navigateWithQueryParams(this.viewUrlWithParams(), options);
+      if (window.router) {
+        window.router.navigateWithQueryParams(this.viewUrlWithParams(), options);
+      }
     },
 
     navigateToIndex: function(options) {
       options = _.extend({trigger: true}, options);
-      window.router.navigateWithQueryParams(this.urlRoot, options);
+      if (window.router) {
+        window.router.navigateWithQueryParams(this.urlRoot, options);
+      }
     },
 
     /**
@@ -142,7 +146,9 @@ function($, _, Backbone, Plumage, requestManager, ModelUtil, BufferedCollection)
      */
     updateUrl: function(options) {
       options = _.extend({replace: true, trigger: false}, options);
-      window.router.navigateWithQueryParams(this.viewUrlWithParams(), options);
+      if (window.router) {
+        window.router.navigateWithQueryParams(this.viewUrlWithParams(), options);
+      }
     },
 
     /**

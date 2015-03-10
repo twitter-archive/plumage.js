@@ -14,6 +14,7 @@ define([
   return Plumage.view.form.fields.Field = ModelView.extend(
   /** @lends Plumage.view.form.fields.Field.prototype */
   {
+    className: 'control-group',
 
     template: template,
 
@@ -66,7 +67,8 @@ define([
       required: 'required',
       minLength: 'Must be at least {{param0}} chars',
       maxLength: 'Must not be more than {{param0}} chars',
-      email: 'Not a valid email address'
+      email: 'Not a valid email address',
+      number: 'Must be a number'
     },
 
     /** error, warning, success. Cleared on model load */
@@ -106,6 +108,8 @@ define([
       var hasFocus = inputEl ? inputEl.is(':focus') : false;
       Handlebars.registerPartial('field', this.fieldTemplate);
       ModelView.prototype.onRender.apply(this, arguments);
+
+      this.$el.addClass(this.validationState);
 
       inputEl = this.getInputEl();
       if (inputEl && hasFocus) {
@@ -286,23 +290,30 @@ define([
       maxLength: function(value, params) {
         return value.length <= params;
       },
+      number: function(value) {
+        return !isNaN(value) && !isNaN(Number(value));
+      },
       email: function(value) {
         return (/^([a-zA-Z0-9_.+-])+\@(([a-zA-Z0-9-])+\.)+([a-zA-Z0-9]{2,4})+$/).test(value);
       }
     },
 
     setValidationState: function(state, message) {
+      if (this.validationState) {
+        this.$el.removeClass(this.validationState);
+      }
       this.validationState = state;
       this.message = message;
-      this.$('.control-group').attr('class', 'control-group');
-      if (this.validationState) {
-        this.$('.control-group').addClass(this.validationState);
-      }
+
+      this.$el.addClass(this.validationState);
       this.$('.help-inline').html(this.message);
     },
 
     validate: function() {
-      var value = this.getValue();
+      return this.validateValue(this.getValue());
+    },
+
+    validateValue: function(value) {
       var rules = this.validationRules;
 
       if (rules) {
@@ -313,7 +324,7 @@ define([
           rules = newRules;
         }
 
-        var success;
+        var success = true;
         //check required first
         if (rules.required) {
           success = this.applyValidator(value, rules.required, 'required');
@@ -420,7 +431,15 @@ define([
       }
     },
 
-    isDomValueValid: function() {
+    /**
+     * Use this to completely disallow invalid values from being set.
+     * this is different from validationRules. If a value doesn't pass isDomValueValid, it will be reverted before
+     * validation happens.
+     */
+    isDomValueValid: function(value) {
+      if (this.updateModelOnChange) {
+        return this.validateValue(value);
+      }
       return true;
     },
 
@@ -460,6 +479,7 @@ define([
     },
 
     onBlur: function(e) {
+      this.updateValueFromDom();
       this.validate();
       this.trigger('blur', this);
     },

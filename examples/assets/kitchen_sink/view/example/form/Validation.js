@@ -25,6 +25,10 @@ define([
       minDate: moment().startOf('week'),
       maxDate: moment().startOf('week').add({day: 6})
     }, {
+      viewCls: Plumage.view.form.fields.DurationField,
+      selector: '.duration-field',
+      label: 'Duration Field'
+    }, {
       viewCls: Plumage.view.form.fields.Field,
       selector: '.validated-field',
       label: 'At least 2 characters',

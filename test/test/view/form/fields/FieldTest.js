@@ -132,6 +132,14 @@ define([
     field.setValue('a');
     field.validate();
     equal(field.message, field.validationMessages.minLength.replace('{{param0}}', 2));
+
+    field = createView({label: 'field', valueAttr: 'body', validationRules: 'number'});
+    equal(field.validate(), true, 'should validate blank as 0');
+    field.setValue('1.0');
+    equal(field.validate(), true, 'should be valid for number');
+    field.setValue('a1', false, 'should be invalid for letters');
+
+
   });
 
 });

@@ -8,7 +8,7 @@ define([
 ], function($, _, Backbone, Plumage, Field, template) {
   return Plumage.view.form.fields.DurationField = Field.extend({
 
-    className: 'duration-field',
+    className: 'duration-field control-group',
 
     fieldTemplate: template,
 
@@ -18,6 +18,8 @@ define([
       {label: 'days', value: 86400000}
     ],
 
+    validationRules: 'number',
+
     events: {
       'change select': 'onUnitChange'
     },
@@ -26,6 +28,13 @@ define([
      * View state. Value of selected unit.
      */
     selectedUnit: undefined,
+
+    initialize: function() {
+      Field.prototype.initialize.apply(this, arguments);
+      if (!this.selectedUnit) {
+        this.selectedUnit = this.units[0].value;
+      }
+    },
 
     getTemplateData: function() {
       var data = Field.prototype.getTemplateData.apply(this, arguments);
@@ -42,8 +51,10 @@ define([
     },
 
     getValueString: function(value) {
-      if (value && this.selectedUnit !== undefined) {
-        return value/this.selectedUnit;
+      if (this.validateValue(value)) {
+        if (value && this.selectedUnit !== undefined) {
+          return value/this.selectedUnit;
+        }
       }
       return value;
     },
@@ -64,7 +75,10 @@ define([
 
     getValueFromDom: function() {
       var value = Field.prototype.getValueFromDom.apply(this, arguments);
-      return value * this.selectedUnit;
+      if ($.isNumeric(value)) {
+        return value * this.selectedUnit;
+      }
+      return value;
     },
 
     //

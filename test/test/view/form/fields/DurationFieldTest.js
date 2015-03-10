@@ -55,4 +55,11 @@ define([
     field.render();
     equal(field.getValueFromDom(), 3600000 * 12);
   });
+
+  test('updates value from dom', function(){
+    var field = createView();
+    field.render();
+    field.getInputEl().val(1);
+    equal(field.getValueFromDom(), 60000);
+  });
 });

@@ -87,35 +87,35 @@ and incorparates other 3rd party components, notably <a href="https://github.com
 
 <p>
   Web development is naturally focused on public sites, and with public sites, page load is king. The longer the page load,
-  the longer the visitor contemplates hitting the back button. This is why most JS frameworks try to be minimal &mdash;
-  More JS &rarrow; higher bounce rate.
+  the longer the visitor contemplates hitting the back button. This is why most JS frameworks try to be minimal:
+  More JS &rarr; higher bounce rate.
 </p>
 
 <p>
   However, in private web apps, the user is not going to bounce if initial load takes 3 seconds (see gmail loading bar).
   Also, since users stick around, its actually subsequent load times that are perceived as performance. So, in private apps
   more JS is not a big deal. What benefits can we get with more JS? We can get a unified and coherent framework
-  for constructing complex UI, and we can stop reinventing the wheel, using the standard components that come with it.
+  for constructing complex UI with standard components, so we can stop reinventing the wheel.
 </p>
 
 <p>
-  Private apps also tend to be more complex, with large numbers of Views for displaying and modifying different
-  related models from a complicated model hierarchy. Simplifying the model can only go so far,
-  restricted by the inherent complexity of the app's domain. Plumage provides a systematic way for constructing and
-  manipulating complex model and view hierarchies.
+  Private apps also tend to be more complex, with complicated model hierarchies accompanied by large numbers of Views for
+  displaying and modifying different sets of related models. Simplifying the model can only go so far &mdash; You're
+  restricted by the inherent complexity of the app's domain. Rather than oversimplifying Plumage provides a systematic
+  way to manage complexity in constructing and manipulating your model and view hierarchies.
 </p>
 
 <p>
   So Plumage's values are:
   <ol>
     <li>
-      <strong>Developer Productivity</strong> - Systematic approach - one way of doing things. Batteries included - don't reinvent the wheel.
+      <strong>Developer Productivity</strong> - Systematic approach = one way of doing things. Batteries included = don't reinvent the wheel.
     </li>
     <li>
-      <strong>Complexity Management</strong> - Modularization, separation of concerns, declarative config.
+      <strong>Complexity Management</strong> - Modularization. Separation of concerns. Declarative config.
     </li>
     <li>
-      <strong>Subsequent Load Time</strong> - One page load, async everything, efficient rendering.
+      <strong>Subsequent Load Time</strong> - Single page apps. Async everything. Efficient rendering.
     </li>
   </ol>
 </p>
@@ -123,7 +123,7 @@ and incorparates other 3rd party components, notably <a href="https://github.com
 <h3>The View Hierarchy</h3>
 
 <p>
-When your data is complex, the view hierarchy for a dashboard app can get complicated fast.
+When your data is complex, the view hierarchy for andata app can get complicated fast.
 
 <img class="screen-shot" src="images/component-hierarchy.png"></img>
 
@@ -140,7 +140,7 @@ Modular views improve reuse, understandability, and separation of concerns.
 </p>
 
 <p>
-Modular views also simplify your design, because views don't know about each other.
+Modular views also simplify the design, because views don't know about each other.
 Leaf Views (views with no subviews) can't affect other Views because they don't know about them, and Container Views
 (views with subviews) are mostly glue, so behavior remains predictable.
 No huge template files, no monolithic views filled with spaghetti, and no global event bus.
@@ -182,7 +182,7 @@ with the Model, and the View uses the path to walk the Model hierarchy and get t
 <h3>Event Handling</h3>
 
 <p>
-When you have a complex view hierarchy, another factor that needs deciding is where to handle UI events.
+When you have a complex view hierarchy, you need to decide where to handle UI events.
 </p>
 <p>Here it's necessary to take a more nuanced approach than with model binding:</p>
 

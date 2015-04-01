@@ -156,20 +156,6 @@ define([
     ok(comments.fetchIfAvailable.calledTwice, 'If view is already shown, fetch on setModel');
   });
 
-  test('nested deferLoad', function() {
-    var ParentModel = Model.extend({
-      relationships: {
-        post: {
-          modelCls: PostRemote,
-          remote: true,
-          deferLoad: true
-        }
-      }
-    });
-
-    var model = new ParentModel({},_.extend({}, ExampleData.POST_DATA, {comments: []}));
-  });
-
   test('setModel sets model on subviews', function() {
     var post = new Post(ExampleData.POST_DATA_WITH_RELATED);
     var author = post.getRelated('author');

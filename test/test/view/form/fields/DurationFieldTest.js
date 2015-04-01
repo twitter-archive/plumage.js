@@ -28,7 +28,7 @@ define([
     }, options));
   }
 
-  test('getTemplateData selects correct unit', function(){
+  test('Setting model results in correct unit', function(){
     var field = createView({valueAttr: 'duration'});
     var model = new Model({duration: 86400000});
     field.setModel(model);
@@ -37,11 +37,48 @@ define([
     equal(data.units[2].selected, true);
     equal(data.value, 1);
 
+    field = createView({valueAttr: 'duration'});
     model.set('duration', 3600000 * 12);
+    field.setModel(model);
 
     data = field.getTemplateData();
     equal(data.units[1].selected, true);
     equal(data.value, 12);
+
+
+    field = createView({valueAttr: 'duration'});
+    model.set('duration', 60000 * 10);
+    field.setModel(model);
+
+    data = field.getTemplateData();
+    equal(data.units[0].selected, true);
+    equal(data.value, 10);
+  });
+
+  test('Updating model results in correct unit', function(){
+    var field = createView({valueAttr: 'duration'});
+    var model = new Model({duration: 86400000});
+    field.setModel(model);
+
+    field.render();
+
+    model.set('duration', 3600000 * 12);
+    var data = field.getTemplateData();
+    equal(data.units[1].selected, true);
+    equal(data.value, 12);
+    equal(field.$('select').val(), data.units[1].value);
+
+    model.set('duration', 60000 * 10);
+    data = field.getTemplateData();
+    equal(data.units[0].selected, true);
+    equal(data.value, 10);
+    equal(field.$('select').val(), data.units[0].value);
+
+    model.set('duration', 86400000);
+    data = field.getTemplateData();
+    equal(data.units[2].selected, true);
+    equal(data.value, 1);
+    equal(field.$('select').val(), data.units[2].value);
   });
 
   test('get correct value from dom', function(){

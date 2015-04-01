@@ -87,6 +87,13 @@ define([
       this.selectedUnit = this.getUnitForValue(this.getValue());
     },
 
+    update: function(isLoad) {
+      Plumage.view.form.fields.Field.prototype.update.apply(this, arguments);
+      if (this.isRendered) {
+        this.$('select').val(this.selectedUnit);
+      }
+    },
+
     //
     // Events
     //

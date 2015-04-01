@@ -433,6 +433,12 @@ h2.title .light {
 .duration-field input {
   width: 117px; }
 
+.form-horizontal-left .control-label {
+  text-align: left;
+  width: 100px; }
+.form-horizontal-left .controls {
+  margin-left: 100px; }
+
 .comments-count-icon {
   background: transparent url(comment-icon.png) no-repeat 50% 0;
   padding: 3px 7px 7px;

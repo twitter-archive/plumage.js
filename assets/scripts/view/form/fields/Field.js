@@ -297,7 +297,7 @@ define([
 
     validators: {
       required: function(value, params) {
-        return value !== undefined && value !== '';
+        return value !== undefined && value !== null && value !== '';
       },
       minLength: function(value, params) {
         return value.length >= params;
@@ -306,7 +306,7 @@ define([
         return value.length <= params;
       },
       email: function(value) {
-        return (/^([a-zA-Z0-9_.+-])+\@(([a-zA-Z0-9-])+\.)+([a-zA-Z0-9]{2,4})+$/).test(value);
+        return value ? (/^([a-zA-Z0-9_.+-])+\@(([a-zA-Z0-9-])+\.)+([a-zA-Z0-9]{2,4})+$/).test(value) : true;
       },
       number: function(value) {
         return !isNaN(value) && !isNaN(Number(value));
@@ -367,8 +367,15 @@ define([
     },
 
     applyValidator: function(value, params, name) {
-      params = $.isArray(params) ? params : [params];
-      var validator = this.validators[name];
+      var validator;
+      if ($.isFunction(params)) {
+        validator = params;
+        params = [];
+      } else {
+        params = $.isArray(params) ? params : [params];
+        validator = this.validators[name];
+      }
+
       if (!validator(value, params)) {
         var message = this.getValidationMessage(name, params);
         this.setValidationState('error', message);

@@ -11,10 +11,11 @@ define([
   'test/DummyEvent',
   'view/ModelView',
   'view/ContainerView',
+  'model/Model',
   'example/model/Post',
   'example/collection/PostCollection',
   'example/ExampleData'
-], function($, _, Backbone, sinon, Environment, EventLog, DummyEvent, ModelView, ContainerView, Post, PostCollection, ExampleData) {
+], function($, _, Backbone, sinon, Environment, EventLog, DummyEvent, ModelView, ContainerView, Model, Post, PostCollection, ExampleData) {
 
 
   //use Environment to mock ajax
@@ -153,6 +154,20 @@ define([
     comments.fetched = false;
     view.setModel(model);
     ok(comments.fetchIfAvailable.calledTwice, 'If view is already shown, fetch on setModel');
+  });
+
+  test('nested deferLoad', function() {
+    var ParentModel = Model.extend({
+      relationships: {
+        post: {
+          modelCls: PostRemote,
+          remote: true,
+          deferLoad: true
+        }
+      }
+    });
+
+    var model = new ParentModel({},_.extend({}, ExampleData.POST_DATA, {comments: []}));
   });
 
   test('setModel sets model on subviews', function() {

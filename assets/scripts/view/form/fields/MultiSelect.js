@@ -44,6 +44,10 @@ define([
     },
 
     getValueLabel: function(value) {
+      if (!this.listModel) {
+        return '';
+      }
+
       var labels = [];
       if (value && value.length) {
         this.listModel.each(function(item) {
@@ -53,9 +57,6 @@ define([
         }.bind(this));
       }
 
-      if (!this.listModel) {
-        return '';
-      }
       if (labels.length === this.listModel.size()) {
         return this.allLabel;
       }

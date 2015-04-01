@@ -1148,6 +1148,19 @@ function($, _, Backbone, Plumage, requestManager, ModelUtil, BufferedCollection)
       return this.urlFromAttributes();
     },
 
+    newUrl: function() {
+      var base =
+        _.result(this, 'urlRoot') ||
+        _.result(this.collection, 'url');
+
+      if (base) {
+        var a = document.createElement('a');
+        a.href = base;
+        return a.pathname + '/new' + a.search;
+      }
+      return null;
+    },
+
     /**
      * Generate the url for this model from its attributes. By default this returns
      * urlRoot/id. If no urlRoot is specified it returns null. This is so prevent loading models
@@ -1158,14 +1171,8 @@ function($, _, Backbone, Plumage, requestManager, ModelUtil, BufferedCollection)
      * @returns {string} Url or null
      */
     urlFromAttributes: function() {
-      var base =
-        _.result(this, 'urlRoot') ||
-        _.result(this.collection, 'url');
-
-      if (base && this.isNew()) {
-        var a = document.createElement('a');
-        a.href = base;
-        return a.pathname + '/new' + a.search;
+      if (this.isNew()) {
+        return this.newUrl();
       }
 
       //no url so do nothing
@@ -1385,8 +1392,21 @@ function($, _, Backbone, Plumage, requestManager, ModelUtil, BufferedCollection)
 
       options.success = function(model, resp, options) {
         if (resp.meta && resp.meta.success === false) {
+          var seenRelated = {};
           if (resp.meta.validationError) {
             model.validationError = resp.meta.validationError;
+            _.each(model.validationError, function(v,k) {
+              var parts = k.split('.');
+              if (parts.length > 1) {
+                var field = parts.pop();
+                var related = model.getRelated(parts.join('.'));
+                if (related) {
+                  related.validationError = related.validationError || {};
+                  related.validationError[field] = v;
+                  seenRelated[related.id] = related;
+                }
+              }
+            });
           }
           model.trigger('invalid',
             model,
@@ -1394,6 +1414,11 @@ function($, _, Backbone, Plumage, requestManager, ModelUtil, BufferedCollection)
             resp.meta.message,
             resp.meta.message_class
           );
+
+          _.each(seenRelated, function(related) {
+            related.trigger('invalid', related, related.validationError);
+          });
+
         } else {
           model.latestLoadParams = undefined;
           model.onLoad(options);
@@ -9156,7 +9181,7 @@ define('view/ContainerView',[
 
     /**
      * Calls a method on ContainerView if it exists or calls it on its subViews.
-     * Elimiates need for ContainerView to know about composite methods provided by subclasses.
+     * Eliminates need for ContainerView to know about composite methods provided by subclasses.
      * @param {string} methodName Name of method to call.
      * @param {Array} params Params to pass into method.
      */
@@ -9279,8 +9304,6 @@ define('view/ModelView',[
     defaultSubViewCls: undefined,
 
     defaultSubViewOptions: undefined,
-
-
 
     /**
      * Adding to the functionality of ConainerView, ModelView supports binding of Models to it.
@@ -9928,7 +9951,7 @@ define('view/form/Form',[
   });
 });
 
-define('text!view/form/fields/templates/Field.html',[],function () { return '{{#if label}}\n<label class="control-label" for="{{valueAttr}}">{{label}}</label>\n<div class="controls">\n  <span class="field">{{> field}}</span>\n  <span class="help-inline">{{#if message}}{{message}}{{/if}}</span>\n</div>\n{{else}}\n{{> field}}\n{{/if}}\n';});
+define('text!view/form/fields/templates/Field.html',[],function () { return '{{#if label}}\n<label class="control-label" for="{{valueAttr}}">{{label}}</label>\n<div class="controls">\n  <span class="field">{{> field}}</span>\n  <span class="help-inline">{{#if message}}{{message}}{{/if}}</span>\n</div>\n{{else}}\n  {{> field}}\n  <span class="help-inline">{{#if message}}{{message}}{{/if}}</span>\n{{/if}}\n';});
 
 
 define('view/form/fields/Field',[
@@ -10229,7 +10252,7 @@ define('view/form/fields/Field',[
 
     validators: {
       required: function(value, params) {
-        return value !== undefined && value !== '';
+        return value !== undefined && value !== null && value !== '';
       },
       minLength: function(value, params) {
         return value.length >= params;
@@ -10238,7 +10261,7 @@ define('view/form/fields/Field',[
         return value.length <= params;
       },
       email: function(value) {
-        return (/^([a-zA-Z0-9_.+-])+\@(([a-zA-Z0-9-])+\.)+([a-zA-Z0-9]{2,4})+$/).test(value);
+        return value ? (/^([a-zA-Z0-9_.+-])+\@(([a-zA-Z0-9-])+\.)+([a-zA-Z0-9]{2,4})+$/).test(value) : true;
       },
       number: function(value) {
         return !isNaN(value) && !isNaN(Number(value));
@@ -10299,8 +10322,15 @@ define('view/form/fields/Field',[
     },
 
     applyValidator: function(value, params, name) {
-      params = $.isArray(params) ? params : [params];
-      var validator = this.validators[name];
+      var validator;
+      if ($.isFunction(params)) {
+        validator = params;
+        params = [];
+      } else {
+        params = $.isArray(params) ? params : [params];
+        validator = this.validators[name];
+      }
+
       if (!validator(value, params)) {
         var message = this.getValidationMessage(name, params);
         this.setValidationState('error', message);
@@ -12959,6 +12989,10 @@ define('view/form/fields/MultiSelect',[
     },
 
     getValueLabel: function(value) {
+      if (!this.listModel) {
+        return '';
+      }
+
       var labels = [];
       if (value && value.length) {
         this.listModel.each(function(item) {
@@ -12968,9 +13002,6 @@ define('view/form/fields/MultiSelect',[
         }.bind(this));
       }
 
-      if (!this.listModel) {
-        return '';
-      }
       if (labels.length === this.listModel.size()) {
         return this.allLabel;
       }
@@ -13212,13 +13243,19 @@ define('view/form/fields/DurationField',[
       this.selectedUnit = this.getUnitForValue(this.getValue());
     },
 
+    update: function(isLoad) {
+      Plumage.view.form.fields.Field.prototype.update.apply(this, arguments);
+      if (this.isRendered) {
+        this.$('select').val(this.selectedUnit);
+      }
+    },
+
     //
     // Events
     //
 
     onUnitChange: function() {
       this.selectedUnit = Number($(arguments[0].target).val());
-      console.log('selecetdUnit changed to ' + this.selectedUnit);
       this.update();
     }
   });
@@ -14975,13 +15012,17 @@ define('view/ModalDialog',[
     initialize: function(options) {
       options = options || {};
       options.modalOptions = _.extend(this.modalOptions, options.modalOptions || {});
-      this.subViews = [this.contentView].concat(options.subViews || []);
-      this.contentView.selector = '.modal-content';
-      this.contentView.name = 'contentView';
+      if (this.contentView) {
+        this.subViews = [this.contentView].concat(options.subViews || []);
+        this.contentView.selector = '.modal-content';
+        this.contentView.name = 'contentView';
+      }
 
       ModelView.prototype.initialize.apply(this, arguments);
 
-      this.contentView = this.getSubView('contentView');
+      if (this.contentView) {
+        this.contentView = this.getSubView('contentView');
+      }
     },
 
     onRender: function() {

@@ -185,3 +185,13 @@
   }
 }
 
+.form-horizontal-left {
+  .control-label {
+    text-align: left;
+    width: 100px;
+  }
+  .controls {
+    margin-left: 100px;
+  }
+}
+

@@ -551,6 +551,19 @@ function($, _, Backbone, Plumage, requestManager, ModelUtil, BufferedCollection)
       return this.urlFromAttributes();
     },
 
+    newUrl: function() {
+      var base =
+        _.result(this, 'urlRoot') ||
+        _.result(this.collection, 'url');
+
+      if (base) {
+        var a = document.createElement('a');
+        a.href = base;
+        return a.pathname + '/new' + a.search;
+      }
+      return null;
+    },
+
     /**
      * Generate the url for this model from its attributes. By default this returns
      * urlRoot/id. If no urlRoot is specified it returns null. This is so prevent loading models
@@ -561,14 +574,8 @@ function($, _, Backbone, Plumage, requestManager, ModelUtil, BufferedCollection)
      * @returns {string} Url or null
      */
     urlFromAttributes: function() {
-      var base =
-        _.result(this, 'urlRoot') ||
-        _.result(this.collection, 'url');
-
-      if (base && this.isNew()) {
-        var a = document.createElement('a');
-        a.href = base;
-        return a.pathname + '/new' + a.search;
+      if (this.isNew()) {
+        return this.newUrl();
       }
 
       //no url so do nothing
@@ -788,8 +795,21 @@ function($, _, Backbone, Plumage, requestManager, ModelUtil, BufferedCollection)
 
       options.success = function(model, resp, options) {
         if (resp.meta && resp.meta.success === false) {
+          var seenRelated = {};
           if (resp.meta.validationError) {
             model.validationError = resp.meta.validationError;
+            _.each(model.validationError, function(v,k) {
+              var parts = k.split('.');
+              if (parts.length > 1) {
+                var field = parts.pop();
+                var related = model.getRelated(parts.join('.'));
+                if (related) {
+                  related.validationError = related.validationError || {};
+                  related.validationError[field] = v;
+                  seenRelated[related.id] = related;
+                }
+              }
+            });
           }
           model.trigger('invalid',
             model,
@@ -797,6 +817,11 @@ function($, _, Backbone, Plumage, requestManager, ModelUtil, BufferedCollection)
             resp.meta.message,
             resp.meta.message_class
           );
+
+          _.each(seenRelated, function(related) {
+            related.trigger('invalid', related, related.validationError);
+          });
+
         } else {
           model.latestLoadParams = undefined;
           model.onLoad(options);

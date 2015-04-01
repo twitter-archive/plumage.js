@@ -30,13 +30,17 @@ define([
     initialize: function(options) {
       options = options || {};
       options.modalOptions = _.extend(this.modalOptions, options.modalOptions || {});
-      this.subViews = [this.contentView].concat(options.subViews || []);
-      this.contentView.selector = '.modal-content';
-      this.contentView.name = 'contentView';
+      if (this.contentView) {
+        this.subViews = [this.contentView].concat(options.subViews || []);
+        this.contentView.selector = '.modal-content';
+        this.contentView.name = 'contentView';
+      }
 
       ModelView.prototype.initialize.apply(this, arguments);
 
-      this.contentView = this.getSubView('contentView');
+      if (this.contentView) {
+        this.contentView = this.getSubView('contentView');
+      }
     },
 
     onRender: function() {

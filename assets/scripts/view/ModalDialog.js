@@ -2,10 +2,11 @@ define([
   'jquery',
   'underscore',
   'backbone',
+  'handlebars',
   'PlumageRoot',
   'view/ModelView',
   'text!view/templates/ModalDialog.html'
-], function($, _, Backbone, Plumage, ModelView, template) {
+], function($, _, Backbone, Handlebars, Plumage, ModelView, template) {
 
   return Plumage.view.ModalDialog = ModelView.extend({
 
@@ -13,7 +14,7 @@ define([
 
     contentView: undefined,
 
-    header: '',
+    headerTemplate: '',
 
     showCancel: false,
 
@@ -44,6 +45,7 @@ define([
     },
 
     onRender: function() {
+      Handlebars.registerPartial('header', this.headerTemplate);
       ModelView.prototype.onRender.apply(this, arguments);
       if (this.$el.closest('html').length === 0) {
         $('body').append(this.$el);

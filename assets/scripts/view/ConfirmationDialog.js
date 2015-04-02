@@ -40,14 +40,12 @@ define([
     initialize: function(options) {
       options = options || {};
       ModalDialog.prototype.initialize.apply(this, arguments);
-      this.headerTemplate = this.initTemplate(this.headerTemplate);
       this.bodyTemplate = this.initTemplate(this.bodyTemplate);
     },
 
     getTemplateData: function() {
       var data = ModalDialog.prototype.getTemplateData.apply(this, arguments);
       return _.extend(data, {
-        headerTemplate: this.headerTemplate(data),
         bodyTemplate: this.bodyTemplate(data),
         buttonText: this.buttonText,
         buttonCls: this.buttonCls,

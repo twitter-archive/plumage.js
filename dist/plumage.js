@@ -14978,16 +14978,17 @@ define('view/ListAndDetailView',[
   });
 });
 
-define('text!view/templates/ModalDialog.html',[],function () { return '<div class="modal hide fade" tabindex="-1" role="dialog" aria-hidden="true">\n  <div class="modal-header">\n    <button type="button" class="close" data-dismiss="modal" aria-hidden="true">x</button>\n    <h3 id="myModalLabel">{{header}}</h3>\n  </div>\n  <div class="modal-body">\n    <div class="modal-content"></div>\n  </div>\n  <div class="modal-footer">\n    {{#if showCancel}}\n      <a class="cancel" data-dismiss="modal" aria-hidden="true">Cancel</a>\n    {{else}}\n      <button class="btn" data-dismiss="modal" aria-hidden="true">Close</button>\n    {{/if}}\n    {{#if showSubmit}}\n      <button class="btn submit" {{#if canSubmit}}{{else}}disabled="true"{{/if}}>Submit</button>\n    {{/if}}\n  </div>\n</div>';});
+define('text!view/templates/ModalDialog.html',[],function () { return '<div class="modal hide fade" tabindex="-1" role="dialog" aria-hidden="true">\n  <div class="modal-header">\n    <button type="button" class="close" data-dismiss="modal" aria-hidden="true">x</button>\n    <h3 id="myModalLabel">{{> header}}</h3>\n  </div>\n  <div class="modal-body">\n    <div class="modal-content"></div>\n  </div>\n  <div class="modal-footer">\n    {{#if showCancel}}\n      <a class="cancel" data-dismiss="modal" aria-hidden="true">Cancel</a>\n    {{else}}\n      <button class="btn" data-dismiss="modal" aria-hidden="true">Close</button>\n    {{/if}}\n    {{#if showSubmit}}\n      <button class="btn submit" {{#if canSubmit}}{{else}}disabled="true"{{/if}}>Submit</button>\n    {{/if}}\n  </div>\n</div>';});
 
 define('view/ModalDialog',[
   'jquery',
   'underscore',
   'backbone',
+  'handlebars',
   'PlumageRoot',
   'view/ModelView',
   'text!view/templates/ModalDialog.html'
-], function($, _, Backbone, Plumage, ModelView, template) {
+], function($, _, Backbone, Handlebars, Plumage, ModelView, template) {
 
   return Plumage.view.ModalDialog = ModelView.extend({
 
@@ -14995,7 +14996,7 @@ define('view/ModalDialog',[
 
     contentView: undefined,
 
-    header: '',
+    headerTemplate: '',
 
     showCancel: false,
 
@@ -15026,6 +15027,7 @@ define('view/ModalDialog',[
     },
 
     onRender: function() {
+      Handlebars.registerPartial('header', this.headerTemplate);
       ModelView.prototype.onRender.apply(this, arguments);
       if (this.$el.closest('html').length === 0) {
         $('body').append(this.$el);
@@ -15066,7 +15068,7 @@ define('view/ModalDialog',[
 
 
 
-define('text!view/templates/ConfirmationDialog.html',[],function () { return '<div class="modal hide fade" tabindex="-1" role="dialog" aria-hidden="true">\n  <div class="modal-header">\n    <button type="button" class="close" data-dismiss="modal" aria-hidden="true">x</button>\n    <h3 id="myModalLabel">{{{headerTemplate}}}</h3>\n  </div>\n  <div class="modal-body">\n    <div class="message"></div>\n    <div class="modal-content">\n\t    {{{bodyTemplate}}}\n    </div>\n  </div>\n  <div class="modal-footer">\n  <button class="btn" data-dismiss="modal" aria-hidden="true">Cancel</button>\n    <button class="btn confirm {{buttonCls}}">{{buttonText}}</button>\n  </div>\n</div>';});
+define('text!view/templates/ConfirmationDialog.html',[],function () { return '<div class="modal hide fade" tabindex="-1" role="dialog" aria-hidden="true">\n  <div class="modal-header">\n    <div class="message"></div>\n    <button type="button" class="close" data-dismiss="modal" aria-hidden="true">x</button>\n    <h3 id="myModalLabel">{{> header}}</h3>\n\n  </div>\n  <div class="modal-body">\n\n    <div class="modal-content">\n\t    {{{bodyTemplate}}}\n    </div>\n  </div>\n  <div class="modal-footer">\n  <button class="btn" data-dismiss="modal" aria-hidden="true">Cancel</button>\n    <button class="btn confirm {{buttonCls}}">{{buttonText}}</button>\n  </div>\n</div>';});
 
 define('view/ConfirmationDialog',[
   'jquery',
@@ -15110,14 +15112,12 @@ define('view/ConfirmationDialog',[
     initialize: function(options) {
       options = options || {};
       ModalDialog.prototype.initialize.apply(this, arguments);
-      this.headerTemplate = this.initTemplate(this.headerTemplate);
       this.bodyTemplate = this.initTemplate(this.bodyTemplate);
     },
 
     getTemplateData: function() {
       var data = ModalDialog.prototype.getTemplateData.apply(this, arguments);
       return _.extend(data, {
-        headerTemplate: this.headerTemplate(data),
         bodyTemplate: this.bodyTemplate(data),
         buttonText: this.buttonText,
         buttonCls: this.buttonCls,

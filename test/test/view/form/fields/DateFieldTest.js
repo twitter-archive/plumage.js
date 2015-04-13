@@ -42,7 +42,7 @@ define([
   }
 
   test('field with model', function() {
-    var model = new Post({body: 'initial', post_date: getDate(0)});
+    var model = new Post({id: 1, body: 'initial', post_date: getDate(0)});
     var field = createView();
 
     field.setModel(model);
@@ -55,6 +55,7 @@ define([
     equal(field.getValue(), getDate(1));
 
     this.ajaxResponse = {results: {
+      href: '/posts/1',
       id: 1,
       body: 'my body',
       post_date: getDate(2)

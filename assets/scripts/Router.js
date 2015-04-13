@@ -68,13 +68,16 @@ function($, _, Backbone, Plumage, History, ModelUtil) {
 
     /** Route handler that forwards to method 'options.method'
      * in Controller 'options.controller'
+     *
+     * @params {Object} options Static options set when creating route
+     * @params {...} queryParams Remaining params used as query params
      */
-    routeToController: function(options, queryParams){
+    routeToController: function(options){
       if (this.app.navView) {
         this.app.navView.select(options.nav);
       }
       var ctrl = this.app.controllerManager.getController(options.controller);
-      ctrl[options.method].apply(ctrl, Array.prototype.slice.call(arguments, 1));
+      ctrl.runHandler(options.method, Array.prototype.slice.call(arguments, 1));
     },
 
     /**
@@ -123,11 +126,6 @@ function($, _, Backbone, Plumage, History, ModelUtil) {
 
     /** Special navigate method for working around Backbone's ignoring of query params. */
     navigateWithQueryParams: function(url, options) {
-      if (url === window.location.pathname + window.location.search) {
-        //already there
-        return;
-      }
-
       this.navigate(url, options);
     },
 

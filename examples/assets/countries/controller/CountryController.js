@@ -27,7 +27,7 @@ function($, _, Backbone, Plumage,
         return country.name === name;
       });
 
-      var model = this.createDetailModel(null, attributes, params);
+      var model = this.createDetailModel(name, attributes, params);
       model.onLoad();
 
       this.showDetailModel(model);

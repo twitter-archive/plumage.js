@@ -24,13 +24,13 @@ define([
   function createView(options) {
     options = options || {};
     return new Field(_.extend({
-      el: $('<div></div>'),
+      el: $('<div></div>')
     }, options));
   }
 
   function createViewWithModel(options) {
     var view = createView(options),
-      model = new Post({body: 'foo'});
+      model = new Post({id: 1, body: 'foo'});
 
     view.setModel(model);
     view.render();

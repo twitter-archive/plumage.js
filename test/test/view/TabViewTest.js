@@ -54,16 +54,20 @@ define([
     view.model.updateUrl = sinon.stub();
     view.setActiveTab('tab2'); //ok with no router?
 
-    window.router = {logNavigationAction: sinon.spy()};
+    try {
+      window.router = {logNavigationAction: sinon.spy()};
 
-    view.setActiveTab('tab1');
-    ok(window.router.logNavigationAction.notCalled);
+      view.setActiveTab('tab1');
+      ok(window.router.logNavigationAction.notCalled);
 
-    view.logTabNavigation = true;
-    view.setActiveTab('tab2');
-    ok(window.router.logNavigationAction.calledOnce);
+      view.logTabNavigation = true;
+      view.setActiveTab('tab2');
+      ok(window.router.logNavigationAction.calledOnce);
 
-    view.setActiveTab('tab2');
-    ok(window.router.logNavigationAction.calledOnce, 'log only on tab change');
+      view.setActiveTab('tab2');
+      ok(window.router.logNavigationAction.calledOnce, 'log only on tab change');
+    } finally {
+      window.router = undefined;
+    }
   });
 });

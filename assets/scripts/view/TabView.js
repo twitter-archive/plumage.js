@@ -25,6 +25,8 @@ define([
       'click .tabs a': 'onTabClick'
     },
 
+    triggerOnTabChange: false,
+
     /**
      * If set, call [router.logNavigationAction]{@link Plumage.Router#logNavigationAction}nAction on tab change.
      */
@@ -72,8 +74,16 @@ define([
 
     setActiveTab: function(tabId) {
       if (this.model && tabId !== this.getActiveTab()) {
-        this.model.set(this.viewStateAttr, tabId);
-        this.model.updateUrl();
+        if (this.triggerOnTabChange) {
+          var extras = {};
+          extras[this.viewStateAttr] = tabId;
+          if (window.router) {
+            window.router.navigateWithQueryParams(this.model.viewUrlWithParams(extras), {trigger: true});
+          }
+        } else {
+          this.model.set(this.viewStateAttr, tabId);
+          this.model.updateUrl();
+        }
         this.updateTabCookie();
         if (this.logTabNavigation) {
           if (window.router) {

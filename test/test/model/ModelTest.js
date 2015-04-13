@@ -49,6 +49,18 @@ define([
     equal(model.url(), null);
   });
 
+  test('use urlIdAttribute to generate url when no href', function(){
+    var model = new Post({name: 'foo'});
+    model.urlIdAttribute = 'name';
+    equal(model.url(), model.urlRoot + '/foo');
+  });
+
+  test('can override getUrlId for more complex urlId', function(){
+    var model = new Post();
+    model.getUrlId = function() {return 'abc/123';};
+    equal(model.url(), model.urlRoot +'/abc/123');
+  });
+
   test('combines query params from href and view state', function(){
     var model = new Post({href: '/foo?a=1', bar: 'baz'});
     model.viewAttrs = ['bar'];
@@ -64,14 +76,20 @@ define([
       href: '/foo'
     });
 
-    window.router = {navigateWithQueryParams: sinon.spy()};
+    try {
+      window.router = {navigateWithQueryParams: sinon.spy()};
 
-    model.navigate();
-    equal(window.router.navigateWithQueryParams.getCall(0).args[0], '/bar');
+      model.navigate();
+      equal(window.router.navigateWithQueryParams.getCall(0).args[0], '/bar');
 
-    model.updateUrl();
-    equal(window.router.navigateWithQueryParams.getCall(1).args[0], '/bar');
+      model.updateUrl();
+      equal(window.router.navigateWithQueryParams.getCall(1).args[0], '/bar');
+    } finally {
+      window.router = undefined;
+    }
   });
+
+
 
   //
   // Relationships
@@ -82,7 +100,7 @@ define([
 
     //try both set and fetch
     for (var i=0; i<2; i++) {
-      var model = new Post();
+      var model = new Post({id: 1});
       var eventLog = new EventLog(model);
       if (i===0) {
         model.set(ExampleData.POST_DATA_WITH_RELATED);
@@ -115,21 +133,21 @@ define([
     this.ajaxResponse = {results: ExampleData.POST_DATA_WITH_RELATED_HREFS};
     var model = new Post();
     model.set(ExampleData.POST_DATA_WITH_RELATED_HREFS);
-    equal(model.getRelated('author').url(), '/author_href/7');
-    equal(model.getRelated('comments').url(), '/comments_href');
+    equal(model.getRelated('author').url(), '/users/7');
+    equal(model.getRelated('comments').url(), '/comments');
   });
 
   test('Can instantiate related collection with attributes', function(){
     var model = new Post();
     model.set(ExampleData.POST_DATA_WITH_COMMENTS_WITH_ATTRIBTES);
-    equal(model.getRelated('comments').url(), '/comments_href');
+    equal(model.getRelated('comments').url(), '/comments');
     equal(model.getRelated('comments').size(), 2);
   });
 
   test('Can instantiate remote related collection with href', function(){
     var model = new PostRemote();
     model.set(ExampleData.POST_DATA_WITH_RELATED_HREFS);
-    equal(model.getRelated('comments').url(), '/comments_href');
+    equal(model.getRelated('comments').url(), '/comments');
   });
 
   //
@@ -137,7 +155,7 @@ define([
   //
 
   test('Related collection fires load', function(){
-    var model = new Post({comments: []});
+    var model = new Post({id: 1, comments: []});
     var eventLog = new EventLog([model, model.getRelated('comments')]);
     this.ajaxResponse = {results: ExampleData.POST_DATA_WITH_RELATED};
 
@@ -149,7 +167,7 @@ define([
   });
 
   asyncTest('Does not load again while already loading', function(){
-    var model = new Post({comments: []});
+    var model = new Post({id: 1, comments: []});
     this.ajaxResponse = {results: ExampleData.POST_DATA_WITH_RELATED};
     this.ajaxAsync = true;
 
@@ -166,7 +184,7 @@ define([
   });
 
   test('setting other variables does not affect related models', function() {
-    var model = new Post({comments: []});
+    var model = new Post({id: 1, comments: []});
     this.ajaxResponse = {results: ExampleData.POST_DATA_WITH_RELATED};
     model.load();
 
@@ -191,7 +209,7 @@ define([
   test('load events happen in correct order', function() {
     this.ajaxResponse = {results: ExampleData.POST_DATA_WITH_RELATED};
     for (var i=0; i<2; i++) {
-      var model = new Post({comments: []});
+      var model = new Post({id: 1, comments: []});
 
       var eventLog = new EventLog([model, model.getRelated('comments')]);
 
@@ -222,7 +240,7 @@ define([
   });
 
   test('Load error', function(){
-    var post = new Post();
+    var post = new Post({id: 1});
     var eventLog = new EventLog(post);
 
     this.ajaxResponseStatus = 'error';
@@ -300,7 +318,7 @@ define([
     this.ajaxResponse = {results: ExampleData.POST_DATA_WITH_RELATED};
 
     for (var i=0; i<2; i++) {
-      var model = new PostCirc();
+      var model = new PostCirc({id: 1});
       if (i===0) {
         model.set(ExampleData.POST_DATA_WITH_RELATED);
         model.onLoad();
@@ -315,7 +333,7 @@ define([
   });
 
   test('Relationship with no data in response should be considered fetched', function() {
-    var post = new Post({comments: []});
+    var post = new Post({id: 1, comments: []});
     this.ajaxResponse = ExampleData.POST_DATA;
 
     var eventCount = this.countEvents(post.getRelated('comments'));
@@ -330,7 +348,7 @@ define([
     var PostWithQuery = Post.extend({getQueryParams: function() {
       return {foo: '1'};
     }});
-    var post = new PostWithQuery({comments: []});
+    var post = new PostWithQuery({id: 1, comments: []});
     this.ajaxResponse = ExampleData.POST_DATA;
     post.load();
 
@@ -343,7 +361,7 @@ define([
   test('View state', function(){
     var PostWithViewState = Post.extend({viewAttrs: ['tab', 'filter']});
 
-    var post = new PostWithViewState();
+    var post = new PostWithViewState({id: 1});
 
     this.ajaxResponse = ExampleData.POST_WITH_VIEW_STATE;
     post.load();

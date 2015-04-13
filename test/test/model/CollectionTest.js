@@ -174,7 +174,7 @@ define([
     collection.set({query: '2'});
     collection.load();
     equal(collection.size(), 1, 'should query in memory');
-    equal(collection.at(0).id, 2);
+    equal(collection.at(0).get('id'), 2);
 
     collection.set({
       query: undefined,
@@ -183,7 +183,7 @@ define([
     collection.addFilter(new Filter({key: 'id', value: 1, comparison: 'equals'}));
     collection.load();
     equal(collection.size(), 1, 'should filter in memory');
-    equal(collection.at(0).id, 1);
+    equal(collection.at(0).get('id'), 1);
   });
 
   test('reset in memory', function(){

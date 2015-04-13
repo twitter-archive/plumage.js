@@ -6,7 +6,7 @@ function($, _, Backbone, Plumage, Model) {
 
   return Plumage.model.User = Model.extend({
 
-    idAttribute: 'account',
+    urlIdAttribute: 'account',
 
     urlRoot: '/users',
 

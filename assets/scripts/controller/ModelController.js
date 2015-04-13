@@ -52,6 +52,19 @@ function($, _, Backbone, Plumage, BaseController, ModelUtil) {
       this.detailViewCls = ModelUtil.loadClass(options.detailViewCls ? options.detailViewCls : this.detailViewCls);
     },
 
+    /** override to set activeModel*/
+    runHandler: function(handlerName, params) {
+      this.setActiveModel(undefined);
+      var promise = this[handlerName].apply(this, params);
+      if (promise) {
+        return promise.done(function (model, resp) {
+          if (model) {
+            this.setActiveModel(model);
+          }
+        }.bind(this));
+      }
+    },
+
     /** Get the most recently used index model */
     getIndexCollection: function() {
       return this.indexModel;
@@ -69,17 +82,19 @@ function($, _, Backbone, Plumage, BaseController, ModelUtil) {
         params.filters = JSON.parse(params.filters);
       }
       var model = this.createIndexModel({}, params);
-      this.showIndexModel(model);
+      return this.showIndexModel(model);
     },
 
     /** handler for showing the detail view. Override this to accept more url params*/
-    showDetail: function(id, params){
-      var model = this.createDetailModel(id, {}, params);
+    showDetail: function(urlId, params){
+
+      var model = this.createDetailModel(urlId, {}, params);
       this.showDetailModel(model);
+      return model;
     },
 
     /** handler for showing the new view. Override this to accept more url params*/
-    showNew: function(params){
+    showNew: function(fragment, params){
       var model = this.createEditModel();
       this.showEditModel(model);
     },
@@ -91,11 +106,11 @@ function($, _, Backbone, Plumage, BaseController, ModelUtil) {
       view.setModel(this.indexModel);
       this.showView(view);
 
-      this.loadModel(this.indexModel, {reset: true}).then(function() {
+      this.indexModel.on('change', this.onIndexChange.bind(this));
+      return this.loadModel(this.indexModel, {reset: true}).done(function() {
         view.setModel(model);
       });
 
-      this.indexModel.on('change', this.onIndexChange.bind(this));
     },
 
     /**
@@ -106,6 +121,12 @@ function($, _, Backbone, Plumage, BaseController, ModelUtil) {
      */
     showDetailModel: function(model) {
 
+      var view = this.getDetailView();
+
+      if (model === this.detailModel) {
+        return $.Deferred().resolve(model).promise().done();
+      }
+
       if (this.detailModel) {
         this.detailModel.off('error', this.onModelError, this);
       }
@@ -113,12 +134,9 @@ function($, _, Backbone, Plumage, BaseController, ModelUtil) {
       this.detailModel = model;
       this.detailModel.on('error', this.onModelError, this);
 
-      var view = this.getDetailView();
-
       view.setModel(model);
       this.showView(view);
-
-      return this.loadModel(model).then(function() {
+      return this.loadModel(model).done(function () {
         // call setModel again, so subviews can get newly loaded related models
         if (model.related) {
           view.setModel(model);
@@ -132,7 +150,7 @@ function($, _, Backbone, Plumage, BaseController, ModelUtil) {
       view.setModel(model);
       this.showView(view);
 
-      return this.loadModel(model).then(function() {
+      return this.loadModel(model).done(function() {
         // call setModel again, so subviews can get newly loaded related models
         if (model.related) {
           view.setModel(model);
@@ -179,25 +197,33 @@ function($, _, Backbone, Plumage, BaseController, ModelUtil) {
      * Create the detail model from specified attributes.
      * Override to add default attributes, eg empty relationships.
      */
-    createDetailModel: function(id, attributes, viewState) {
-      return this.createModel(this.modelCls, id, attributes, viewState);
+    createDetailModel: function(urlId, attributes, viewState) {
+      var result = this.createModel(this.modelCls, urlId, attributes, viewState);
+      if (this.detailModel && result.url() === this.detailModel.url()) {
+        this.detailModel.set(attributes);
+        if (viewState) {
+          this.detailModel.setViewState(viewState);
+        }
+        result = this.detailModel;
+      }
+      return result;
     },
 
     /**
      * Create the edit model from specified attributes.
      * Override to add default attributes, eg empty relationships.
      */
-    createEditModel: function(id, attributes, viewState) {
-      return this.createModel(this.modelCls, id, attributes, viewState);
+    createEditModel: function(urlId, attributes, viewState) {
+      return this.createModel(this.modelCls, urlId, attributes, viewState);
     },
 
     /** Helper for creating the detail model. */
-    createModel: function(modelCls, id, attributes, viewState) {
+    createModel: function(modelCls, urlId, attributes, viewState) {
       attributes = attributes || {};
       var options = {};
-      if (id) {
+      if (urlId) {
         attributes = _.clone(attributes);
-        attributes[modelCls.prototype.idAttribute] = id;
+        attributes[modelCls.prototype.urlIdAttribute] = urlId;
       }
       options.viewState = viewState;
       return new modelCls(attributes, options);
@@ -234,12 +260,26 @@ function($, _, Backbone, Plumage, BaseController, ModelUtil) {
       return new this.editViewCls();
     },
 
+    setActiveModel: function(model) {
+      if (this.activeModel) {
+        this.activeModel.off('change', this.onActiveModelChange, this);
+      }
+      this.activeModel = model;
+      if (this.activeModel) {
+        this.activeModel.on('change', this.onActiveModelChange, this);
+      }
+    },
+
     // Event Handlers
+
+    onActiveModelChange: function() {
+      this.activeModel.updateUrl();
+    },
 
     /** Show detail view on index item select */
     onIndexItemSelected: function(selection) {
       if(selection) {
-        var model = this.createDetailModel(selection.id, selection.attributes);
+        var model = this.createDetailModel(null, selection.attributes);
         model.navigate();
       }
     },
@@ -264,11 +304,7 @@ function($, _, Backbone, Plumage, BaseController, ModelUtil) {
      * @param {Plumage.model.Collection} collection Collection to reload
      * @param {Boolean} updateUrl should update url? default to true
      */
-    reloadIndex: _.debounce(function(collection, updateUrl) {
-      updateUrl = updateUrl === undefined ? true : false;
-      if (updateUrl) {
-        collection.updateUrl();
-      }
+    reloadIndex: _.debounce(function(collection) {
       collection.load({reset: true});
     }, 200)
   });

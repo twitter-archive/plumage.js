@@ -7,6 +7,6 @@ define([
 
   return Plumage.model.Model.extend({
     urlRoot: '/cities',
-    idAttribute: 'name'
+    urlIdAttribute: 'name'
   });
 });

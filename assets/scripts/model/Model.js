@@ -39,6 +39,12 @@ function($, _, Backbone, Plumage, requestManager, ModelUtil, BufferedCollection)
     /** Has this Model been loaded yet? */
     fetched: false,
 
+    /** Criterium for uniqueness is always href */
+    idAttribute: 'href',
+
+    /** field use of for url when href is undefined, ie urlRoot + '/' + urlId */
+    urlIdAttribute: 'id',
+
 
     /**
      * Base Model class for Plumage models.
@@ -296,6 +302,13 @@ function($, _, Backbone, Plumage, requestManager, ModelUtil, BufferedCollection)
       this._pending = false;
       this._changing = false;
       return this;
+    },
+
+    /** set view state
+     * @param {Object} viewState
+     */
+    setViewState: function(viewState) {
+      this.set(this.processViewState(viewState));
     },
 
     processViewState: function(viewState) {
@@ -564,9 +577,16 @@ function($, _, Backbone, Plumage, requestManager, ModelUtil, BufferedCollection)
       return null;
     },
 
+    getUrlId: function() {
+      var urlId = this.get(this.urlIdAttribute);
+      if (urlId) {
+        return encodeURIComponent(urlId);
+      }
+    },
+
     /**
      * Generate the url for this model from its attributes. By default this returns
-     * urlRoot/id. If no urlRoot is specified it returns null. This is so prevent loading models
+     * urlRoot/urlIdAttribute. If no urlRoot is specified it returns null. This is so prevent loading models
      * whose urls' can't be derived from attributed. (eg when url depends a parent model's url)
      *
      * Override this method if you have custom urls.
@@ -574,16 +594,21 @@ function($, _, Backbone, Plumage, requestManager, ModelUtil, BufferedCollection)
      * @returns {string} Url or null
      */
     urlFromAttributes: function() {
-      if (this.isNew()) {
-        return this.newUrl();
-      }
-
-      //no url so do nothing
+       //no url so do nothing
       if (!this.urlRoot) {
         return null;
       }
 
-      return Backbone.Model.prototype.url.apply(this, arguments);
+      var base =
+        _.result(this, 'urlRoot') ||
+        _.result(this.collection, 'url');
+      if (!base) {
+        throw new Error('A "url" property or function must be specified');
+      }
+      if (this.isNew()) {
+        return this.newUrl();
+      }
+      return base.replace(/([^\/])$/, '$1/') + this.getUrlId();
     },
 
     /**
@@ -614,7 +639,7 @@ function($, _, Backbone, Plumage, requestManager, ModelUtil, BufferedCollection)
     },
 
     isNew: function() {
-      return !this.has(this.idAttribute) || this.get('href') && this.get('href').match(/\/new$/) !== null;
+      return !this.getUrlId() || this.get('href') && this.get('href').match(/\/new$/) !== null;
     },
 
     /**
@@ -648,7 +673,9 @@ function($, _, Backbone, Plumage, requestManager, ModelUtil, BufferedCollection)
       this._wrapHandlers(options);
 
       this.fireBeginLoad();
-      return this.fetch(options);
+      return this.fetch(options).then(function(resp, result, xhr) {
+        return $.Deferred().resolve(this, resp).promise();
+      }.bind(this));
     },
 
     save: function(key, val, options) {
@@ -662,7 +689,9 @@ function($, _, Backbone, Plumage, requestManager, ModelUtil, BufferedCollection)
       }
       options = options || {};
       this._wrapHandlers(options);
-      Backbone.Model.prototype.save.apply(this, [attrs, options]);
+      Backbone.Model.prototype.save.apply(this, [attrs, options]).then(function(resp){
+        return $.Deferred().resolve(this, resp).promise();
+      }.bind(this));
     },
 
     /**

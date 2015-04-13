@@ -636,6 +636,12 @@ function($, _, Backbone, Plumage, requestManager, ModelUtil, BufferedCollection)
     /** Has this Model been loaded yet? */
     fetched: false,
 
+    /** Criterium for uniqueness is always href */
+    idAttribute: 'href',
+
+    /** field use of for url when href is undefined, ie urlRoot + '/' + urlId */
+    urlIdAttribute: 'id',
+
 
     /**
      * Base Model class for Plumage models.
@@ -893,6 +899,13 @@ function($, _, Backbone, Plumage, requestManager, ModelUtil, BufferedCollection)
       this._pending = false;
       this._changing = false;
       return this;
+    },
+
+    /** set view state
+     * @param {Object} viewState
+     */
+    setViewState: function(viewState) {
+      this.set(this.processViewState(viewState));
     },
 
     processViewState: function(viewState) {
@@ -1161,9 +1174,16 @@ function($, _, Backbone, Plumage, requestManager, ModelUtil, BufferedCollection)
       return null;
     },
 
+    getUrlId: function() {
+      var urlId = this.get(this.urlIdAttribute);
+      if (urlId) {
+        return encodeURIComponent(urlId);
+      }
+    },
+
     /**
      * Generate the url for this model from its attributes. By default this returns
-     * urlRoot/id. If no urlRoot is specified it returns null. This is so prevent loading models
+     * urlRoot/urlIdAttribute. If no urlRoot is specified it returns null. This is so prevent loading models
      * whose urls' can't be derived from attributed. (eg when url depends a parent model's url)
      *
      * Override this method if you have custom urls.
@@ -1171,16 +1191,21 @@ function($, _, Backbone, Plumage, requestManager, ModelUtil, BufferedCollection)
      * @returns {string} Url or null
      */
     urlFromAttributes: function() {
-      if (this.isNew()) {
-        return this.newUrl();
-      }
-
-      //no url so do nothing
+       //no url so do nothing
       if (!this.urlRoot) {
         return null;
       }
 
-      return Backbone.Model.prototype.url.apply(this, arguments);
+      var base =
+        _.result(this, 'urlRoot') ||
+        _.result(this.collection, 'url');
+      if (!base) {
+        throw new Error('A "url" property or function must be specified');
+      }
+      if (this.isNew()) {
+        return this.newUrl();
+      }
+      return base.replace(/([^\/])$/, '$1/') + this.getUrlId();
     },
 
     /**
@@ -1211,7 +1236,7 @@ function($, _, Backbone, Plumage, requestManager, ModelUtil, BufferedCollection)
     },
 
     isNew: function() {
-      return !this.has(this.idAttribute) || this.get('href') && this.get('href').match(/\/new$/) !== null;
+      return !this.getUrlId() || this.get('href') && this.get('href').match(/\/new$/) !== null;
     },
 
     /**
@@ -1245,7 +1270,9 @@ function($, _, Backbone, Plumage, requestManager, ModelUtil, BufferedCollection)
       this._wrapHandlers(options);
 
       this.fireBeginLoad();
-      return this.fetch(options);
+      return this.fetch(options).then(function(resp, result, xhr) {
+        return $.Deferred().resolve(this, resp).promise();
+      }.bind(this));
     },
 
     save: function(key, val, options) {
@@ -1259,7 +1286,9 @@ function($, _, Backbone, Plumage, requestManager, ModelUtil, BufferedCollection)
       }
       options = options || {};
       this._wrapHandlers(options);
-      Backbone.Model.prototype.save.apply(this, [attrs, options]);
+      Backbone.Model.prototype.save.apply(this, [attrs, options]).then(function(resp){
+        return $.Deferred().resolve(this, resp).promise();
+      }.bind(this));
     },
 
     /**
@@ -1454,6 +1483,9 @@ function($, _, Backbone, Plumage, Model) {
   return Plumage.model.Filter = Model.extend(
   /** @lends Plumage.model.Filter.prototype */
   {
+
+    idAttribute: 'id',
+
     /**
      * Model for a Filter on a [Collection]{@link Plumage.collection.Collection}.
      *
@@ -2521,7 +2553,7 @@ function($, _, Backbone, Plumage, Model) {
 
   return Plumage.model.User = Model.extend({
 
-    idAttribute: 'account',
+    urlIdAttribute: 'account',
 
     urlRoot: '/users',
 
@@ -7963,6 +7995,11 @@ function($, _, Backbone, Plumage, requestManager) {
     /** The top level view currently shown by this controller */
     currentView: undefined,
 
+    /** Hook for wrapping handlers */
+    runHandler: function(handlerName, params) {
+      this[handlerName].apply(this, params);
+    },
+
     /**
      * Renders and shows a view in the el specified by [contentSelector]{@link Plumage.controller.BaseController#contentSelector}.
      * This hides and triggers onHide on the current view, cancels outstanding requests, then
@@ -8070,6 +8107,19 @@ function($, _, Backbone, Plumage, BaseController, ModelUtil) {
       this.detailViewCls = ModelUtil.loadClass(options.detailViewCls ? options.detailViewCls : this.detailViewCls);
     },
 
+    /** override to set activeModel*/
+    runHandler: function(handlerName, params) {
+      this.setActiveModel(undefined);
+      var promise = this[handlerName].apply(this, params);
+      if (promise) {
+        return promise.done(function (model, resp) {
+          if (model) {
+            this.setActiveModel(model);
+          }
+        }.bind(this));
+      }
+    },
+
     /** Get the most recently used index model */
     getIndexCollection: function() {
       return this.indexModel;
@@ -8087,17 +8137,19 @@ function($, _, Backbone, Plumage, BaseController, ModelUtil) {
         params.filters = JSON.parse(params.filters);
       }
       var model = this.createIndexModel({}, params);
-      this.showIndexModel(model);
+      return this.showIndexModel(model);
     },
 
     /** handler for showing the detail view. Override this to accept more url params*/
-    showDetail: function(id, params){
-      var model = this.createDetailModel(id, {}, params);
+    showDetail: function(urlId, params){
+
+      var model = this.createDetailModel(urlId, {}, params);
       this.showDetailModel(model);
+      return model;
     },
 
     /** handler for showing the new view. Override this to accept more url params*/
-    showNew: function(params){
+    showNew: function(fragment, params){
       var model = this.createEditModel();
       this.showEditModel(model);
     },
@@ -8109,11 +8161,11 @@ function($, _, Backbone, Plumage, BaseController, ModelUtil) {
       view.setModel(this.indexModel);
       this.showView(view);
 
-      this.loadModel(this.indexModel, {reset: true}).then(function() {
+      this.indexModel.on('change', this.onIndexChange.bind(this));
+      return this.loadModel(this.indexModel, {reset: true}).done(function() {
         view.setModel(model);
       });
 
-      this.indexModel.on('change', this.onIndexChange.bind(this));
     },
 
     /**
@@ -8124,6 +8176,12 @@ function($, _, Backbone, Plumage, BaseController, ModelUtil) {
      */
     showDetailModel: function(model) {
 
+      var view = this.getDetailView();
+
+      if (model === this.detailModel) {
+        return $.Deferred().resolve(model).promise().done();
+      }
+
       if (this.detailModel) {
         this.detailModel.off('error', this.onModelError, this);
       }
@@ -8131,12 +8189,9 @@ function($, _, Backbone, Plumage, BaseController, ModelUtil) {
       this.detailModel = model;
       this.detailModel.on('error', this.onModelError, this);
 
-      var view = this.getDetailView();
-
       view.setModel(model);
       this.showView(view);
-
-      return this.loadModel(model).then(function() {
+      return this.loadModel(model).done(function () {
         // call setModel again, so subviews can get newly loaded related models
         if (model.related) {
           view.setModel(model);
@@ -8150,7 +8205,7 @@ function($, _, Backbone, Plumage, BaseController, ModelUtil) {
       view.setModel(model);
       this.showView(view);
 
-      return this.loadModel(model).then(function() {
+      return this.loadModel(model).done(function() {
         // call setModel again, so subviews can get newly loaded related models
         if (model.related) {
           view.setModel(model);
@@ -8197,25 +8252,33 @@ function($, _, Backbone, Plumage, BaseController, ModelUtil) {
      * Create the detail model from specified attributes.
      * Override to add default attributes, eg empty relationships.
      */
-    createDetailModel: function(id, attributes, viewState) {
-      return this.createModel(this.modelCls, id, attributes, viewState);
+    createDetailModel: function(urlId, attributes, viewState) {
+      var result = this.createModel(this.modelCls, urlId, attributes, viewState);
+      if (this.detailModel && result.url() === this.detailModel.url()) {
+        this.detailModel.set(attributes);
+        if (viewState) {
+          this.detailModel.setViewState(viewState);
+        }
+        result = this.detailModel;
+      }
+      return result;
     },
 
     /**
      * Create the edit model from specified attributes.
      * Override to add default attributes, eg empty relationships.
      */
-    createEditModel: function(id, attributes, viewState) {
-      return this.createModel(this.modelCls, id, attributes, viewState);
+    createEditModel: function(urlId, attributes, viewState) {
+      return this.createModel(this.modelCls, urlId, attributes, viewState);
     },
 
     /** Helper for creating the detail model. */
-    createModel: function(modelCls, id, attributes, viewState) {
+    createModel: function(modelCls, urlId, attributes, viewState) {
       attributes = attributes || {};
       var options = {};
-      if (id) {
+      if (urlId) {
         attributes = _.clone(attributes);
-        attributes[modelCls.prototype.idAttribute] = id;
+        attributes[modelCls.prototype.urlIdAttribute] = urlId;
       }
       options.viewState = viewState;
       return new modelCls(attributes, options);
@@ -8252,12 +8315,26 @@ function($, _, Backbone, Plumage, BaseController, ModelUtil) {
       return new this.editViewCls();
     },
 
+    setActiveModel: function(model) {
+      if (this.activeModel) {
+        this.activeModel.off('change', this.onActiveModelChange, this);
+      }
+      this.activeModel = model;
+      if (this.activeModel) {
+        this.activeModel.on('change', this.onActiveModelChange, this);
+      }
+    },
+
     // Event Handlers
+
+    onActiveModelChange: function() {
+      this.activeModel.updateUrl();
+    },
 
     /** Show detail view on index item select */
     onIndexItemSelected: function(selection) {
       if(selection) {
-        var model = this.createDetailModel(selection.id, selection.attributes);
+        var model = this.createDetailModel(null, selection.attributes);
         model.navigate();
       }
     },
@@ -8282,11 +8359,7 @@ function($, _, Backbone, Plumage, BaseController, ModelUtil) {
      * @param {Plumage.model.Collection} collection Collection to reload
      * @param {Boolean} updateUrl should update url? default to true
      */
-    reloadIndex: _.debounce(function(collection, updateUrl) {
-      updateUrl = updateUrl === undefined ? true : false;
-      if (updateUrl) {
-        collection.updateUrl();
-      }
+    reloadIndex: _.debounce(function(collection) {
       collection.load({reset: true});
     }, 200)
   });
@@ -8481,13 +8554,16 @@ function($, _, Backbone, Plumage, History, ModelUtil) {
 
     /** Route handler that forwards to method 'options.method'
      * in Controller 'options.controller'
+     *
+     * @params {Object} options Static options set when creating route
+     * @params {...} queryParams Remaining params used as query params
      */
-    routeToController: function(options, queryParams){
+    routeToController: function(options){
       if (this.app.navView) {
         this.app.navView.select(options.nav);
       }
       var ctrl = this.app.controllerManager.getController(options.controller);
-      ctrl[options.method].apply(ctrl, Array.prototype.slice.call(arguments, 1));
+      ctrl.runHandler(options.method, Array.prototype.slice.call(arguments, 1));
     },
 
     /**
@@ -8536,11 +8612,6 @@ function($, _, Backbone, Plumage, History, ModelUtil) {
 
     /** Special navigate method for working around Backbone's ignoring of query params. */
     navigateWithQueryParams: function(url, options) {
-      if (url === window.location.pathname + window.location.search) {
-        //already there
-        return;
-      }
-
       this.navigate(url, options);
     },
 
@@ -15859,6 +15930,8 @@ define('view/TabView',[
       'click .tabs a': 'onTabClick'
     },
 
+    triggerOnTabChange: false,
+
     /**
      * If set, call [router.logNavigationAction]{@link Plumage.Router#logNavigationAction}nAction on tab change.
      */
@@ -15906,8 +15979,16 @@ define('view/TabView',[
 
     setActiveTab: function(tabId) {
       if (this.model && tabId !== this.getActiveTab()) {
-        this.model.set(this.viewStateAttr, tabId);
-        this.model.updateUrl();
+        if (this.triggerOnTabChange) {
+          var extras = {};
+          extras[this.viewStateAttr] = tabId;
+          if (window.router) {
+            window.router.navigateWithQueryParams(this.model.viewUrlWithParams(extras), {trigger: true});
+          }
+        } else {
+          this.model.set(this.viewStateAttr, tabId);
+          this.model.updateUrl();
+        }
         this.updateTabCookie();
         if (this.logTabNavigation) {
           if (window.router) {

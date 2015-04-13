@@ -15,7 +15,7 @@ define([
   'example/model/Post',
   'example/collection/PostCollection'
 ], function($, _, Backbone, sinon, Environment, EventLog, ModelController, IndexView,
-    NoRenderModelView, ExampleData) {
+    NoRenderModelView, ExampleData, Post) {
 
 
   //use Environment to mock ajax
@@ -59,5 +59,28 @@ define([
     ok(!ctrl.getIndexView().shown, 'should hide index view');
 
     ok(ctrl.showView.calledTwice, 'do not show if already shown');
+  });
+
+  asyncTest('update url on model change', function() {
+    var ctrl = createModelController();
+
+    this.ajaxResponse = ExampleData.POSTS;
+    ctrl.runHandler('showIndex').then(function(){
+      equal(ctrl.getIndexCollection(), ctrl.activeModel, 'showIndex sets activeModel');
+      start();
+    });
+
+    //this.ajaxResponse = ExampleData.POST_DATA;
+    //ctrl.runHandler('showDetail');
+    //equal(ctrl.getDetailModel(), ctrl.activeModel, 'showDetail sets activeModel');
+  });
+
+  test('current model updates url on change', function() {
+    var ctrl = createModelController();
+    var model = new Post();
+    sinon.spy(model, 'updateUrl');
+    ctrl.setActiveModel(model);
+    model.trigger('change');
+    ok(model.updateUrl.calledOnce);
   });
 });

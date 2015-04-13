@@ -35,6 +35,11 @@ function($, _, Backbone, Plumage, requestManager) {
     /** The top level view currently shown by this controller */
     currentView: undefined,
 
+    /** Hook for wrapping handlers */
+    runHandler: function(handlerName, params) {
+      this[handlerName].apply(this, params);
+    },
+
     /**
      * Renders and shows a view in the el specified by [contentSelector]{@link Plumage.controller.BaseController#contentSelector}.
      * This hides and triggers onHide on the current view, cancels outstanding requests, then

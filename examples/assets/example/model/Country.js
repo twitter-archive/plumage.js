@@ -7,7 +7,7 @@ define([
 ], function($, _, Backbone, Plumage, City) {
 
   return Plumage.model.Model.extend({
-    idAttribute: 'name',
+    urlIdAttribute: 'name',
 
     urlRoot: '/',
 

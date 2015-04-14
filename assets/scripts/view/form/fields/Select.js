@@ -147,7 +147,8 @@ define([
     getItemData: function(item) {
       var data = {
         value: this.getListItemValue(item),
-        label: this.getListItemLabel(item)
+        label: this.getListItemLabel(item),
+        url: item.viewUrlWithParams() || '#'
       };
       data.selected = this.isValueSelected(data.value);
       return data;

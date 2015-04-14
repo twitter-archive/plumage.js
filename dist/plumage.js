@@ -1376,7 +1376,7 @@ function($, _, Backbone, Plumage, requestManager, ModelUtil, BufferedCollection)
     toViewJSON: function(options) {
       var result = _.clone(this.attributes);
       if (result.url === undefined && this.hasUrl()) {
-        result.url = this.url();
+        result.url = this.viewUrlWithParams();
       }
       var displayName = this.getDisplayName();
       if (displayName !== undefined) {
@@ -9531,14 +9531,10 @@ define('view/ModelView',[
      * @override
      */
     getTemplateData: function() {
-      var data = {};
       if (this.model) {
-        data = this.model.toViewJSON();
-        if (this.model.hasUrl() && !data.model_url) {
-          data.model_url = this.model.urlWithParams();
-        }
+        return this.model.toViewJSON();
       }
-      return data;
+      return {};
     },
 
     /**
@@ -11238,7 +11234,8 @@ define('view/form/fields/Select',[
     getItemData: function(item) {
       var data = {
         value: this.getListItemValue(item),
-        label: this.getListItemLabel(item)
+        label: this.getListItemLabel(item),
+        url: item.viewUrlWithParams() || '#'
       };
       data.selected = this.isValueSelected(data.value);
       return data;
@@ -11335,7 +11332,7 @@ define('view/form/fields/Select',[
   });
 });
 
-define('text!view/form/fields/templates/CategorySelect.html',[],function () { return '<input type="hidden" {{#fieldName}}name="{{fieldName}}"{{/fieldName}} value="{{value}}">\n<ul class="nav nav-pills">\n{{#if noSelectionText}}\n<li data-category="" {{^hasSelection}}class="active"{{/hasSelection}}>\n  <a href="{{noSelectionValue}}">\n    {{noSelectionText}}\n  </a>\n</li>\n{{/if}}\n\n{{#listValues}}\n  <li data-value="{{value}}" class="{{value}}{{#selected}} active{{/selected}}"><a href="#">{{label}}</a></li>\n{{/listValues}}\n</ul>';});
+define('text!view/form/fields/templates/CategorySelect.html',[],function () { return '<input type="hidden" {{#fieldName}}name="{{fieldName}}"{{/fieldName}} value="{{value}}">\n<ul class="nav nav-pills">\n{{#if noSelectionText}}\n<li data-category="" {{^hasSelection}}class="active"{{/hasSelection}}>\n  <a href="{{noSelectionValue}}">\n    {{noSelectionText}}\n  </a>\n</li>\n{{/if}}\n\n{{#listValues}}\n  <li data-value="{{value}}" class="{{value}}{{#selected}} active{{/selected}}"><a href="{{url}}">{{label}}</a></li>\n{{/listValues}}\n</ul>';});
 
 define('view/form/fields/CategorySelect',[
   'jquery',
@@ -11355,8 +11352,6 @@ define('view/form/fields/CategorySelect',[
     listValueAttr: 'name',
     listLabelAttr: 'label',
     modelAttr: 'filter',
-
-    itemTemplate: '<li data-value="{{value}}" class="{{value}}{{#selected}} active{{/selected}}"><a href="#">{{label}}</a></li>',
 
     noSelectionText: 'All',
 
@@ -13151,7 +13146,7 @@ define('view/form/fields/DropdownMultiSelect',[
   'handlebars',
   'PlumageRoot',
   'view/form/fields/MultiSelect',
-  'text!view/form/fields/templates/DropdownMultiSelect.html',
+  'text!view/form/fields/templates/DropdownMultiSelect.html'
 ], function($, _, Backbone, Handlebars, Plumage, MultiSelect, template) {
   /**
    * Like a normal field, except value is an array of selected values.
@@ -13166,7 +13161,8 @@ define('view/form/fields/DropdownMultiSelect',[
       'click li a': 'onItemClick',
       'click li input': 'onItemClick',
       'click li.select-all a': 'onSelectAllClick',
-      'click li.select-all input': 'onSelectAllClick'
+      'click li.select-all input': 'onSelectAllClick',
+      'click .dropdown-toggle': 'onToggleClick'
     },
 
     initialize: function() {
@@ -13427,8 +13423,6 @@ define('view/form/fields/TypeAhead',[
 
     valueAttr: 'name',
     labelAttr: 'name',
-
-    itemTemplate: '<li data-value="{{value}}" class="{{value}}{{#selected}} active{{/selected}}"><a href="#">{{label}}</a></li>',
 
     shown: false,
 

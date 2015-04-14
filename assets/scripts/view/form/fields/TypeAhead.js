@@ -24,8 +24,6 @@ define([
     valueAttr: 'name',
     labelAttr: 'name',
 
-    itemTemplate: '<li data-value="{{value}}" class="{{value}}{{#selected}} active{{/selected}}"><a href="#">{{label}}</a></li>',
-
     shown: false,
 
     /**

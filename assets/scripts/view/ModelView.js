@@ -208,14 +208,10 @@ define([
      * @override
      */
     getTemplateData: function() {
-      var data = {};
       if (this.model) {
-        data = this.model.toViewJSON();
-        if (this.model.hasUrl() && !data.model_url) {
-          data.model_url = this.model.urlWithParams();
-        }
+        return this.model.toViewJSON();
       }
-      return data;
+      return {};
     },
 
     /**

@@ -779,7 +779,7 @@ function($, _, Backbone, Plumage, requestManager, ModelUtil, BufferedCollection)
     toViewJSON: function(options) {
       var result = _.clone(this.attributes);
       if (result.url === undefined && this.hasUrl()) {
-        result.url = this.url();
+        result.url = this.viewUrlWithParams();
       }
       var displayName = this.getDisplayName();
       if (displayName !== undefined) {

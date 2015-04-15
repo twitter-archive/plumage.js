@@ -134,7 +134,7 @@ define([
 
     /** Ensure listModel is loaded */
     ensureListData: function() {
-      if (this.listModel && this.listModel.deferLoad && !this.listModel.fetched) {
+      if (this.listModel && this.listModel.loadOnShow && !this.listModel.fetched) {
         this.listModel.fetchIfAvailable();
       }
     },

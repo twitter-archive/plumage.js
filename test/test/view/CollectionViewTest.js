@@ -23,8 +23,7 @@ define([
 
   var PostRemote = Post.extend({relationships: _.clone(Post.prototype.relationships)});
   PostRemote.prototype.relationships.comments = _.extend({}, PostRemote.prototype.relationships.comments, {
-    remote: true,
-    deferLoad: true
+    remote: 'loadOnShow'
   });
 
   function createView(options) {

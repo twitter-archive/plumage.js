@@ -26,8 +26,7 @@ define([
 
   var PostRemote = Post.extend({relationships: _.clone(Post.prototype.relationships)});
   PostRemote.prototype.relationships.comments = _.extend({}, PostRemote.prototype.relationships.comments, {
-    remote: true,
-    deferLoad: true
+    remote: 'loadOnShow'
   });
 
   function createView(options) {
@@ -36,7 +35,7 @@ define([
       valueAttr: 'category',
       listValueAttr: 'name',
       el: $('<div></div>'),
-      template: '<div></div>',
+      template: '<div></div>'
     }, options));
   }
 

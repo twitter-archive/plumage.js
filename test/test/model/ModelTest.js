@@ -25,7 +25,7 @@ define([
   }));
 
   var PostRemote = Post.extend({relationships: _.clone(Post.prototype.relationships)});
-  PostRemote.prototype.relationships.comments = _.extend({}, PostRemote.prototype.relationships.comments, {remote: true});
+  PostRemote.prototype.relationships.comments = _.extend({}, PostRemote.prototype.relationships.comments, {remote: 'autoload'});
 
   test('Can instantiate', function(){
     var model = new Post();
@@ -253,8 +253,20 @@ define([
     ok(errorHandler.calledOnce, 'error handler should have been called');
   });
 
+  test('Error on invalid remote param', function() {
+    PostRemote.prototype.relationships.comments.remote = 'foo';
+
+    try {
+      new PostRemote(ExampleData.POST_DATA_WITH_EMPTY_COMMENTS);
+      ok(false, 'should throw on unknown remote param');
+    } catch(e) {
+      ok(true);
+    }
+  });
+
   test('Remote relationship', function(){
-    PostRemote.prototype.relationships.comments.deferLoad = false;
+    PostRemote.prototype.relationships.comments.remote = 'autoload';
+
     var post = new PostRemote(ExampleData.POST_DATA_WITH_EMPTY_COMMENTS);
     var comments = post.getRelated('comments');
     sinon.spy(comments, 'resetInMemory');
@@ -263,29 +275,35 @@ define([
 
     ok(!comments.resetInMemory.called, 'remote relationship should not be reset in memory');
     equal(this.ajaxCount, 2, 'should fetch both parent and remote children');
-
-    PostRemote.prototype.relationships.comments.deferLoad = true;
-    post = new PostRemote(ExampleData.POST_DATA_WITH_EMPTY_COMMENTS);
-    post.load();
-
-    equal(this.ajaxCount, 3, 'Should not fetch remote children with deferLoad');
-
-    ok(!post.getRelated('comments').fetched, 'defered load children should not be fetched');
   });
 
-  test('Defer load of remote relationship', function(){
-    PostRemote.prototype.relationships.comments.deferLoad = true;
+  test('do not autoload for remote = manual', function(){
+    PostRemote.prototype.relationships.comments.remote = 'manual';
+
     var post = new PostRemote(ExampleData.POST_DATA_WITH_RELATED);
     this.ajaxResponse = {results: ExampleData.POST_DATA_WITH_RELATED};
+    post.load();
+    equal(this.ajaxCount, 1, 'should not load related');
 
-    equal(post.getRelated('comments').deferLoad, true, 'should flag model as defer load');
+    equal(post.getRelated('comments').loadOnShow, undefined, 'do not mark for load on show');
+  });
+
+  test('defer load when remote = loadOnShow', function(){
+    PostRemote.prototype.relationships.comments.remote = 'loadOnShow';
+
+    var post = new PostRemote(ExampleData.POST_DATA_WITH_EMPTY_COMMENTS);
+    this.ajaxResponse = {results: ExampleData.POST_DATA_WITH_RELATED_HREFS};
+
+    equal(post.getRelated('comments').loadOnShow, true, 'should flag model as defer load');
 
     post.load();
 
     equal(this.ajaxCount, 1, 'should fetch both parent and remote children');
 
-    equal(post.getRelated('comments').deferLoad, true, 'should flag model as defer load');
+    equal(post.getRelated('comments').loadOnShow, true, 'should flag model as defer load');
+    ok(!post.getRelated('comments').fetched, 'loadOnShow children should not be fetched');
   });
+
 
   test('Force create relationship', function(){
     var post = new Post(ExampleData.POST_DATA);

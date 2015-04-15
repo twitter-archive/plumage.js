@@ -123,25 +123,27 @@ function($, _, Backbone, Plumage, BaseController, ModelUtil) {
 
       var view = this.getDetailView();
 
-      if (model === this.detailModel) {
-        return $.Deferred().resolve(model).promise().done();
-      }
-
-      if (this.detailModel) {
-        this.detailModel.off('error', this.onModelError, this);
-      }
-
-      this.detailModel = model;
-      this.detailModel.on('error', this.onModelError, this);
-
-      view.setModel(model);
-      this.showView(view);
-      return this.loadModel(model).done(function () {
-        // call setModel again, so subviews can get newly loaded related models
-        if (model.related) {
-          view.setModel(model);
+      var result;
+      if (model !== this.detailModel) {
+        if (this.detailModel) {
+          this.detailModel.off('error', this.onModelError, this);
         }
-      });
+
+        this.detailModel = model;
+        this.detailModel.on('error', this.onModelError, this);
+        view.setModel(model);
+        result = this.loadModel(model).done(function () {
+          // call setModel again, so subviews can get newly loaded related models
+          if (model.related) {
+            view.setModel(model);
+          }
+        });
+      } else {
+        result = $.Deferred().resolve(model).promise().done();
+      }
+
+      this.showView(view);
+      return result;
     },
 
     showEditModel: function(model) {

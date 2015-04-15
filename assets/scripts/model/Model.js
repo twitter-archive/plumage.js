@@ -19,6 +19,10 @@ function($, _, Backbone, Plumage, requestManager, ModelUtil, BufferedCollection)
      * params:
      *  - forceCreate: create the related model even if it doesn't exist in the initial data. This way
      *      They can be set on views, in preparation for later updates.
+     *  - remote: The related model needs to be loaded after the current model loads. Can be of the values:
+     *     - 'autoload' => Load as soon as url is available.
+     *     - 'loadOnShow' => Load when first shown in a view.
+     *     - 'manual' => Loaded manually.
      */
     relationships: {},
 
@@ -307,8 +311,8 @@ function($, _, Backbone, Plumage, requestManager, ModelUtil, BufferedCollection)
     /** set view state
      * @param {Object} viewState
      */
-    setViewState: function(viewState) {
-      this.set(this.processViewState(viewState));
+    setViewState: function(viewState, options) {
+      this.set(this.processViewState(viewState), options);
     },
 
     processViewState: function(viewState) {
@@ -338,12 +342,18 @@ function($, _, Backbone, Plumage, requestManager, ModelUtil, BufferedCollection)
     instantiateRelationship: function(key, data, relationship) {
       var related = this.getRelated(key);
       if (related === undefined) {
+        if (relationship.remote && ['autoload', 'loadOnShow', 'manual'].indexOf(relationship.remote) === -1) {
+          throw 'invalid remote relationship param';
+        }
         var RelatedClass = ModelUtil.loadClass(relationship.modelCls);
 
         if (RelatedClass.prototype instanceof Plumage.collection.Collection) {
           related = this.createRelatedCollection(RelatedClass, relationship, data);
         } else {
           related = this.createRelatedModel(RelatedClass, relationship, data);
+        }
+        if (relationship.remote === 'loadOnShow') {
+          related.loadOnShow = true;
         }
         this.setRelated(key, related);
         return true;
@@ -480,15 +490,12 @@ function($, _, Backbone, Plumage, requestManager, ModelUtil, BufferedCollection)
      * @param {Object} data Data to set on Model.
      */
     updateRelatedModel: function(relationship, model, data) {
-      if (relationship.remote && relationship.deferLoad) {
-        model.deferLoad = true;
-      }
       if (model instanceof Plumage.collection.Collection) {
         if ($.isArray(data)) {
           data = {models: data};
         }
       }
-      model.set(data, {silent: true});
+      model.set(data, {silent: true}); //silent to prevent double render with subsequent load event.
       return !$.isEmptyObject(model.changed);
     },
 
@@ -715,7 +722,7 @@ function($, _, Backbone, Plumage, requestManager, ModelUtil, BufferedCollection)
         var rel = this.getRelated(key);
         if (rel && !visited[rel.cid]) {
           if (relationship.remote) {
-            if (!rel.deferLoad) {
+            if (relationship.remote === 'autoload' || relationship.remote === 'loadOnShow' && !rel.loadOnShow) {
               rel.fetchIfAvailable();
             }
           } else {
@@ -732,7 +739,7 @@ function($, _, Backbone, Plumage, requestManager, ModelUtil, BufferedCollection)
       this.trigger('beginLoad', this);
       _.each(this.relationships, function(relationship, key) {
         var rel = this.getRelated(key);
-        if (rel && relationship.remote && !rel.deferLoad) {
+        if (rel && relationship.remote === 'autoload') {
           rel.fireBeginLoad();
         }
       }, this);

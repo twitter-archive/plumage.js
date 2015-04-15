@@ -616,6 +616,10 @@ function($, _, Backbone, Plumage, requestManager, ModelUtil, BufferedCollection)
      * params:
      *  - forceCreate: create the related model even if it doesn't exist in the initial data. This way
      *      They can be set on views, in preparation for later updates.
+     *  - remote: The related model needs to be loaded after the current model loads. Can be of the values:
+     *     - 'autoload' => Load as soon as url is available.
+     *     - 'loadOnShow' => Load when first shown in a view.
+     *     - 'manual' => Loaded manually.
      */
     relationships: {},
 
@@ -904,8 +908,8 @@ function($, _, Backbone, Plumage, requestManager, ModelUtil, BufferedCollection)
     /** set view state
      * @param {Object} viewState
      */
-    setViewState: function(viewState) {
-      this.set(this.processViewState(viewState));
+    setViewState: function(viewState, options) {
+      this.set(this.processViewState(viewState), options);
     },
 
     processViewState: function(viewState) {
@@ -935,12 +939,18 @@ function($, _, Backbone, Plumage, requestManager, ModelUtil, BufferedCollection)
     instantiateRelationship: function(key, data, relationship) {
       var related = this.getRelated(key);
       if (related === undefined) {
+        if (relationship.remote && ['autoload', 'loadOnShow', 'manual'].indexOf(relationship.remote) === -1) {
+          throw 'invalid remote relationship param';
+        }
         var RelatedClass = ModelUtil.loadClass(relationship.modelCls);
 
         if (RelatedClass.prototype instanceof Plumage.collection.Collection) {
           related = this.createRelatedCollection(RelatedClass, relationship, data);
         } else {
           related = this.createRelatedModel(RelatedClass, relationship, data);
+        }
+        if (relationship.remote === 'loadOnShow') {
+          related.loadOnShow = true;
         }
         this.setRelated(key, related);
         return true;
@@ -1077,15 +1087,12 @@ function($, _, Backbone, Plumage, requestManager, ModelUtil, BufferedCollection)
      * @param {Object} data Data to set on Model.
      */
     updateRelatedModel: function(relationship, model, data) {
-      if (relationship.remote && relationship.deferLoad) {
-        model.deferLoad = true;
-      }
       if (model instanceof Plumage.collection.Collection) {
         if ($.isArray(data)) {
           data = {models: data};
         }
       }
-      model.set(data, {silent: true});
+      model.set(data, {silent: true}); //silent to prevent double render with subsequent load event.
       return !$.isEmptyObject(model.changed);
     },
 
@@ -1312,7 +1319,7 @@ function($, _, Backbone, Plumage, requestManager, ModelUtil, BufferedCollection)
         var rel = this.getRelated(key);
         if (rel && !visited[rel.cid]) {
           if (relationship.remote) {
-            if (!rel.deferLoad) {
+            if (relationship.remote === 'autoload' || relationship.remote === 'loadOnShow' && !rel.loadOnShow) {
               rel.fetchIfAvailable();
             }
           } else {
@@ -1329,7 +1336,7 @@ function($, _, Backbone, Plumage, requestManager, ModelUtil, BufferedCollection)
       this.trigger('beginLoad', this);
       _.each(this.relationships, function(relationship, key) {
         var rel = this.getRelated(key);
-        if (rel && relationship.remote && !rel.deferLoad) {
+        if (rel && relationship.remote === 'autoload') {
           rel.fireBeginLoad();
         }
       }, this);
@@ -8178,25 +8185,27 @@ function($, _, Backbone, Plumage, BaseController, ModelUtil) {
 
       var view = this.getDetailView();
 
-      if (model === this.detailModel) {
-        return $.Deferred().resolve(model).promise().done();
-      }
-
-      if (this.detailModel) {
-        this.detailModel.off('error', this.onModelError, this);
-      }
-
-      this.detailModel = model;
-      this.detailModel.on('error', this.onModelError, this);
-
-      view.setModel(model);
-      this.showView(view);
-      return this.loadModel(model).done(function () {
-        // call setModel again, so subviews can get newly loaded related models
-        if (model.related) {
-          view.setModel(model);
+      var result;
+      if (model !== this.detailModel) {
+        if (this.detailModel) {
+          this.detailModel.off('error', this.onModelError, this);
         }
-      });
+
+        this.detailModel = model;
+        this.detailModel.on('error', this.onModelError, this);
+        view.setModel(model);
+        result = this.loadModel(model).done(function () {
+          // call setModel again, so subviews can get newly loaded related models
+          if (model.related) {
+            view.setModel(model);
+          }
+        });
+      } else {
+        result = $.Deferred().resolve(model).promise().done();
+      }
+
+      this.showView(view);
+      return result;
     },
 
     showEditModel: function(model) {
@@ -9501,15 +9510,17 @@ define('view/ModelView',[
         this.model.on('destroy', this.onModelDestroy, this);
         this.model.on('invalid', this.onModelInvalid, this);
         this.model.on('error', this.onModelError, this);
+
+        if (changed && this.model && this.model.fetched) {
+          this.onModelLoad();
+        }
+
+        if (this.shown) {
+          this.ensureData();
+        }
       }
 
-      if (changed && this.model && this.model.fetched) {
-        this.onModelLoad();
-      }
 
-      if (this.shown) {
-        this.ensureData();
-      }
 
       //recurse
       this.eachSubView(function(subView) {
@@ -9517,10 +9528,13 @@ define('view/ModelView',[
       }.bind(this));
     },
 
-    /** triggers loading of deferLoad Models. */
+    /** triggers loading of loadOnShow Models. */
     ensureData: function() {
-      if (this.model && this.model.deferLoad && !this.model.fetched) {
-        this.model.fetchIfAvailable();
+      if (this.model && this.model.loadOnShow) {
+        if(!this.model.fetched) {
+          this.model.fetchIfAvailable();
+        }
+        delete this.model.loadOnShow;
       }
     },
 
@@ -11221,7 +11235,7 @@ define('view/form/fields/Select',[
 
     /** Ensure listModel is loaded */
     ensureListData: function() {
-      if (this.listModel && this.listModel.deferLoad && !this.listModel.fetched) {
+      if (this.listModel && this.listModel.loadOnShow && !this.listModel.fetched) {
         this.listModel.fetchIfAvailable();
       }
     },

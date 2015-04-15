@@ -83,4 +83,21 @@ define([
     model.trigger('change');
     ok(model.updateUrl.calledOnce);
   });
+
+  test('showDetail is idempotent for same model', function() {
+    var ctrl = createModelController();
+    sinon.spy(ctrl, 'showView');
+
+
+    this.ajaxResponse = ExampleData.POST_DATA;
+    ctrl.showDetail(1);
+    ok(ctrl.showView.calledOnce);
+
+    sinon.spy(ctrl.getDetailView(), 'setModel');
+
+    ctrl.showDetail(1);
+    ok(ctrl.showView.calledTwice);
+    ok(ctrl.getDetailView().setModel.notCalled);
+    equal(this.ajaxCount, 1, 'should not load same model twice');
+  });
 });

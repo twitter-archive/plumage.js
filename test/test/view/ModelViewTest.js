@@ -27,8 +27,7 @@ define([
 
   var PostRemote = Post.extend({relationships: _.clone(Post.prototype.relationships)});
   PostRemote.prototype.relationships.comments = _.extend({}, PostRemote.prototype.relationships.comments, {
-    remote: true,
-    deferLoad: true
+    remote: 'loadOnShow'
   });
 
   test('test model binding', function(){
@@ -134,7 +133,7 @@ define([
     ok(onRenderSpy.calledTwice, 'after render, so render on load');
   });
 
-  test('onShow triggers deferred load', function() {
+  test('onShow triggers loadOnShow', function() {
     var model = new PostRemote(_.extend({}, ExampleData.POST_DATA, {comments: []}));
     var comments = model.getRelated('comments');
     sinon.spy(comments, 'fetchIfAvailable');
@@ -151,6 +150,7 @@ define([
     ok(comments.fetchIfAvailable.calledOnce, 'should not fetch twice');
 
     view.model = null;
+    comments.loadOnShow = true;
     comments.fetched = false;
     view.setModel(model);
     ok(comments.fetchIfAvailable.calledTwice, 'If view is already shown, fetch on setModel');

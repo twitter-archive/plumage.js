@@ -178,15 +178,17 @@ define([
         this.model.on('destroy', this.onModelDestroy, this);
         this.model.on('invalid', this.onModelInvalid, this);
         this.model.on('error', this.onModelError, this);
+
+        if (changed && this.model && this.model.fetched) {
+          this.onModelLoad();
+        }
+
+        if (this.shown) {
+          this.ensureData();
+        }
       }
 
-      if (changed && this.model && this.model.fetched) {
-        this.onModelLoad();
-      }
 
-      if (this.shown) {
-        this.ensureData();
-      }
 
       //recurse
       this.eachSubView(function(subView) {
@@ -194,10 +196,13 @@ define([
       }.bind(this));
     },
 
-    /** triggers loading of deferLoad Models. */
+    /** triggers loading of loadOnShow Models. */
     ensureData: function() {
-      if (this.model && this.model.deferLoad && !this.model.fetched) {
-        this.model.fetchIfAvailable();
+      if (this.model && this.model.loadOnShow) {
+        if(!this.model.fetched) {
+          this.model.fetchIfAvailable();
+        }
+        delete this.model.loadOnShow;
       }
     },
 

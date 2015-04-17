@@ -41,11 +41,6 @@ define([
     valueAttr: undefined,
 
     /**
-     * input's name attribute
-     */
-    fieldName: undefined,
-
-    /**
      * If updateModelOnChange is set, the model is updated on every change
      */
     updateModelOnChange: false,
@@ -138,7 +133,7 @@ define([
     update: function(isLoad) {
       if (this.isRendered) {
         var val = this.getInputEl().val(),
-          newVal = this.getValueString(this.getValue());
+          newVal = this.processValueForDom(this.getValue());
         if (val !== newVal) {
           this.getInputEl().val(newVal);
         }
@@ -212,7 +207,7 @@ define([
       var data = {
         label: this.getLabel(),
         valueAttr: this.valueAttr,
-        value: this.getValueString(this.getValue()),
+        value: this.processValueForDom(this.getValue()),
         hasValue: this.hasValue(),
         placeholder: this.placeholder,
         readonly: this.readonly,
@@ -241,7 +236,7 @@ define([
       return this.value;
     },
 
-    getValueString: function(value) {
+    processValueForDom: function(value) {
       return value;
     },
 

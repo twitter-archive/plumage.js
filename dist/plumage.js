@@ -10077,11 +10077,6 @@ define('view/form/fields/Field',[
     valueAttr: undefined,
 
     /**
-     * input's name attribute
-     */
-    fieldName: undefined,
-
-    /**
      * If updateModelOnChange is set, the model is updated on every change
      */
     updateModelOnChange: false,
@@ -10174,7 +10169,7 @@ define('view/form/fields/Field',[
     update: function(isLoad) {
       if (this.isRendered) {
         var val = this.getInputEl().val(),
-          newVal = this.getValueString(this.getValue());
+          newVal = this.processValueForDom(this.getValue());
         if (val !== newVal) {
           this.getInputEl().val(newVal);
         }
@@ -10248,7 +10243,7 @@ define('view/form/fields/Field',[
       var data = {
         label: this.getLabel(),
         valueAttr: this.valueAttr,
-        value: this.getValueString(this.getValue()),
+        value: this.processValueForDom(this.getValue()),
         hasValue: this.hasValue(),
         placeholder: this.placeholder,
         readonly: this.readonly,
@@ -10277,7 +10272,7 @@ define('view/form/fields/Field',[
       return this.value;
     },
 
-    getValueString: function(value) {
+    processValueForDom: function(value) {
       return value;
     },
 
@@ -11860,7 +11855,7 @@ define('view/form/fields/Calendar',[
   });
 });
 
-define('text!view/form/fields/templates/Checkbox.html',[],function () { return '{{#if checkboxLabel}}\n<label class="{{cls}}">\n{{/if}}\n  <input type="checkbox" name="{{../fieldName}}" {{#selected}}checked="true"{{/selected}} value="true">\n{{#if checkboxLabel}}\n  <span>{{checkboxLabel}}</span>\n</label>\n{{/if}}\n';});
+define('text!view/form/fields/templates/Checkbox.html',[],function () { return '{{#if checkboxLabel}}\n<label class="{{cls}}">\n{{/if}}\n  <input type="checkbox" name="{{valueAttr}}" {{#selected}}checked="true"{{/selected}} value="true">\n{{#if checkboxLabel}}\n  <span>{{checkboxLabel}}</span>\n</label>\n{{/if}}\n';});
 
 define('view/form/fields/Checkbox',[
   'jquery',
@@ -11870,16 +11865,25 @@ define('view/form/fields/Checkbox',[
   'view/form/fields/Field',
   'text!view/form/fields/templates/Checkbox.html'
 ], function($, _, Backbone, Plumage, Field, template) {
-  return Plumage.view.form.fields.Checkbox = Field.extend({
+  return Plumage.view.form.fields.Checkbox = Field.extend(
+  /** @lends Plumage.view.form.fields.Checkbox.prototype */
+  {
 
     fieldTemplate: template,
 
+    /** Label next to the checkbox. Optional */
     checkboxLabel: '',
+
+    /** Model value to interpret as checked */
+    checkedValue: true,
+
+    /** Model value to interpret as unchecked */
+    uncheckedValue: false,
 
     getTemplateData: function() {
       var data = Field.prototype.getTemplateData.apply(this, arguments);
       data.checkboxLabel = this.checkboxLabel;
-      if (this.getValue()) {
+      if (this.getValue() === this.checkedValue) {
         data.selected = true;
       }
       return data;
@@ -11901,11 +11905,11 @@ define('view/form/fields/Checkbox',[
     },
 
     processDomValue: function(value) {
-      return value === 'true' ? true : false;
+      return value === 'true' ? this.checkedValue : this.uncheckedValue;
     },
 
     update: function() {
-      if (this.rendered) {
+      if (this.isRendered) {
         this.render();
       }
     }
@@ -12553,7 +12557,7 @@ define('view/form/fields/DateField',[
       //do nothing on typing. Wait for blur
     },
 
-    getValueString: function(value) {
+    processValueForDom: function(value) {
       if (value) {
         var m = this.utc ? moment.utc(value) : moment(value);
         return m.format(this.format);
@@ -12747,8 +12751,8 @@ define('view/form/fields/picker/DateRangePicker',[
         return m.format(this.dateFormat);
       }.bind(this);
 
-      this.getSubView('fromDate').getValueString = formatDate;
-      this.getSubView('toDate').getValueString = formatDate;
+      this.getSubView('fromDate').processValueForDom = formatDate;
+      this.getSubView('toDate').processValueForDom = formatDate;
     },
 
     onRender: function() {
@@ -12917,7 +12921,7 @@ define('view/form/fields/DateRangeField',[
     // Value
     //
 
-    getValueString: function(value) {
+    processValueForDom: function(value) {
       if (value && value.length) {
         var picker = this.getPicker();
         var format = picker.showHourSelect ? this.formatWithHour : this.format;
@@ -13287,7 +13291,7 @@ define('view/form/fields/DurationField',[
       return data;
     },
 
-    getValueString: function(value) {
+    processValueForDom: function(value) {
       if (!isNaN(Number(value))) {
         if (value && this.selectedUnit !== undefined) {
           return value/this.selectedUnit;

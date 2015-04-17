@@ -122,7 +122,7 @@ define([
       //do nothing on typing. Wait for blur
     },
 
-    getValueString: function(value) {
+    processValueForDom: function(value) {
       if (value) {
         var m = this.utc ? moment.utc(value) : moment(value);
         return m.format(this.format);

@@ -132,8 +132,8 @@ define([
         return m.format(this.dateFormat);
       }.bind(this);
 
-      this.getSubView('fromDate').getValueString = formatDate;
-      this.getSubView('toDate').getValueString = formatDate;
+      this.getSubView('fromDate').processValueForDom = formatDate;
+      this.getSubView('toDate').processValueForDom = formatDate;
     },
 
     onRender: function() {

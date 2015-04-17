@@ -50,7 +50,7 @@ define([
       return data;
     },
 
-    getValueString: function(value) {
+    processValueForDom: function(value) {
       if (!isNaN(Number(value))) {
         if (value && this.selectedUnit !== undefined) {
           return value/this.selectedUnit;

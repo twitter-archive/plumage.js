@@ -32,7 +32,7 @@
   },
   "devDependencies" : {
     "blanket": "latest",
-    "qunit": "latest"
+    "qunit": "1.16"
   }
 
 }

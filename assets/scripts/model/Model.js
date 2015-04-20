@@ -696,9 +696,13 @@ function($, _, Backbone, Plumage, requestManager, ModelUtil, BufferedCollection)
       }
       options = options || {};
       this._wrapHandlers(options);
-      Backbone.Model.prototype.save.apply(this, [attrs, options]).then(function(resp){
-        return $.Deferred().resolve(this, resp).promise();
-      }.bind(this));
+      var xhr = Backbone.Model.prototype.save.apply(this, [attrs, options]);
+      if (xhr) {
+        xhr.then(function(resp){
+          return $.Deferred().resolve(this, resp).promise();
+        }.bind(this));
+      }
+      return false;
     },
 
     /**

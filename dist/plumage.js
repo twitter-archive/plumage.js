@@ -1293,9 +1293,13 @@ function($, _, Backbone, Plumage, requestManager, ModelUtil, BufferedCollection)
       }
       options = options || {};
       this._wrapHandlers(options);
-      Backbone.Model.prototype.save.apply(this, [attrs, options]).then(function(resp){
-        return $.Deferred().resolve(this, resp).promise();
-      }.bind(this));
+      var xhr = Backbone.Model.prototype.save.apply(this, [attrs, options]);
+      if (xhr) {
+        xhr.then(function(resp){
+          return $.Deferred().resolve(this, resp).promise();
+        }.bind(this));
+      }
+      return false;
     },
 
     /**
@@ -8151,14 +8155,13 @@ function($, _, Backbone, Plumage, BaseController, ModelUtil) {
     showDetail: function(urlId, params){
 
       var model = this.createDetailModel(urlId, {}, params);
-      this.showDetailModel(model);
-      return model;
+      return this.showDetailModel(model);
     },
 
     /** handler for showing the new view. Override this to accept more url params*/
     showNew: function(fragment, params){
       var model = this.createEditModel();
-      this.showEditModel(model);
+      return this.showEditModel(model);
     },
 
     /** Logic for binding a model to, and then showing the index view */

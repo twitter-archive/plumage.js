@@ -89,14 +89,13 @@ function($, _, Backbone, Plumage, BaseController, ModelUtil) {
     showDetail: function(urlId, params){
 
       var model = this.createDetailModel(urlId, {}, params);
-      this.showDetailModel(model);
-      return model;
+      return this.showDetailModel(model);
     },
 
     /** handler for showing the new view. Override this to accept more url params*/
     showNew: function(fragment, params){
       var model = this.createEditModel();
-      this.showEditModel(model);
+      return this.showEditModel(model);
     },
 
     /** Logic for binding a model to, and then showing the index view */

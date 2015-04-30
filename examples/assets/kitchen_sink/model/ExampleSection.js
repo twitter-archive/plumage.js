@@ -9,6 +9,7 @@ define([
   return Plumage.model.Model.extend({
     idAttribute: 'name',
 
+    urlIdAttribute: 'name',
     urlRoot: '/',
 
     sourceLoaded: false,

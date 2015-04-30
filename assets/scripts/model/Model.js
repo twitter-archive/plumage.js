@@ -756,7 +756,7 @@ function($, _, Backbone, Plumage, requestManager, ModelUtil, BufferedCollection)
     fetchIfAvailable: function() {
       var url = this.urlWithParams();
       if (url) {
-        requestManager.loadModel(this);
+        return requestManager.loadModel(this);
       }
     },
 

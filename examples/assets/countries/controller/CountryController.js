@@ -43,6 +43,7 @@ function($, _, Backbone, Plumage,
     // No server so don't actually load anything.
     loadModel: function(model) {
       model.onLoad();
+      return $.Deferred().resolve(model).promise();
     }
   });
 });

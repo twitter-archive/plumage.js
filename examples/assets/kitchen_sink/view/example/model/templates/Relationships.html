@@ -70,7 +70,7 @@ var MyModel = Plumage.model.Model.extend({
     }
   }
 });
-var model = new MyModel();
+var model = new MyModel({related: {}});
 model.load();
 log('--');
 log('model marked to loadOnShow: ' + model.getRelated('related').loadOnShow);

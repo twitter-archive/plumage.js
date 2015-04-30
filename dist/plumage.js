@@ -1353,7 +1353,7 @@ function($, _, Backbone, Plumage, requestManager, ModelUtil, BufferedCollection)
     fetchIfAvailable: function() {
       var url = this.urlWithParams();
       if (url) {
-        requestManager.loadModel(this);
+        return requestManager.loadModel(this);
       }
     },
 
@@ -14648,9 +14648,11 @@ define('view/grid/GridView',[
     onModelLoad: function(models, options) {
       if (!this.infiniteScroll) {
         this.onDoneLoad();
-        this.grid.invalidate();
-        this.updateNoData();
-        this.grid.scrollRowToTop(0);
+        if (this.isRendered) {
+          this.grid.invalidate();
+          this.updateNoData();
+          this.grid.scrollRowToTop(0);
+        }
       }
       if (models && models.get && models.get('sortField')) {
         this.grid.setSortColumn(models.get('sortField'), String(models.get('sortDir')) === '1');
@@ -15314,7 +15316,7 @@ define('view/DisplayField',[
 });
 
 
-define('text!view/templates/NavView.html',[],function () { return '\n<div id="nav-top">\n  <a class="brand" href="/">\n    <span class="nav-title">{{title}}</span>\n    {{#subtitle}}<span class="nav-subtitle">{{.}}</span>{{/subtitle}}\n  </a>\n  <div id="extra-links">\n  {{#if aboutUrl}}\n    <a class="outlink" href="{{aboutUrl}}" target="_">{{aboutLabel}}</a>\n  {{/if}}\n\n  {{#if helpUrl}}\n    <a class="outlink" href="{{helpUrl}}" target="_">{{helpLabel}}</a>\n  {{/if}}\n  </div>\n\n  <div id="nav-top-right" class="nav pull-right">\n    <div class="nav-search"></div>\n  </div>\n  <div class="clear"></div>\n</div>\n\n{{#if navItems}}\n<div id="main-nav" class="navbar">\n  <div class="navbar-inner">\n    <ul class="nav-menu nav menu">\n      {{#navItems}}\n      <li class="{{className}}"><a href="{{url}}">{{label}}</a></li>\n      {{/navItems}}\n    </ul>\n\n    <ul class="nav right-nav pull-right">\n      <li class="user-menu"></li>\n    </ul>\n  </div>\n</div>\n{{/if}}';});
+define('text!view/templates/NavView.html',[],function () { return '\n<div id="nav-top">\n  <a class="brand" href="{{titleUrl}}">\n    <span class="nav-title">{{title}}</span>\n    {{#subtitle}}<span class="nav-subtitle">{{.}}</span>{{/subtitle}}\n  </a>\n  <div id="extra-links">\n  {{#if aboutUrl}}\n    <a class="outlink" href="{{aboutUrl}}" target="_">{{aboutLabel}}</a>\n  {{/if}}\n\n  {{#if helpUrl}}\n    <a class="outlink" href="{{helpUrl}}" target="_">{{helpLabel}}</a>\n  {{/if}}\n  </div>\n\n  <div id="nav-top-right" class="nav pull-right">\n    <div class="nav-search"></div>\n  </div>\n  <div class="clear"></div>\n</div>\n\n{{#if navItems}}\n<div id="main-nav" class="navbar">\n  <div class="navbar-inner">\n    <ul class="nav-menu nav menu">\n      {{#navItems}}\n      <li class="{{className}}"><a href="{{url}}">{{label}}</a></li>\n      {{/navItems}}\n    </ul>\n\n    <ul class="nav right-nav pull-right">\n      <li class="user-menu"></li>\n    </ul>\n  </div>\n</div>\n{{/if}}';});
 
 define('view/NavView',[
   'jquery',
@@ -15339,6 +15341,8 @@ define('view/NavView',[
      *
      */
     title: undefined,
+
+    titleUrl: '/',
 
     subtitle: undefined,
 
@@ -15428,6 +15432,7 @@ define('view/NavView',[
       }
       return {
         title: this.title,
+        titleUrl: this.titleUrl,
         subtitle: this.subtitle,
         navItems: navItems,
         showAbout: this.aboutTemplate !== undefined,

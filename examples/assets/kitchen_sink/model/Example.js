@@ -4,6 +4,8 @@ function($, _, Backbone, Plumage) {
   return Plumage.model.Model.extend({
     idAttribute: 'name',
 
+    urlIdAttribute: 'name',
+
     urlRoot: '/example',
 
     viewAttrs: ['tab', 'dropdown'],

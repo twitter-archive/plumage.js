@@ -95,6 +95,8 @@ define([
     var grid = gridView.grid;
     var model =  new PostCollection([]);
     gridView.setModel(model);
+    gridView.render();
+
     model.onLoad();
 
     equal(gridView.noDataEl.css('display'), 'block', 'should show noData when there are no rows');

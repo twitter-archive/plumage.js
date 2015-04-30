@@ -20,7 +20,7 @@ Add script tags for require.js, config.js (config for require.js) to your index.
     <script type="text/javascript" src="/bower_components/plumagejs/assets/scripts/config.js"></script>
     <!-- include your own require.js config here -->
 
-In your js files, require plumage, and access plumage classes from the [Plumage](Plumage.html) object.
+In your js files, require plumage, and access plumage classes from the [Plumage](http://twitter.github.io/plumage.js/api/Plumage.html) object.
 
     define(['jquery', 'underscore', 'plumage'],
     function($, _, Plumage) {
@@ -31,7 +31,7 @@ In your js files, require plumage, and access plumage classes from the [Plumage]
 
 ### Hello Plumage
 
-To get running, we'll need an [App](Plumage.App.html), a [Router](Plumage.Router.html) and a [Controller](Plumage.controller.BaseController.html).
+To get running, we'll need an [App](http://twitter.github.io/plumage.js/api/Plumage.App.html), a [Router](http://twitter.github.io/plumage.js/api/Plumage.Router.html) and a [Controller](http://twitter.github.io/plumage.js/api/Plumage.controller.BaseController.html).
 
 **controller/MyController.js**
 
@@ -77,8 +77,8 @@ Load the page and you should see the 'Hello Plumage!' alert.
 
 ### Next Steps
 
-Next you'll probably want some [Models](Plumage.model.Model.html), [Collections](Plumage.collection.Collection.html) and
-[Views](Plumage.view.ModelView.html). A good place to start is the source code of the [Countries example](../examples/countries).
+Next you'll probably want some [Models](http://twitter.github.io/plumage.js/api/Plumage.model.Model.html), [Collections](http://twitter.github.io/plumage.js/api/Plumage.collection.Collection.html) and
+[Views](http://twitter.github.io/plumage.js/api/Plumage.view.ModelView.html). A good place to start is the [source code](examples/countries.html) of the [Countries example](http://twitter.github.io/plumage.js/examples/countries).
 
 ### License
 

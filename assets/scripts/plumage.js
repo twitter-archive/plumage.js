@@ -42,6 +42,7 @@ define([
   'view/form/fields/DateRangeField',
   'view/form/fields/DropdownMultiSelect',
   'view/form/fields/DropdownSelect',
+  'view/form/fields/DurationField',
   'view/form/fields/Field',
   'view/form/fields/FieldWithPicker',
   'view/form/fields/FilterCheckbox',

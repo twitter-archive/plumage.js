@@ -210,9 +210,11 @@ define([
     onModelLoad: function(models, options) {
       if (!this.infiniteScroll) {
         this.onDoneLoad();
-        this.grid.invalidate();
-        this.updateNoData();
-        this.grid.scrollRowToTop(0);
+        if (this.isRendered) {
+          this.grid.invalidate();
+          this.updateNoData();
+          this.grid.scrollRowToTop(0);
+        }
       }
       if (models && models.get && models.get('sortField')) {
         this.grid.setSortColumn(models.get('sortField'), String(models.get('sortDir')) === '1');
@@ -261,11 +263,13 @@ define([
       }
 
       var cell = this.grid.getCellFromEvent(e);
-      var id = this.grid.getDataItem(cell.row).id,
+      var item = this.grid.getDataItem(cell.row);
+      if (item) {
+        var id = this.grid.getDataItem(cell.row).id,
         data = this.grid.getData(),
         model = data.getItem(data.getIndexForId(id));
-
-      this.trigger('itemSelected',  model);
+        this.trigger('itemSelected',  model);
+      }
     },
 
     toggleRowSelected: function(index) {

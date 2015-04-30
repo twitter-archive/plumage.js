@@ -3,8 +3,9 @@ define([
   'underscore',
   'backbone',
   'PlumageRoot',
-  'view/ModelView'
-], function($, _, Backbone, Plumage, ModelView) {
+  'view/ModelView',
+  'view/MessageView'
+], function($, _, Backbone, Plumage, ModelView, MessageView) {
 
   return Plumage.view.controller.IndexView = ModelView.extend({
 
@@ -17,6 +18,13 @@ define([
     filterViewCls: undefined,
 
     gridOptions: undefined,
+
+    subViews: [{
+      viewCls: MessageView,
+      selector: '.message',
+      updateOnMessage: true,
+      replaceEl: true
+    }],
 
     initialize:function (options) {
       ModelView.prototype.initialize.apply(this, arguments);

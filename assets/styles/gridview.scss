@@ -123,9 +123,10 @@
 .filter-view {
   width: 100%;
   height: 50px;
+  @include box-sizing(border-box);
 }
 
-.filter-view form {
+form.filter-view {
   margin: 0;
   color: #555;
   padding: 10px;

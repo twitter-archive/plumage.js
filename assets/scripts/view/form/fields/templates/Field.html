@@ -1,11 +1,10 @@
 {{#if label}}
-<div class="control-group {{#if validationState}}{{validationState}}{{/if}}">
-  <label class="control-label" for="{{valueAttr}}">{{label}}</label>
-  <div class="controls">
-    <span class="field">{{> field}}</span>
-    <span class="help-inline">{{#if message}}{{message}}{{/if}}</span>
-  </div>
+<label class="control-label" for="{{valueAttr}}">{{label}}</label>
+<div class="controls">
+  <span class="field">{{> field}}</span>
+  <span class="help-inline">{{#if message}}{{message}}{{/if}}</span>
 </div>
 {{else}}
   {{> field}}
+  <span class="help-inline">{{#if message}}{{message}}{{/if}}</span>
 {{/if}}

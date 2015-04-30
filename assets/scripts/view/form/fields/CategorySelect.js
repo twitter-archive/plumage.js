@@ -17,8 +17,6 @@ define([
     listLabelAttr: 'label',
     modelAttr: 'filter',
 
-    itemTemplate: '<li data-value="{{value}}" class="{{value}}{{#selected}} active{{/selected}}"><a href="#">{{label}}</a></li>',
-
     noSelectionText: 'All',
 
     noSelectionValue: '',

@@ -173,6 +173,7 @@ function($, _, Backbone, Plumage) {
         success: function (resp) {
           //silent because so we don't trigger this.onLoad
           this.collection.reset(resp, {parse: true, silent: true});
+          this.collection.onLoad({silent: true});
           this.onBufferLoad(this.collection, pageIndex);
         }.bind(this)
       };

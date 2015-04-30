@@ -1,10 +1,59 @@
 // For browser, export only select globals
 if ( typeof window !== "undefined" ) {
-	extend( window, QUnit.constructor.prototype );
+
+	// Deprecated
+	// Extend assert methods to QUnit and Global scope through Backwards compatibility
+	(function() {
+		var i,
+			assertions = Assert.prototype;
+
+		function applyCurrent( current ) {
+			return function() {
+				var assert = new Assert( QUnit.config.current );
+				current.apply( assert, arguments );
+			};
+		}
+
+		for ( i in assertions ) {
+			QUnit[ i ] = applyCurrent( assertions[ i ] );
+		}
+	})();
+
+	(function() {
+		var i, l,
+			keys = [
+				"test",
+				"module",
+				"expect",
+				"asyncTest",
+				"start",
+				"stop",
+				"ok",
+				"equal",
+				"notEqual",
+				"propEqual",
+				"notPropEqual",
+				"deepEqual",
+				"notDeepEqual",
+				"strictEqual",
+				"notStrictEqual",
+				"throws"
+			];
+
+		for ( i = 0, l = keys.length; i < l; i++ ) {
+			window[ keys[ i ] ] = QUnit[ keys[ i ] ];
+		}
+	})();
+
 	window.QUnit = QUnit;
 }
 
-// For CommonJS environments, export everything
+// For nodejs
 if ( typeof module !== "undefined" && module.exports ) {
 	module.exports = QUnit;
+}
+
+// For CommonJS with exports, but without module.exports, like Rhino
+if ( typeof exports !== "undefined" ) {
+	exports.QUnit = QUnit;
 }

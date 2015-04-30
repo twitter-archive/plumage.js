@@ -320,12 +320,7 @@ function($, _, Backbone, Plumage) {
 
     /** Load the given model, keeping a reference to the request. */
     loadModel: function(model, options) {
-      options = options || {};
-      var success = options.success;
-      options.success = function(model, resp, options) {
-        this.onSuccess(model, resp, options);
-        if (success) {success(model, resp, options);}
-      }.bind(this);
+      options = _.defaults({}, options, {reset: true});
 
       var xhr = model.load(options);
       if (xhr) {
@@ -344,17 +339,6 @@ function($, _, Backbone, Plumage) {
         }
       }
       this.requests = [];
-    },
-
-    /**
-     * Event handler. Trigger's message on the App if response contains a message.
-     * @param resp {Object} XHR response
-     * @private
-     */
-    onSuccess: function(model, resp, options) {
-      if (resp.meta && resp.meta.message_body) {
-        theApp.dispatch.trigger('message', resp.meta.message_body, resp.meta.message_class);
-      }
     }
   });
 
@@ -539,6 +523,7 @@ function($, _, Backbone, Plumage) {
         success: function (resp) {
           //silent because so we don't trigger this.onLoad
           this.collection.reset(resp, {parse: true, silent: true});
+          this.collection.onLoad({silent: true});
           this.onBufferLoad(this.collection, pageIndex);
         }.bind(this)
       };
@@ -631,6 +616,10 @@ function($, _, Backbone, Plumage, requestManager, ModelUtil, BufferedCollection)
      * params:
      *  - forceCreate: create the related model even if it doesn't exist in the initial data. This way
      *      They can be set on views, in preparation for later updates.
+     *  - remote: The related model needs to be loaded after the current model loads. Can be of the values:
+     *     - 'autoload' => Load as soon as url is available.
+     *     - 'loadOnShow' => Load when first shown in a view.
+     *     - 'manual' => Loaded manually.
      */
     relationships: {},
 
@@ -645,11 +634,17 @@ function($, _, Backbone, Plumage, requestManager, ModelUtil, BufferedCollection)
     /** Path where to find the response data in the response JSON.*/
     resultsPath: 'results',
 
-    /** Attribute to use as a label/title when shown in a general View */
-    labelAttr: 'name',
+    /** Attribute to display when shown in a general View, like a title */
+    displayNameAttr: undefined,
 
     /** Has this Model been loaded yet? */
     fetched: false,
+
+    /** Criterium for uniqueness is always href */
+    idAttribute: 'href',
+
+    /** field use of for url when href is undefined, ie urlRoot + '/' + urlId */
+    urlIdAttribute: 'id',
 
 
     /**
@@ -739,7 +734,16 @@ function($, _, Backbone, Plumage, requestManager, ModelUtil, BufferedCollection)
      */
     navigate: function(options) {
       options = _.extend({trigger: true}, options);
-      window.router.navigateWithQueryParams(this.urlWithParams(), options);
+      if (window.router) {
+        window.router.navigateWithQueryParams(this.viewUrlWithParams(), options);
+      }
+    },
+
+    navigateToIndex: function(options) {
+      options = _.extend({trigger: true}, options);
+      if (window.router) {
+        window.router.navigateWithQueryParams(this.urlRoot, options);
+      }
     },
 
     /**
@@ -749,7 +753,9 @@ function($, _, Backbone, Plumage, requestManager, ModelUtil, BufferedCollection)
      */
     updateUrl: function(options) {
       options = _.extend({replace: true, trigger: false}, options);
-      window.router.navigateWithQueryParams(this.urlWithParams(), options);
+      if (window.router) {
+        window.router.navigateWithQueryParams(this.viewUrlWithParams(), options);
+      }
     },
 
     /**
@@ -899,6 +905,13 @@ function($, _, Backbone, Plumage, requestManager, ModelUtil, BufferedCollection)
       return this;
     },
 
+    /** set view state
+     * @param {Object} viewState
+     */
+    setViewState: function(viewState, options) {
+      this.set(this.processViewState(viewState), options);
+    },
+
     processViewState: function(viewState) {
       var results = {};
       for ( var iAttrs = 0; iAttrs < this.viewAttrs.length; iAttrs++) {
@@ -926,12 +939,18 @@ function($, _, Backbone, Plumage, requestManager, ModelUtil, BufferedCollection)
     instantiateRelationship: function(key, data, relationship) {
       var related = this.getRelated(key);
       if (related === undefined) {
+        if (relationship.remote && ['autoload', 'loadOnShow', 'manual'].indexOf(relationship.remote) === -1) {
+          throw 'invalid remote relationship param';
+        }
         var RelatedClass = ModelUtil.loadClass(relationship.modelCls);
 
         if (RelatedClass.prototype instanceof Plumage.collection.Collection) {
           related = this.createRelatedCollection(RelatedClass, relationship, data);
         } else {
           related = this.createRelatedModel(RelatedClass, relationship, data);
+        }
+        if (relationship.remote === 'loadOnShow') {
+          related.loadOnShow = true;
         }
         this.setRelated(key, related);
         return true;
@@ -1068,15 +1087,12 @@ function($, _, Backbone, Plumage, requestManager, ModelUtil, BufferedCollection)
      * @param {Object} data Data to set on Model.
      */
     updateRelatedModel: function(relationship, model, data) {
-      if (relationship.remote && relationship.deferLoad) {
-        model.deferLoad = true;
-      }
       if (model instanceof Plumage.collection.Collection) {
         if ($.isArray(data)) {
           data = {models: data};
         }
       }
-      model.set(data, {silent: true});
+      model.set(data, {silent: true}); //silent to prevent double render with subsequent load event.
       return !$.isEmptyObject(model.changed);
     },
 
@@ -1152,16 +1168,51 @@ function($, _, Backbone, Plumage, requestManager, ModelUtil, BufferedCollection)
       return this.urlFromAttributes();
     },
 
+    newUrl: function() {
+      var base =
+        _.result(this, 'urlRoot') ||
+        _.result(this.collection, 'url');
+
+      if (base) {
+        var a = document.createElement('a');
+        a.href = base;
+        return a.pathname + '/new' + a.search;
+      }
+      return null;
+    },
+
+    getUrlId: function() {
+      var urlId = this.get(this.urlIdAttribute);
+      if (urlId) {
+        return encodeURIComponent(urlId);
+      }
+    },
+
     /**
      * Generate the url for this model from its attributes. By default this returns
-     * urlRoot/id
+     * urlRoot/urlIdAttribute. If no urlRoot is specified it returns null. This is so prevent loading models
+     * whose urls' can't be derived from attributed. (eg when url depends a parent model's url)
      *
      * Override this method if you have custom urls.
      * Return null if attributes for url are not yet available.
      * @returns {string} Url or null
      */
     urlFromAttributes: function() {
-      return Backbone.Model.prototype.url.apply(this, arguments);
+       //no url so do nothing
+      if (!this.urlRoot) {
+        return null;
+      }
+
+      var base =
+        _.result(this, 'urlRoot') ||
+        _.result(this.collection, 'url');
+      if (!base) {
+        throw new Error('A "url" property or function must be specified');
+      }
+      if (this.isNew()) {
+        return this.newUrl();
+      }
+      return base.replace(/([^\/])$/, '$1/') + this.getUrlId();
     },
 
     /**
@@ -1178,15 +1229,21 @@ function($, _, Backbone, Plumage, requestManager, ModelUtil, BufferedCollection)
       }
       var params = this.getQueryParams();
       params = _.extend({}, params, extras);
-      if (params && !$.isEmptyObject(params)) {
-        params = $.param(params, true);
-        if (url.indexOf('?') >= 0) {
-          return url + '&' + params;
-        } else {
-          return url + '?' + params;
-        }
-      }
-      return url;
+      return this._appendParamsToUrl(url, params);
+    },
+
+    /**
+     * Sometimes you want the view url to be different than the server resource url (eg appending a subview nav id).
+     * Called by navigate and updateUrl.
+     *
+     * By default just calls urlWithParams.
+     */
+    viewUrlWithParams: function(extras) {
+      return this.urlWithParams(extras);
+    },
+
+    isNew: function() {
+      return !this.getUrlId() || this.get('href') && this.get('href').match(/\/new$/) !== null;
     },
 
     /**
@@ -1220,7 +1277,9 @@ function($, _, Backbone, Plumage, requestManager, ModelUtil, BufferedCollection)
       this._wrapHandlers(options);
 
       this.fireBeginLoad();
-      return this.fetch(options);
+      return this.fetch(options).then(function(resp, result, xhr) {
+        return $.Deferred().resolve(this, resp).promise();
+      }.bind(this));
     },
 
     save: function(key, val, options) {
@@ -1234,7 +1293,13 @@ function($, _, Backbone, Plumage, requestManager, ModelUtil, BufferedCollection)
       }
       options = options || {};
       this._wrapHandlers(options);
-      Backbone.Model.prototype.save.apply(this, [attrs, options]);
+      var xhr = Backbone.Model.prototype.save.apply(this, [attrs, options]);
+      if (xhr) {
+        xhr.then(function(resp){
+          return $.Deferred().resolve(this, resp).promise();
+        }.bind(this));
+      }
+      return false;
     },
 
     /**
@@ -1258,7 +1323,7 @@ function($, _, Backbone, Plumage, requestManager, ModelUtil, BufferedCollection)
         var rel = this.getRelated(key);
         if (rel && !visited[rel.cid]) {
           if (relationship.remote) {
-            if (!rel.deferLoad) {
+            if (relationship.remote === 'autoload' || relationship.remote === 'loadOnShow' && !rel.loadOnShow) {
               rel.fetchIfAvailable();
             }
           } else {
@@ -1275,7 +1340,7 @@ function($, _, Backbone, Plumage, requestManager, ModelUtil, BufferedCollection)
       this.trigger('beginLoad', this);
       _.each(this.relationships, function(relationship, key) {
         var rel = this.getRelated(key);
-        if (rel && relationship.remote && !rel.deferLoad) {
+        if (rel && relationship.remote === 'autoload') {
           rel.fireBeginLoad();
         }
       }, this);
@@ -1288,16 +1353,18 @@ function($, _, Backbone, Plumage, requestManager, ModelUtil, BufferedCollection)
     fetchIfAvailable: function() {
       var url = this.urlWithParams();
       if (url) {
-        requestManager.loadModel(this);
+        return requestManager.loadModel(this);
       }
     },
 
     /**
-     * Gets a label/title for this model
+     * Gets a 'display name'/title for this model
      * @returns {string}
      */
-    getLabel: function() {
-      return this.get(this.labelAttr);
+    getDisplayName: function() {
+      if (this.displayNameAttr !== undefined) {
+        return this.get(this.displayNameAttr);
+      }
     },
 
     /**
@@ -1320,7 +1387,11 @@ function($, _, Backbone, Plumage, requestManager, ModelUtil, BufferedCollection)
     toViewJSON: function(options) {
       var result = _.clone(this.attributes);
       if (result.url === undefined && this.hasUrl()) {
-        result.url = this.url();
+        result.url = this.viewUrlWithParams();
+      }
+      var displayName = this.getDisplayName();
+      if (displayName !== undefined) {
+        result.displayName = displayName;
       }
       _.each(this.relationships, function(relationship, key) {
         var related = this.getRelated(key);
@@ -1343,24 +1414,58 @@ function($, _, Backbone, Plumage, requestManager, ModelUtil, BufferedCollection)
     // Helpers
     //
 
+    _appendParamsToUrl: function(url, params) {
+      if (params && !$.isEmptyObject(params)) {
+        params = $.param(params, true);
+        if (url.indexOf('?') >= 0) {
+          return url + '&' + params;
+        } else {
+          return url + '?' + params;
+        }
+      }
+      return url;
+    },
+
     _wrapHandlers: function(options) {
       var success = options.success,
         error = options.error;
 
       options.success = function(model, resp, options) {
         if (resp.meta && resp.meta.success === false) {
+          var seenRelated = {};
           if (resp.meta.validationError) {
             model.validationError = resp.meta.validationError;
+            _.each(model.validationError, function(v,k) {
+              var parts = k.split('.');
+              if (parts.length > 1) {
+                var field = parts.pop();
+                var related = model.getRelated(parts.join('.'));
+                if (related) {
+                  related.validationError = related.validationError || {};
+                  related.validationError[field] = v;
+                  seenRelated[related.id] = related;
+                }
+              }
+            });
           }
           model.trigger('invalid',
             model,
             model.validationError,
-            resp.meta.message_body,
+            resp.meta.message,
             resp.meta.message_class
           );
+
+          _.each(seenRelated, function(related) {
+            related.trigger('invalid', related, related.validationError);
+          });
+
         } else {
           model.latestLoadParams = undefined;
           model.onLoad(options);
+          if (typeof theApp !== 'undefined' && resp.meta && resp.meta.message) {
+            theApp.dispatch.trigger('message', resp.meta.message, resp.meta.message_class);
+          }
+
           if (success) {
             success(model, resp, options);
           }
@@ -1389,6 +1494,9 @@ function($, _, Backbone, Plumage, Model) {
   return Plumage.model.Filter = Model.extend(
   /** @lends Plumage.model.Filter.prototype */
   {
+
+    idAttribute: 'id',
+
     /**
      * Model for a Filter on a [Collection]{@link Plumage.collection.Collection}.
      *
@@ -2456,7 +2564,7 @@ function($, _, Backbone, Plumage, Model) {
 
   return Plumage.model.User = Model.extend({
 
-    idAttribute: 'account',
+    urlIdAttribute: 'account',
 
     urlRoot: '/users',
 
@@ -2524,8 +2632,8 @@ function($, _, Backbone, Handlebars, Plumage, moment, Model) {
       if (modelType) {
         var modelCls = require('model/' + modelType);
         var model = new modelCls(data);
-        var label = model.getLabel();
-        return '<a href="'+model.url()+'" class="name" title="'+label+'">'+label+'</a>';
+        var displayName = model.getDisplayName();
+        return '<a href="'+model.url()+'" class="name" title="'+displayName+'">'+displayName+'</a>';
       }
       return '';
     },
@@ -7898,6 +8006,11 @@ function($, _, Backbone, Plumage, requestManager) {
     /** The top level view currently shown by this controller */
     currentView: undefined,
 
+    /** Hook for wrapping handlers */
+    runHandler: function(handlerName, params) {
+      this[handlerName].apply(this, params);
+    },
+
     /**
      * Renders and shows a view in the el specified by [contentSelector]{@link Plumage.controller.BaseController#contentSelector}.
      * This hides and triggers onHide on the current view, cancels outstanding requests, then
@@ -7975,11 +8088,16 @@ function($, _, Backbone, Plumage, BaseController, ModelUtil) {
     /** Options to pass into index model constructor */
     indexModelOptions: {},
 
-    /** Top level View class for index. Override this */
+    /** View class for index. Override this */
     indexViewCls: undefined,
 
-    /** Top level View class for detail. Override this */
+    /** View class for detail. Override this */
     detailViewCls: undefined,
+
+    /** View class for editing. Override this */
+    editViewCls: undefined,
+
+    notFoundMessage: '404 Not Found',
 
     /**
      * Controller with general index and detail handlers.
@@ -8000,6 +8118,19 @@ function($, _, Backbone, Plumage, BaseController, ModelUtil) {
       this.detailViewCls = ModelUtil.loadClass(options.detailViewCls ? options.detailViewCls : this.detailViewCls);
     },
 
+    /** override to set activeModel*/
+    runHandler: function(handlerName, params) {
+      this.setActiveModel(undefined);
+      var promise = this[handlerName].apply(this, params);
+      if (promise) {
+        return promise.done(function (model, resp) {
+          if (model) {
+            this.setActiveModel(model);
+          }
+        }.bind(this));
+      }
+    },
+
     /** Get the most recently used index model */
     getIndexCollection: function() {
       return this.indexModel;
@@ -8017,13 +8148,20 @@ function($, _, Backbone, Plumage, BaseController, ModelUtil) {
         params.filters = JSON.parse(params.filters);
       }
       var model = this.createIndexModel({}, params);
-      this.showIndexModel(model);
+      return this.showIndexModel(model);
     },
 
     /** handler for showing the detail view. Override this to accept more url params*/
-    showDetail: function(id, params){
-      var model = this.createDetailModel(id, {}, params);
-      this.showDetailModel(model);
+    showDetail: function(urlId, params){
+
+      var model = this.createDetailModel(urlId, {}, params);
+      return this.showDetailModel(model);
+    },
+
+    /** handler for showing the new view. Override this to accept more url params*/
+    showNew: function(fragment, params){
+      var model = this.createEditModel();
+      return this.showEditModel(model);
     },
 
     /** Logic for binding a model to, and then showing the index view */
@@ -8033,11 +8171,11 @@ function($, _, Backbone, Plumage, BaseController, ModelUtil) {
       view.setModel(this.indexModel);
       this.showView(view);
 
-      this.loadModel(this.indexModel, {reset: true}).then(function() {
+      this.indexModel.on('change', this.onIndexChange.bind(this));
+      return this.loadModel(this.indexModel, {reset: true}).done(function() {
         view.setModel(model);
       });
 
-      this.indexModel.on('change', this.onIndexChange.bind(this));
     },
 
     /**
@@ -8048,25 +8186,48 @@ function($, _, Backbone, Plumage, BaseController, ModelUtil) {
      */
     showDetailModel: function(model) {
 
-      if (this.detailModel) {
-        this.detailModel.off('error', this.onModelError, this);
+      var view = this.getDetailView();
+
+      var result;
+      if (model !== this.detailModel) {
+        if (this.detailModel) {
+          this.detailModel.off('error', this.onModelError, this);
+        }
+
+        this.detailModel = model;
+        this.detailModel.on('error', this.onModelError, this);
+        view.setModel(model);
+        result = this.loadModel(model).done(function () {
+          // call setModel again, so subviews can get newly loaded related models
+          if (model.related) {
+            view.setModel(model);
+          }
+        });
+      } else {
+        result = $.Deferred().resolve(model).promise().done();
       }
 
-      this.detailModel = model;
-      this.detailModel.on('error', this.onModelError, this);
+      this.showView(view);
+      return result;
+    },
 
-      var view = this.getDetailView();
+    showEditModel: function(model) {
+      var view = this.getEditView();
 
       view.setModel(model);
       this.showView(view);
 
-      return this.loadModel(model).then(function() {
+      return this.loadModel(model).done(function() {
         // call setModel again, so subviews can get newly loaded related models
         if (model.related) {
           view.setModel(model);
         }
       });
     },
+
+    //
+    // View getters
+    //
 
     /** Get and lazy create the index view */
     getIndexView: function() {
@@ -8085,6 +8246,13 @@ function($, _, Backbone, Plumage, BaseController, ModelUtil) {
       return this.detailView;
     },
 
+    getEditView: function() {
+      if (!this.editView) {
+        this.editView = this.createEditView();
+      }
+      return this.editView;
+    },
+
     // Hooks
 
     /** Create the index model from specified data. */
@@ -8096,17 +8264,33 @@ function($, _, Backbone, Plumage, BaseController, ModelUtil) {
      * Create the detail model from specified attributes.
      * Override to add default attributes, eg empty relationships.
      */
-    createDetailModel: function(id, attributes, viewState) {
-      return this.createModel(this.modelCls, id, attributes, viewState);
+    createDetailModel: function(urlId, attributes, viewState) {
+      var result = this.createModel(this.modelCls, urlId, attributes, viewState);
+      if (this.detailModel && result.url() === this.detailModel.url()) {
+        this.detailModel.set(attributes);
+        if (viewState) {
+          this.detailModel.setViewState(viewState);
+        }
+        result = this.detailModel;
+      }
+      return result;
+    },
+
+    /**
+     * Create the edit model from specified attributes.
+     * Override to add default attributes, eg empty relationships.
+     */
+    createEditModel: function(urlId, attributes, viewState) {
+      return this.createModel(this.modelCls, urlId, attributes, viewState);
     },
 
     /** Helper for creating the detail model. */
-    createModel: function(modelCls, id, attributes, viewState) {
+    createModel: function(modelCls, urlId, attributes, viewState) {
       attributes = attributes || {};
       var options = {};
-      if (id) {
+      if (urlId) {
         attributes = _.clone(attributes);
-        attributes[modelCls.prototype.idAttribute] = id;
+        attributes[modelCls.prototype.urlIdAttribute] = urlId;
       }
       options.viewState = viewState;
       return new modelCls(attributes, options);
@@ -8138,13 +8322,31 @@ function($, _, Backbone, Plumage, BaseController, ModelUtil) {
       return new this.detailViewCls();
     },
 
+    /** Create the detail view. Feel free to override */
+    createEditView: function () {
+      return new this.editViewCls();
+    },
+
+    setActiveModel: function(model) {
+      if (this.activeModel) {
+        this.activeModel.off('change', this.onActiveModelChange, this);
+      }
+      this.activeModel = model;
+      if (this.activeModel) {
+        this.activeModel.on('change', this.onActiveModelChange, this);
+      }
+    },
 
     // Event Handlers
+
+    onActiveModelChange: function() {
+      this.activeModel.updateUrl();
+    },
 
     /** Show detail view on index item select */
     onIndexItemSelected: function(selection) {
       if(selection) {
-        var model = this.createDetailModel(selection.id);
+        var model = this.createDetailModel(null, selection.attributes);
         model.navigate();
       }
     },
@@ -8156,7 +8358,11 @@ function($, _, Backbone, Plumage, BaseController, ModelUtil) {
 
     onModelError: function(model, response, options) {
       if (response.status === 404) {
+
         this.createIndexModel().navigate({replace: true});
+        setTimeout(function() {
+          theApp.dispatch.trigger('message', this.notFoundMessage, 'bad');
+        }.bind(this), 500);
       }
     },
 
@@ -8165,11 +8371,7 @@ function($, _, Backbone, Plumage, BaseController, ModelUtil) {
      * @param {Plumage.model.Collection} collection Collection to reload
      * @param {Boolean} updateUrl should update url? default to true
      */
-    reloadIndex: _.debounce(function(collection, updateUrl) {
-      updateUrl = updateUrl === undefined ? true : false;
-      if (updateUrl) {
-        collection.updateUrl();
-      }
+    reloadIndex: _.debounce(function(collection) {
       collection.load({reset: true});
     }, 200)
   });
@@ -8299,7 +8501,7 @@ function($, _, Backbone, Plumage, History, ModelUtil) {
   return Plumage.Router = Backbone.Router.extend(
   /** @lends Plumage.Router.prototype */
   {
-    /** Routes config. Map from route pattern to a route options object. Options must include controller and method */
+    /** Routes config. Array of pairs [pattern, options]. Options must include controller and method */
     controllerRoutes: undefined,
 
     /** reference to the controllerManager for access to Controller instances*/
@@ -8347,14 +8549,14 @@ function($, _, Backbone, Plumage, History, ModelUtil) {
         }
       });
 
-      for (var route in this.controllerRoutes) {
-        if (!this.controllerRoutes.hasOwnProperty(route)) {
-          continue;
+      if (this.controllerRoutes) {
+        for (var i = 0; i < this.controllerRoutes.length; i++) {
+          var route = this.controllerRoutes[i];
+          var routeOptions = route[1],
+            name = routeOptions.controller + '.' + routeOptions.method,
+            handler = _.bind(this.routeToController, this, routeOptions);
+          this.route(route[0], name, handler);
         }
-        var routeOptions = this.controllerRoutes[route],
-          name = routeOptions.controller + '.' + routeOptions.method,
-          handler = _.bind(this.routeToController, this, routeOptions);
-        this.route(route, name, handler);
       }
     },
 
@@ -8364,13 +8566,16 @@ function($, _, Backbone, Plumage, History, ModelUtil) {
 
     /** Route handler that forwards to method 'options.method'
      * in Controller 'options.controller'
+     *
+     * @params {Object} options Static options set when creating route
+     * @params {...} queryParams Remaining params used as query params
      */
-    routeToController: function(options, queryParams){
+    routeToController: function(options){
       if (this.app.navView) {
         this.app.navView.select(options.nav);
       }
       var ctrl = this.app.controllerManager.getController(options.controller);
-      ctrl[options.method].apply(ctrl, Array.prototype.slice.call(arguments, 1));
+      ctrl.runHandler(options.method, Array.prototype.slice.call(arguments, 1));
     },
 
     /**
@@ -8394,11 +8599,17 @@ function($, _, Backbone, Plumage, History, ModelUtil) {
         router.trigger.apply(router, ['route:' + name].concat(args));
         router.trigger('route', name, args);
         router.history.trigger('route', router, name, args);
+        router.logNavigationAction(window.location.href, window.location.pathname);
       });
+
       return this;
     },
 
     navigate: function(url, options) {
+      if (url === null || url === undefined) {
+        throw new Error('A "url" must be specified');
+      }
+
       //remove host and protocol if it's local
       if (url.indexOf(window.location.origin) === 0) {
         url = url.slice(window.location.origin.length);
@@ -8413,12 +8624,14 @@ function($, _, Backbone, Plumage, History, ModelUtil) {
 
     /** Special navigate method for working around Backbone's ignoring of query params. */
     navigateWithQueryParams: function(url, options) {
-      if (url === window.location.pathname + window.location.search) {
-        //already there
-        return;
-      }
-
       this.navigate(url, options);
+    },
+
+    /**
+     * Template method hook for logging, eg post to google analytics
+     */
+    logNavigationAction: function(url, pageName) {
+      // do nothing
     },
 
     /**
@@ -9051,7 +9264,7 @@ define('view/ContainerView',[
 
     /**
      * Calls a method on ContainerView if it exists or calls it on its subViews.
-     * Elimiates need for ContainerView to know about composite methods provided by subclasses.
+     * Eliminates need for ContainerView to know about composite methods provided by subclasses.
      * @param {string} methodName Name of method to call.
      * @param {Array} params Params to pass into method.
      */
@@ -9295,18 +9508,22 @@ define('view/ModelView',[
         this.model.on('beginLoad', this.onModelBeginLoad, this);
         this.model.on('change', this.onModelChange, this);
         this.model.on('load', this.onModelLoad, this);
+        this.model.on('add', this.onModelAdd, this);
+        this.model.on('remove', this.onModelRemove, this);
         this.model.on('destroy', this.onModelDestroy, this);
         this.model.on('invalid', this.onModelInvalid, this);
         this.model.on('error', this.onModelError, this);
+
+        if (changed && this.model && this.model.fetched) {
+          this.onModelLoad();
+        }
+
+        if (this.shown) {
+          this.ensureData();
+        }
       }
 
-      if (changed && this.model && this.model.fetched) {
-        this.onModelLoad();
-      }
 
-      if (this.shown) {
-        this.ensureData();
-      }
 
       //recurse
       this.eachSubView(function(subView) {
@@ -9314,10 +9531,13 @@ define('view/ModelView',[
       }.bind(this));
     },
 
-    /** triggers loading of deferLoad Models. */
+    /** triggers loading of loadOnShow Models. */
     ensureData: function() {
-      if (this.model && this.model.deferLoad && !this.model.fetched) {
-        this.model.fetchIfAvailable();
+      if (this.model && this.model.loadOnShow) {
+        if(!this.model.fetched) {
+          this.model.fetchIfAvailable();
+        }
+        delete this.model.loadOnShow;
       }
     },
 
@@ -9328,14 +9548,10 @@ define('view/ModelView',[
      * @override
      */
     getTemplateData: function() {
-      var data = {};
       if (this.model) {
-        data = this.model.toViewJSON();
-        if (this.model.hasUrl() && !data.model_url) {
-          data.model_url = this.model.urlWithParams();
-        }
+        return this.model.toViewJSON();
       }
-      return data;
+      return {};
     },
 
     /**
@@ -9397,6 +9613,14 @@ define('view/ModelView',[
       this.updateViewState(model);
       this.update(true);
       this.hideLoadingAnimation();
+    },
+
+    onModelAdd: function(event, model) {
+      this.onModelChange(event, model);
+    },
+
+    onModelRemove: function(event, model) {
+      this.onModelChange(event, model);
     },
 
     onModelDestroy: function(event, model) {
@@ -9517,14 +9741,6 @@ define('view/CollectionView',[
     // overrides
     //
 
-    setModel: function() {
-      ModelView.prototype.setModel.apply(this, arguments);
-      if (this.model) {
-        this.model.on('add', this.onModelAdd, this);
-        this.model.on('remove', this.onModelRemove, this);
-      }
-    },
-
     getTemplateData: function() {
       var moreUrl;
       if (this.moreUrl && this.model && this.model.hasMore()) {
@@ -9580,6 +9796,18 @@ define('view/CollectionView',[
 
     update: function() {
       ModelView.prototype.update.apply(this, arguments);
+    },
+
+    updateModel: function(rootModel, parentModel) {
+      ModelView.prototype.updateModel.apply(this, arguments);
+      var collection = this.getModelFromRoot(this.relationship, rootModel, parentModel);
+      if (collection) {
+        collection.each(function(model, index) {
+          if (index < this.itemViews.length) {
+            this.itemViews[index].updateModel(model);
+          }
+        }.bind(this));
+      }
     },
 
     //
@@ -9762,7 +9990,7 @@ define('view/form/Form',[
         this.model = new ModelCls();
       }
       if(this.isValid()) {
-        this.updateModel(this.model);
+        this.updateModel(this.rootModel);
         var error;
         if (this.model.validate) {
           error = this.model.validate(this.model.attributes);
@@ -9793,8 +10021,8 @@ define('view/form/Form',[
       if (resp.meta.success) {
         this.trigger('save', this, model);
       } else {
-        if (resp.meta.message_body) {
-          this.setMessage(resp.meta.message_body, resp.meta.message_class);
+        if (resp.meta.message) {
+          this.setMessage(resp.meta.message, resp.meta.message_class);
         }
       }
     },
@@ -9807,7 +10035,7 @@ define('view/form/Form',[
   });
 });
 
-define('text!view/form/fields/templates/Field.html',[],function () { return '{{#if label}}\n<div class="control-group {{#if validationState}}{{validationState}}{{/if}}">\n  <label class="control-label" for="{{valueAttr}}">{{label}}</label>\n  <div class="controls">\n    <span class="field">{{> field}}</span>\n    <span class="help-inline">{{#if message}}{{message}}{{/if}}</span>\n  </div>\n</div>\n{{else}}\n  {{> field}}\n{{/if}}';});
+define('text!view/form/fields/templates/Field.html',[],function () { return '{{#if label}}\n<label class="control-label" for="{{valueAttr}}">{{label}}</label>\n<div class="controls">\n  <span class="field">{{> field}}</span>\n  <span class="help-inline">{{#if message}}{{message}}{{/if}}</span>\n</div>\n{{else}}\n  {{> field}}\n  <span class="help-inline">{{#if message}}{{message}}{{/if}}</span>\n{{/if}}\n';});
 
 
 define('view/form/fields/Field',[
@@ -9816,15 +10044,17 @@ define('view/form/fields/Field',[
   'backbone',
   'handlebars',
   'PlumageRoot',
+  'view/View',
   'view/ModelView',
   'text!view/form/fields/templates/Field.html'
-], function($, _, Backbone, Handlebars, Plumage, ModelView, template) {
+], function($, _, Backbone, Handlebars, Plumage, View, ModelView, template) {
 
 
 
   return Plumage.view.form.fields.Field = ModelView.extend(
   /** @lends Plumage.view.form.fields.Field.prototype */
   {
+    className: 'control-group',
 
     template: template,
 
@@ -9832,7 +10062,7 @@ define('view/form/fields/Field',[
      * Template for html input element.
      * This template is separate so that it can be reused by subclasses.
      */
-    fieldTemplate: '<input type="text" name="{{valueAttr}}" {{#placeholder}}placeholder="{{.}}"{{/placeholder}} value="{{value}}" {{#readonly}}readonly="readonly"{{/readonly}}/>',
+    fieldTemplate: '<input type="text" name="{{valueAttr}}" {{#placeholder}}placeholder="{{.}}"{{/placeholder}} value="{{value}}" {{#readonly}}readonly="readonly"{{/readonly}} {{#disabled}}disabled=1{{/disabled}}/>',
 
     /**
      * optional. model attribute to display as label
@@ -9850,17 +10080,12 @@ define('view/form/fields/Field',[
     valueAttr: undefined,
 
     /**
-     * input's name attribute
-     */
-    fieldName: undefined,
-
-    /**
      * If updateModelOnChange is set, the model is updated on every change
      */
     updateModelOnChange: false,
 
     /**
-     * The view value. It's seperate from the model value, and used for rerendering.
+     * The view value. It's separate from the model value, and used for rerendering.
      *
      * Because it comes from the dom, value is always a string.
      */
@@ -9877,7 +10102,10 @@ define('view/form/fields/Field',[
       required: 'required',
       minLength: 'Must be at least {{param0}} chars',
       maxLength: 'Must not be more than {{param0}} chars',
-      email: 'Not a valid email address'
+      email: 'Not a valid email address',
+      number: 'Must be a number',
+      minValue: 'Must be >= {{param0}}',
+      maxValue: 'Must be <= {{param0}}'
     },
 
     /** error, warning, success. Cleared on model load */
@@ -9886,6 +10114,15 @@ define('view/form/fields/Field',[
     /** message to display next to field, eg error message */
     message: undefined,
 
+
+    constructor: function(options){
+      options = options || {};
+
+      this.validationMessages = _.extend({},this.validationMessages, options.validationMessages);
+      delete options.validationMessages;
+
+      View.apply(this, arguments);
+    },
 
     /**
      * An editable view for displaying and editing a single value of a model.
@@ -9907,7 +10144,10 @@ define('view/form/fields/Field',[
      * @constructs
      * @extends Plumage.view.ModelView
      */
-    initialize: function() {
+    initialize: function(options) {
+      this.validationMessages = _.extend({},this.validationMessages, options.validationMessages);
+      delete options.validationMessages;
+
       ModelView.prototype.initialize.apply(this, arguments);
       this.className = this.className ? this.className + ' field' : 'field';
     },
@@ -9917,6 +10157,8 @@ define('view/form/fields/Field',[
       var hasFocus = inputEl ? inputEl.is(':focus') : false;
       Handlebars.registerPartial('field', this.fieldTemplate);
       ModelView.prototype.onRender.apply(this, arguments);
+
+      this.$el.addClass(this.validationState);
 
       inputEl = this.getInputEl();
       if (inputEl && hasFocus) {
@@ -9930,7 +10172,7 @@ define('view/form/fields/Field',[
     update: function(isLoad) {
       if (this.isRendered) {
         var val = this.getInputEl().val(),
-          newVal = this.getValueString(this.getValue());
+          newVal = this.processValueForDom(this.getValue());
         if (val !== newVal) {
           this.getInputEl().val(newVal);
         }
@@ -9989,6 +10231,13 @@ define('view/form/fields/Field',[
       this.getInputEl().focus();
     },
 
+    setDisabled: function(disabled) {
+      if (this.disabled !== disabled) {
+        this.disabled = disabled;
+        this.render();
+      }
+    },
+
     //
     // Overrides
     //
@@ -9997,10 +10246,11 @@ define('view/form/fields/Field',[
       var data = {
         label: this.getLabel(),
         valueAttr: this.valueAttr,
-        value: this.getValueString(this.getValue()),
+        value: this.processValueForDom(this.getValue()),
         hasValue: this.hasValue(),
         placeholder: this.placeholder,
         readonly: this.readonly,
+        disabled: this.disabled,
         validationState: this.validationState,
         message: this.message
       };
@@ -10013,6 +10263,10 @@ define('view/form/fields/Field',[
       this.updateValueFromModel();
     },
 
+    ensureData: function() {
+      ModelView.prototype.ensureData.apply(this, arguments);
+    },
+
     //
     // Attributes
     //
@@ -10021,7 +10275,7 @@ define('view/form/fields/Field',[
       return this.value;
     },
 
-    getValueString: function(value) {
+    processValueForDom: function(value) {
       return value;
     },
 
@@ -10067,13 +10321,17 @@ define('view/form/fields/Field',[
       this.$el.blur();
     },
 
+    onShow: function() {
+      ModelView.prototype.onShow.apply(this, arguments);
+    },
+
     //
     // Validation
     //
 
     validators: {
       required: function(value, params) {
-        return value !== undefined && value !== '';
+        return value !== undefined && value !== null && value !== '';
       },
       minLength: function(value, params) {
         return value.length >= params;
@@ -10082,22 +10340,35 @@ define('view/form/fields/Field',[
         return value.length <= params;
       },
       email: function(value) {
-        return (/^([a-zA-Z0-9_.+-])+\@(([a-zA-Z0-9-])+\.)+([a-zA-Z0-9]{2,4})+$/).test(value);
+        return value ? (/^([a-zA-Z0-9_.+-])+\@(([a-zA-Z0-9-])+\.)+([a-zA-Z0-9]{2,4})+$/).test(value) : true;
+      },
+      number: function(value) {
+        return !isNaN(value) && !isNaN(Number(value));
+      },
+      minValue: function(value, params) {
+        return value >= params[0];
+      },
+      maxValue: function(value, params) {
+        return value <= params[0];
       }
     },
 
     setValidationState: function(state, message) {
+      if (this.validationState) {
+        this.$el.removeClass(this.validationState);
+      }
       this.validationState = state;
       this.message = message;
-      this.$('.control-group').attr('class', 'control-group');
-      if (this.validationState) {
-        this.$('.control-group').addClass(this.validationState);
-      }
+
+      this.$el.addClass(this.validationState);
       this.$('.help-inline').html(this.message);
     },
 
     validate: function() {
-      var value = this.getValue();
+      return this.validateValue(this.getValue());
+    },
+
+    validateValue: function(value) {
       var rules = this.validationRules;
 
       if (rules) {
@@ -10108,7 +10379,7 @@ define('view/form/fields/Field',[
           rules = newRules;
         }
 
-        var success;
+        var success = true;
         //check required first
         if (rules.required) {
           success = this.applyValidator(value, rules.required, 'required');
@@ -10130,8 +10401,15 @@ define('view/form/fields/Field',[
     },
 
     applyValidator: function(value, params, name) {
-      params = $.isArray(params) ? params : [params];
-      var validator = this.validators[name];
+      var validator;
+      if ($.isFunction(params)) {
+        validator = params;
+        params = [];
+      } else {
+        params = $.isArray(params) ? params : [params];
+        validator = this.validators[name];
+      }
+
       if (!validator(value, params)) {
         var message = this.getValidationMessage(name, params);
         this.setValidationState('error', message);
@@ -10162,14 +10440,15 @@ define('view/form/fields/Field',[
 
     updateModel: function(rootModel, parentModel) {
       var model = this.getModelFromRoot(this.relationship, rootModel, parentModel),
-        value = this.getValue();
+        value = this.disabled ? null : this.getValue();
       return model.set(this.valueAttr, value) !== false;
     },
 
     updateValueFromModel: function() {
+      this.value = '';
       if (this.model) {
         this.value = this.getValueFromModel();
-        this.valueChanged();
+        this.valueChanged(true);
 
         if (this.isRendered) {
           this.update();
@@ -10214,7 +10493,15 @@ define('view/form/fields/Field',[
       }
     },
 
-    isDomValueValid: function() {
+    /**
+     * Use this to completely disallow invalid values from being set.
+     * this is different from validationRules. If a value doesn't pass isDomValueValid, it will be reverted before
+     * validation happens.
+     */
+    isDomValueValid: function(value) {
+      if (this.updateModelOnChange) {
+        return this.validateValue(value);
+      }
       return true;
     },
 
@@ -10232,8 +10519,11 @@ define('view/form/fields/Field',[
       }
     },
 
-    /** Hook called when value changes. Useful for keeping view state in sync */
-    valueChanged: function() {
+    /**
+     * Hook called when value changes. Useful for keeping view state in sync.
+     * @param {Boolean} fromModel Being called from updateValueFromModel?
+     */
+    valueChanged: function(fromModel) {
       return;
     },
 
@@ -10254,6 +10544,7 @@ define('view/form/fields/Field',[
     },
 
     onBlur: function(e) {
+      this.updateValueFromDom();
       this.validate();
       this.trigger('blur', this);
     },
@@ -10638,13 +10929,97 @@ define('view/comment/ExpandableComments',[
   });
 });
 
+
+define('text!view/templates/MessageView.html',[],function () { return '\n{{#body}}\n<div class="message-body {{../cls}}">\n{{{.}}}\n</div>\n{{/body}}\n';});
+
+define('view/MessageView',[
+  'jquery',
+  'backbone',
+  'handlebars',
+  'PlumageRoot',
+  'view/ModelView',
+  'text!view/templates/MessageView.html'
+], function($, Backbone, Handlebars, Plumage, ModelView, template) {
+
+  /**
+   * lists with selections need two models:
+   *  - one for list contents
+   *  - one for list selection
+   *
+   * The selection model, populated by the model hierarchy. The list model needs to be populated manually.
+   */
+  return Plumage.view.MessageView = ModelView.extend({
+
+    className: 'message',
+
+    template: template,
+
+    updateOnMessage: true,
+
+    fadeOutTime: 2500,
+
+    events: {
+      'click a': 'onLinkClick'
+    },
+
+    initialize: function() {
+      ModelView.prototype.initialize.apply(this, arguments);
+      if (this.updateOnMessage && typeof theApp !== 'undefined') {
+        theApp.dispatch.on('message', this.setMessage.bind(this));
+      }
+    },
+
+    onRender: function() {
+      ModelView.prototype.onRender.apply(this, arguments);
+      this.updateClass();
+    },
+
+    getTemplateData: function() {
+      var data = {
+        body: this.messageBody,
+        cls: this.messageCls
+      };
+      return data;
+    },
+
+    updateClass: function() {
+      var show = Boolean(this.messageBody);
+      this.$el.toggleClass('show', show);
+      if (this.fadeOutTime && show) {
+        setTimeout(function() {
+          this.$el.removeClass('show');
+          this.messageBody = undefined;
+        }.bind(this), this.fadeOutTime);
+      }
+    },
+    setMessage: function(messageBody, messageCls) {
+      this.messageBody = messageBody;
+      this.messageCls = messageCls;
+      if (this.shown) {
+        this.render();
+      }
+    },
+
+    onShow: function() {
+      ModelView.prototype.onShow.apply(this, arguments);
+      this.render();
+    },
+
+    setModel: function() {
+      this.messageBody = undefined;
+      this.messageCls = undefined;
+      ModelView.prototype.setModel.apply(this, arguments);
+    }
+  });
+});
 define('view/controller/IndexView',[
   'jquery',
   'underscore',
   'backbone',
   'PlumageRoot',
-  'view/ModelView'
-], function($, _, Backbone, Plumage, ModelView) {
+  'view/ModelView',
+  'view/MessageView'
+], function($, _, Backbone, Plumage, ModelView, MessageView) {
 
   return Plumage.view.controller.IndexView = ModelView.extend({
 
@@ -10657,6 +11032,13 @@ define('view/controller/IndexView',[
     filterViewCls: undefined,
 
     gridOptions: undefined,
+
+    subViews: [{
+      viewCls: MessageView,
+      selector: '.message',
+      updateOnMessage: true,
+      replaceEl: true
+    }],
 
     initialize:function (options) {
       ModelView.prototype.initialize.apply(this, arguments);
@@ -10713,7 +11095,7 @@ define('view/controller/IndexView',[
 });
 
 
-define('text!view/form/fields/templates/Select.html',[],function () { return '<select name="{{valueAttr}}">\n{{#if noSelectionText}}\n<option value="{{noSelectionValue}}" {{^hasSelection}}selected="true"{{/hasSelection}}>{{noSelectionText}}</option>\n{{/if}}\n\n{{#listValues}}\n<option value="{{value}}" class="{{value}}" {{#selected}}selected{{/selected}}>{{label}}</option>\n{{/listValues}}\n</select>';});
+define('text!view/form/fields/templates/Select.html',[],function () { return '<select name="{{valueAttr}}" {{#selectSize}}size="{{.}}"{{/selectSize}}>\n{{#if noSelectionText}}\n<option value="{{noSelectionValue}}" {{^hasSelection}}selected="true"{{/hasSelection}}>{{noSelectionText}}</option>\n{{/if}}\n\n{{#listValues}}\n<option value="{{value}}" class="{{value}}" {{#selected}}selected{{/selected}}>{{label}}</option>\n{{/listValues}}\n</select>';});
 
 define('view/form/fields/Select',[
   'jquery',
@@ -10723,7 +11105,7 @@ define('view/form/fields/Select',[
   'PlumageRoot',
   'view/ModelView',
   'view/form/fields/Field',
-  'text!view/form/fields/templates/Select.html',
+  'text!view/form/fields/templates/Select.html'
 ], function($, _, Backbone, Handlebars, Plumage, ModelView, Field, template) {
 
 
@@ -10732,7 +11114,7 @@ define('view/form/fields/Select',[
   {
     /**
      * List of {label:"", value:""} objects to use as select choices.
-     * Use either this, or listModel, or listRelationship
+     * Use either this, listModel or listRelationship
      */
     listValues: undefined,
 
@@ -10759,8 +11141,11 @@ define('view/form/fields/Select',[
      */
     listLabelAttr: undefined,
 
+    selectSize: undefined,
+
     noSelectionText: undefined,
     noSelectionValue: '',
+
     noItemsText: 'No Items',
 
     fieldTemplate: template,
@@ -10783,9 +11168,7 @@ define('view/form/fields/Select',[
      */
     initialize: function() {
       Field.prototype.initialize.apply(this, arguments);
-      if (this.listValues && this.defaultToFirst) {
-        this.setValue(this.listValues[0].value);
-      }
+      this.updateDefault();
     },
 
     /**
@@ -10802,62 +11185,57 @@ define('view/form/fields/Select',[
 
     getTemplateData: function() {
       var data = Field.prototype.getTemplateData.apply(this, arguments);
+
       _.extend(data, {
         valueLabel: this.getValueLabel(data.value),
         noSelectionValue: this.noSelectionValue,
         noSelectionText: this.noSelectionText,
         noItemsText: this.noItemsText,
         hasSelection: this.hasSelection(),
-        defaultToFirst: this.defaultToFirst
+        defaultToFirst: this.defaultToFirst,
+        selectSize: this.selectSize,
+        listValues: this.getListValues(this.model)
       });
 
-      if (data.value === undefined || data.value === null) {
-        if (this.listModel && this.listModel.size() > 0) {
-          data.valueLabel = this.noSelectionText;
-          data.value = this.noSelectionValue;
-        } else {
-          data.valueLabel = this.noItemsText;
-        }
-      }
-
-      if (this.listModel) {
-        data.listValues = this.listModel.map(function(model){
-          return this.getItemData(model);
-        }, this);
-      } else {
-        data.listValues = this.listValues;
-      }
       return data;
     },
 
-    getValueLabel: function(value) {
-      var i;
+    getListValues: function(model) {
       if (this.listModel) {
-        for (i=0;i<this.listModel.size();i++) {
-          var listItem = this.listModel.at(i);
-          if (this.getListItemValue(listItem) === value) {
-            return this.getListItemLabel(listItem);
-          }
-        }
-      } else if (this.listValues) {
-        for (i = 0; i < this.listValues.length; i++) {
-          if (this.listValues[i].value === value) {
-            return this.listValues[i].label;
-          }
-        }
+        return this.listModel.map(function(model){
+          return this.getItemData(model);
+        }, this);
+      } else {
+        return this.listValues;
       }
     },
 
-    getValueFromModel: function() {
-      var value = Plumage.view.form.fields.Field.prototype.getValueFromModel.apply(this, arguments);
-      if (!value && this.defaultToFirst && this.listModel && this.listModel.size() > 0) {
-        return this.getListItemValue(this.listModel.at(0));
+    getValueLabel: function(value) {
+      var i,
+        listValues = this.getListValues(this.model);
+      if (listValues) {
+        for (i=0;i<listValues.length;i++) {
+          if (listValues[i].value === value) {
+            return listValues[i].label;
+          }
+        }
       }
-      return value;
     },
 
     setValue: function(value) {
       Field.prototype.setValue.apply(this, arguments);
+    },
+
+    onShow: function() {
+      Field.prototype.onShow.apply(this, arguments);
+      this.ensureListData();
+    },
+
+    /** Ensure listModel is loaded */
+    ensureListData: function() {
+      if (this.listModel && this.listModel.loadOnShow && !this.listModel.fetched) {
+        this.listModel.fetchIfAvailable();
+      }
     },
 
     /**
@@ -10868,7 +11246,8 @@ define('view/form/fields/Select',[
     getItemData: function(item) {
       var data = {
         value: this.getListItemValue(item),
-        label: this.getListItemLabel(item)
+        label: this.getListItemLabel(item),
+        url: item.viewUrlWithParams() || '#'
       };
       data.selected = this.isValueSelected(data.value);
       return data;
@@ -10892,6 +11271,14 @@ define('view/form/fields/Select',[
       return value !== null && value !== undefined && value !== this.noSelectionValue;
     },
 
+    updateDefault: function() {
+      var listValues = this.getListValues(this.model);
+      if (!this.hasSelection() && this.defaultToFirst && listValues && listValues.length) {
+        this.setValue(listValues[0].value, {silent: true});
+      }
+    },
+
+
     /**
      * List Model
      **************/
@@ -10902,8 +11289,12 @@ define('view/form/fields/Select',[
         var listModel = this.getModelFromRoot(this.listRelationship, rootModel, parentModel);
         if (listModel) {
           this.setListModel(listModel);
+          if (this.shown) {
+            this.ensureListData();
+          }
         }
       }
+      this.updateDefault();
     },
 
     setListModel: function(listModel) {
@@ -10953,7 +11344,7 @@ define('view/form/fields/Select',[
   });
 });
 
-define('text!view/form/fields/templates/CategorySelect.html',[],function () { return '<input type="hidden" {{#fieldName}}name="{{fieldName}}"{{/fieldName}} value="{{value}}">\n<ul class="nav nav-pills">\n{{#if noSelectionText}}\n<li data-category="" {{^hasSelection}}class="active"{{/hasSelection}}>\n  <a href="{{noSelectionValue}}">\n    {{noSelectionText}}\n  </a>\n</li>\n{{/if}}\n\n{{#listValues}}\n  <li data-value="{{value}}" class="{{value}}{{#selected}} active{{/selected}}"><a href="#">{{label}}</a></li>\n{{/listValues}}\n</ul>';});
+define('text!view/form/fields/templates/CategorySelect.html',[],function () { return '<input type="hidden" {{#fieldName}}name="{{fieldName}}"{{/fieldName}} value="{{value}}">\n<ul class="nav nav-pills">\n{{#if noSelectionText}}\n<li data-category="" {{^hasSelection}}class="active"{{/hasSelection}}>\n  <a href="{{noSelectionValue}}">\n    {{noSelectionText}}\n  </a>\n</li>\n{{/if}}\n\n{{#listValues}}\n  <li data-value="{{value}}" class="{{value}}{{#selected}} active{{/selected}}"><a href="{{url}}">{{label}}</a></li>\n{{/listValues}}\n</ul>';});
 
 define('view/form/fields/CategorySelect',[
   'jquery',
@@ -10973,8 +11364,6 @@ define('view/form/fields/CategorySelect',[
     listValueAttr: 'name',
     listLabelAttr: 'label',
     modelAttr: 'filter',
-
-    itemTemplate: '<li data-value="{{value}}" class="{{value}}{{#selected}} active{{/selected}}"><a href="#">{{label}}</a></li>',
 
     noSelectionText: 'All',
 
@@ -11469,27 +11858,35 @@ define('view/form/fields/Calendar',[
   });
 });
 
-define('text!view/form/fields/templates/Checkbox.html',[],function () { return '<label class="checkbox {{cls}}">\n  <input type="checkbox" name="{{../fieldName}}" {{#selected}}checked="true"{{/selected}} value="true">\n  <span>{{checkboxLabel}}</span>\n</label>\n';});
+define('text!view/form/fields/templates/Checkbox.html',[],function () { return '{{#if checkboxLabel}}\n<label class="{{cls}}">\n{{/if}}\n  <input type="checkbox" name="{{valueAttr}}" {{#selected}}checked="true"{{/selected}} value="true">\n{{#if checkboxLabel}}\n  <span>{{checkboxLabel}}</span>\n</label>\n{{/if}}\n';});
 
 define('view/form/fields/Checkbox',[
   'jquery',
   'underscore',
   'backbone',
-  'handlebars',
   'PlumageRoot',
   'view/form/fields/Field',
   'text!view/form/fields/templates/Checkbox.html'
-], function($, _, Backbone, Handlebars, Plumage, Field, template) {
-  return Plumage.view.form.fields.Checkbox = Field.extend({
+], function($, _, Backbone, Plumage, Field, template) {
+  return Plumage.view.form.fields.Checkbox = Field.extend(
+  /** @lends Plumage.view.form.fields.Checkbox.prototype */
+  {
 
     fieldTemplate: template,
 
+    /** Label next to the checkbox. Optional */
     checkboxLabel: '',
+
+    /** Model value to interpret as checked */
+    checkedValue: true,
+
+    /** Model value to interpret as unchecked */
+    uncheckedValue: false,
 
     getTemplateData: function() {
       var data = Field.prototype.getTemplateData.apply(this, arguments);
       data.checkboxLabel = this.checkboxLabel;
-      if (this.getValue()) {
+      if (this.getValue() === this.checkedValue) {
         data.selected = true;
       }
       return data;
@@ -11511,11 +11908,11 @@ define('view/form/fields/Checkbox',[
     },
 
     processDomValue: function(value) {
-      return value === 'true' ? true : false;
+      return value === 'true' ? this.checkedValue : this.uncheckedValue;
     },
 
     update: function() {
-      if (this.rendered) {
+      if (this.isRendered) {
         this.render();
       }
     }
@@ -11628,7 +12025,7 @@ define('view/form/fields/FieldWithPicker',[
   'PlumageRoot',
   'view/form/fields/Field',
   'view/form/fields/picker/Picker',
-  'text!view/form/fields/templates/FieldWithPicker.html',
+  'text!view/form/fields/templates/FieldWithPicker.html'
 ], function($, _, Backbone, Handlebars, moment, Plumage, Field, Picker, template) {
 
   return  Plumage.view.form.fields.FieldWithPicker = Field.extend(
@@ -12083,7 +12480,7 @@ define('view/form/fields/DateField',[
       viewCls: HourSelect,
       name: 'hourSelect',
       selector: '.field',
-      opens: 'left',
+      opens: 'right',
       tagName: 'span'
     }],
 
@@ -12119,6 +12516,7 @@ define('view/form/fields/DateField',[
       hourSelect.utc = this.utc;
       hourSelect.valueAttr = this.valueAttr;
       hourSelect.updateModelOnChange = this.updateModelOnChange;
+      hourSelect.relationship = this.relationship;
       this.setShowHourSelect(this.showHourSelect);
 
       if (this.minDate) {
@@ -12162,7 +12560,7 @@ define('view/form/fields/DateField',[
       //do nothing on typing. Wait for blur
     },
 
-    getValueString: function(value) {
+    processValueForDom: function(value) {
       if (value) {
         var m = this.utc ? moment.utc(value) : moment(value);
         return m.format(this.format);
@@ -12179,7 +12577,7 @@ define('view/form/fields/DateField',[
       if (value) {
         var m = this.utc ? moment.utc(value) : moment(value);
         var oldValue = this.getValue();
-        if (oldValue && this.keepTime) {
+        if (oldValue && (this.keepTime || this.showHourSelect)) {
           var oldM = this.utc ? moment.utc(oldValue) : moment(oldValue);
           m.hour(oldM.hour()).minute(oldM.minute()).second(oldM.second()).millisecond(oldM.millisecond());
         }
@@ -12356,8 +12754,8 @@ define('view/form/fields/picker/DateRangePicker',[
         return m.format(this.dateFormat);
       }.bind(this);
 
-      this.getSubView('fromDate').getValueString = formatDate;
-      this.getSubView('toDate').getValueString = formatDate;
+      this.getSubView('fromDate').processValueForDom = formatDate;
+      this.getSubView('toDate').processValueForDom = formatDate;
     },
 
     onRender: function() {
@@ -12526,7 +12924,7 @@ define('view/form/fields/DateRangeField',[
     // Value
     //
 
-    getValueString: function(value) {
+    processValueForDom: function(value) {
       if (value && value.length) {
         var picker = this.getPicker();
         var format = picker.showHourSelect ? this.formatWithHour : this.format;
@@ -12636,17 +13034,16 @@ define('view/form/fields/MultiSelect',[
   'jquery',
   'underscore',
   'backbone',
-  'handlebars',
   'PlumageRoot',
   'view/form/fields/Select',
   'text!view/form/fields/templates/MultiSelect.html',
-], function($, _, Backbone, Handlebars, Plumage, Select, template) {
+], function($, _, Backbone, Plumage, Select, template) {
   /**
    * Like a normal field, except value is an array of selected values.
    */
   return Plumage.view.form.fields.MultiSelect = Select.extend({
 
-    template: Handlebars.compile(template),
+    template: template,
 
     showSelectAll: false,
 
@@ -12679,6 +13076,10 @@ define('view/form/fields/MultiSelect',[
     },
 
     getValueLabel: function(value) {
+      if (!this.listModel) {
+        return '';
+      }
+
       var labels = [];
       if (value && value.length) {
         this.listModel.each(function(item) {
@@ -12688,9 +13089,6 @@ define('view/form/fields/MultiSelect',[
         }.bind(this));
       }
 
-      if (!this.listModel) {
-        return '';
-      }
       if (labels.length === this.listModel.size()) {
         return this.allLabel;
       }
@@ -12769,7 +13167,7 @@ define('view/form/fields/DropdownMultiSelect',[
   'handlebars',
   'PlumageRoot',
   'view/form/fields/MultiSelect',
-  'text!view/form/fields/templates/DropdownMultiSelect.html',
+  'text!view/form/fields/templates/DropdownMultiSelect.html'
 ], function($, _, Backbone, Handlebars, Plumage, MultiSelect, template) {
   /**
    * Like a normal field, except value is an array of selected values.
@@ -12784,7 +13182,8 @@ define('view/form/fields/DropdownMultiSelect',[
       'click li a': 'onItemClick',
       'click li input': 'onItemClick',
       'click li.select-all a': 'onSelectAllClick',
-      'click li.select-all input': 'onSelectAllClick'
+      'click li.select-all input': 'onSelectAllClick',
+      'click .dropdown-toggle': 'onToggleClick'
     },
 
     initialize: function() {
@@ -12838,6 +13237,116 @@ define('view/form/fields/DropdownMultiSelect',[
   });
 
 
+});
+
+
+define('text!view/form/fields/templates/DurationField.html',[],function () { return '<input type="text" name="{{valueAttr}}" {{#placeholder}}placeholder="{{.}}"{{/placeholder}} value="{{value}}" {{#readonly}}readonly="readonly"{{/readonly}} {{#disabled}}disabled="true"{{/disabled}}/>\n<select {{#readonly}}readonly="readonly"{{/readonly}} {{#disabled}}disabled="true"{{/disabled}}>\n{{#units}}\n    <option value="{{value}}" class="{{value}}" {{#selected}}selected{{/selected}}>{{label}}</option>\n{{/units}}\n</select>';});
+
+define('view/form/fields/DurationField',[
+  'jquery',
+  'underscore',
+  'backbone',
+  'PlumageRoot',
+  'view/form/fields/Field',
+  'text!view/form/fields/templates/DurationField.html'
+], function($, _, Backbone, Plumage, Field, template) {
+  return Plumage.view.form.fields.DurationField = Field.extend({
+
+    className: 'duration-field control-group',
+
+    fieldTemplate: template,
+
+    units: [
+      {label: 'minutes', value: 60000},
+      {label: 'hours', value: 3600000},
+      {label: 'days', value: 86400000}
+    ],
+
+    validationRules: {number: true, minValue: 0},
+
+    events: {
+      'change select': 'onUnitChange'
+    },
+
+    /**
+     * View state. Value of selected unit.
+     */
+    selectedUnit: undefined,
+
+    initialize: function() {
+      Field.prototype.initialize.apply(this, arguments);
+      if (!this.selectedUnit) {
+        this.selectedUnit = this.units[0].value;
+      }
+    },
+
+    getTemplateData: function() {
+      var data = Field.prototype.getTemplateData.apply(this, arguments);
+
+      data.units = _.map(this.units, function (unit) {
+        var result =  _.clone(unit);
+        if (this.selectedUnit !== undefined && result.value === this.selectedUnit) {
+          result.selected = true;
+        }
+        return result;
+      }.bind(this));
+
+      return data;
+    },
+
+    processValueForDom: function(value) {
+      if (!isNaN(Number(value))) {
+        if (value && this.selectedUnit !== undefined) {
+          return value/this.selectedUnit;
+        }
+      }
+      return value;
+    },
+
+    getUnitForValue: function(value) {
+      var selectedIndex = 0;
+      for (var i = 0; i < this.units.length; i++) {
+        if (value % this.units[i].value === 0) {
+          selectedIndex = i;
+        }
+      }
+      return this.units[selectedIndex].value;
+    },
+
+    getValueFromDom: function() {
+      var value = Field.prototype.getValueFromDom.apply(this, arguments);
+      if ($.isNumeric(value)) {
+        return value * this.selectedUnit;
+      }
+      return value;
+    },
+
+    valueChanged: function(fromModel) {
+      if (fromModel) {
+        this.autoSelectUnit();
+      }
+    },
+
+    autoSelectUnit: function() {
+      this.selectedUnit = this.getUnitForValue(this.getValue());
+    },
+
+    update: function(isLoad) {
+      Plumage.view.form.fields.Field.prototype.update.apply(this, arguments);
+      if (this.isRendered) {
+        this.$('select').val(this.selectedUnit);
+      }
+    },
+
+    //
+    // Events
+    //
+
+    onUnitChange: function() {
+      this.selectedUnit = Number($(arguments[0].target).val());
+      this.update();
+    }
+  });
 });
 
 define('view/form/fields/FilterCheckbox',[
@@ -12935,8 +13444,6 @@ define('view/form/fields/TypeAhead',[
 
     valueAttr: 'name',
     labelAttr: 'name',
-
-    itemTemplate: '<li data-value="{{value}}" class="{{value}}{{#selected}} active{{/selected}}"><a href="#">{{label}}</a></li>',
 
     shown: false,
 
@@ -13319,7 +13826,7 @@ define('view/form/fields/FilterTypeAhead',[
   });
 });
 
-define('text!view/form/fields/templates/InPlaceTextField.html',[],function () { return '{{#if label}}\n<div class="control-group">\n  <label class="control-label" for="{{valueAttr}}">{{label}}</label>\n  <div class="controls">\n{{/if}}\n    <div class="field-value {{#unless hasValue}}no-value{{/unless}}">\n      <i class="icon-pencil"></i>\n      <span>{{#if hasValue}}{{value}}{{else}}{{placeholder}}{{/if}}</span>\n\t  </div>\n    {{> field}}\n{{#if label}}\n  </div>\n</div>\n{{/if}}\n';});
+define('text!view/form/fields/templates/InPlaceTextField.html',[],function () { return '<div class="control-group {{#if validationState}}{{validationState}}{{/if}}">\n{{#if label}}\n  <label class="control-label" for="{{valueAttr}}">{{label}}</label>\n  <div class="controls">\n{{/if}}\n    <div class="field-value {{#unless hasValue}}no-value{{/unless}}">\n      <i class="icon-pencil"></i>\n      <span>{{#if hasValue}}{{value}}{{else}}{{placeholder}}{{/if}}</span>\n\t  </div>\n    {{> field}}\n    <span class="help-inline">{{#if message}}{{message}}{{/if}}</span>\n{{#if label}}\n  </div>\n{{/if}}\n</div>\n';});
 
 define('view/form/fields/InPlaceTextField',[
   'jquery',
@@ -13378,6 +13885,10 @@ define('view/form/fields/InPlaceTextField',[
     //
 
     onChange: function(e) {
+      //do nothing. commit on hide instead of change.
+    },
+
+    onInput: function(e) {
       //do nothing. commit on hide instead of change.
     },
 
@@ -13575,6 +14086,8 @@ define('view/form/fields/FilterField',[
 
   return Plumage.view.form.fields.FilterField = Field.extend({
 
+    className: 'filter-text-field',
+
     filterKey: undefined,
 
     comparison: 'contains',
@@ -13706,7 +14219,7 @@ define('view/grid/FilterView',[
    */
   return Plumage.view.grid.FilterView = Form.extend({
 
-    className: 'form-inline',
+    className: 'form-inline filter-view',
 
     template: Handlebars.compile(template),
 
@@ -14135,9 +14648,11 @@ define('view/grid/GridView',[
     onModelLoad: function(models, options) {
       if (!this.infiniteScroll) {
         this.onDoneLoad();
-        this.grid.invalidate();
-        this.updateNoData();
-        this.grid.scrollRowToTop(0);
+        if (this.isRendered) {
+          this.grid.invalidate();
+          this.updateNoData();
+          this.grid.scrollRowToTop(0);
+        }
       }
       if (models && models.get && models.get('sortField')) {
         this.grid.setSortColumn(models.get('sortField'), String(models.get('sortDir')) === '1');
@@ -14186,11 +14701,13 @@ define('view/grid/GridView',[
       }
 
       var cell = this.grid.getCellFromEvent(e);
-      var id = this.grid.getDataItem(cell.row).id,
+      var item = this.grid.getDataItem(cell.row);
+      if (item) {
+        var id = this.grid.getDataItem(cell.row).id,
         data = this.grid.getData(),
         model = data.getItem(data.getIndexForId(id));
-
-      this.trigger('itemSelected',  model);
+        this.trigger('itemSelected',  model);
+      }
     },
 
     toggleRowSelected: function(index) {
@@ -14549,16 +15066,17 @@ define('view/ListAndDetailView',[
   });
 });
 
-define('text!view/templates/ModalDialog.html',[],function () { return '<div class="modal hide fade" tabindex="-1" role="dialog" aria-hidden="true">\n  <div class="modal-header">\n    <button type="button" class="close" data-dismiss="modal" aria-hidden="true">x</button>\n    <h3 id="myModalLabel">{{header}}</h3>\n  </div>\n  <div class="modal-body">\n    <div class="modal-content"></div>\n  </div>\n  <div class="modal-footer">\n    {{#if showCancel}}\n      <a class="cancel" data-dismiss="modal" aria-hidden="true">Cancel</a>\n    {{else}}\n      <button class="btn" data-dismiss="modal" aria-hidden="true">Close</button>\n    {{/if}}\n    {{#if showSubmit}}\n      <button class="btn submit">Submit</button>\n    {{/if}}\n  </div>\n</div>';});
+define('text!view/templates/ModalDialog.html',[],function () { return '<div class="modal hide fade" tabindex="-1" role="dialog" aria-hidden="true">\n  <div class="modal-header">\n    <button type="button" class="close" data-dismiss="modal" aria-hidden="true">x</button>\n    <h3 id="myModalLabel">{{> header}}</h3>\n  </div>\n  <div class="modal-body">\n    <div class="modal-content"></div>\n  </div>\n  <div class="modal-footer">\n    {{#if showCancel}}\n      <a class="cancel" data-dismiss="modal" aria-hidden="true">Cancel</a>\n    {{else}}\n      <button class="btn" data-dismiss="modal" aria-hidden="true">Close</button>\n    {{/if}}\n    {{#if showSubmit}}\n      <button class="btn submit" {{#if canSubmit}}{{else}}disabled="true"{{/if}}>Submit</button>\n    {{/if}}\n  </div>\n</div>';});
 
 define('view/ModalDialog',[
   'jquery',
   'underscore',
   'backbone',
+  'handlebars',
   'PlumageRoot',
   'view/ModelView',
   'text!view/templates/ModalDialog.html'
-], function($, _, Backbone, Plumage, ModelView, template) {
+], function($, _, Backbone, Handlebars, Plumage, ModelView, template) {
 
   return Plumage.view.ModalDialog = ModelView.extend({
 
@@ -14566,7 +15084,7 @@ define('view/ModalDialog',[
 
     contentView: undefined,
 
-    header: '',
+    headerTemplate: '',
 
     showCancel: false,
 
@@ -14583,15 +15101,22 @@ define('view/ModalDialog',[
     initialize: function(options) {
       options = options || {};
       options.modalOptions = _.extend(this.modalOptions, options.modalOptions || {});
+      if (this.contentView) {
+        this.subViews = [this.contentView].concat(options.subViews || []);
+        this.contentView.selector = '.modal-content';
+        this.contentView.name = 'contentView';
+      }
+
       ModelView.prototype.initialize.apply(this, arguments);
+
+      if (this.contentView) {
+        this.contentView = this.getSubView('contentView');
+      }
     },
 
     onRender: function() {
+      Handlebars.registerPartial('header', this.headerTemplate);
       ModelView.prototype.onRender.apply(this, arguments);
-      if (this.contentView) {
-        this.$('.modal-content').html(this.contentView.render().el);
-      }
-
       if (this.$el.closest('html').length === 0) {
         $('body').append(this.$el);
         this.$('.modal').modal(this.modalOptions);
@@ -14603,25 +15128,24 @@ define('view/ModalDialog',[
       return _.extend(data,{
         header: this.header,
         showCancel: this.showCancel,
-        showSubmit: this.showSubmit
+        showSubmit: this.showSubmit,
+        canSubmit: this.canSubmit()
       });
     },
 
     show: function() {
       this.render();
       this.$('.modal').modal('show');
-      this.onShow();
-      if (this.contentView) {
-        this.contentView.onShow();
-      }
+      ModelView.prototype.onShow.apply(this, arguments);
     },
 
     hide: function() {
       this.$('.modal').modal('hide');
-      if (this.contentView) {
-        this.contentView.onHide();
-      }
-      this.onHide();
+      ModelView.prototype.onHide.apply(this, arguments);
+    },
+
+    canSubmit: function(model) {
+      return true;
     },
 
     onSubmitClick: function() {
@@ -14632,83 +15156,7 @@ define('view/ModalDialog',[
 
 
 
-define('text!view/templates/MessageView.html',[],function () { return '\n{{#body}}\n<div class="message-body {{../cls}}">\n{{{.}}}\n</div>\n{{/body}}\n';});
-
-define('view/MessageView',[
-  'jquery',
-  'backbone',
-  'handlebars',
-  'PlumageRoot',
-  'view/ModelView',
-  'text!view/templates/MessageView.html'
-], function($, Backbone, Handlebars, Plumage, ModelView, template) {
-
-  /**
-   * lists with selections need two models:
-   *  - one for list contents
-   *  - one for list selection
-   *
-   * The selection model, populated by the model hierarchy. The list model needs to be populated manually.
-   */
-  return Plumage.view.MessageView = ModelView.extend({
-
-    className: 'message',
-
-    template: template,
-
-    updateOnMessage: true,
-
-    events: {
-      'click a': 'onLinkClick'
-    },
-
-    initialize: function() {
-      ModelView.prototype.initialize.apply(this, arguments);
-      if (this.updateOnMessage) {
-        theApp.dispatch.on('message', this.setMessage.bind(this));
-      }
-    },
-
-    onRender: function() {
-      ModelView.prototype.onRender.apply(this, arguments);
-      this.updateClass();
-    },
-
-    getTemplateData: function() {
-      var data = {
-        body: this.messageBody,
-        cls: this.messageCls
-      };
-      return data;
-    },
-
-    updateClass: function() {
-      this.$el.toggleClass('show', Boolean(this.messageBody));
-    },
-
-    setMessage: function(messageBody, messageCls) {
-      this.messageBody = messageBody;
-      this.messageCls = messageCls;
-      if (this.shown) {
-        this.render();
-      }
-    },
-
-    onShow: function() {
-      ModelView.prototype.onShow.apply(this, arguments);
-      this.render();
-
-    },
-
-    setModel: function() {
-      this.messageBody = undefined;
-      this.messageCls = undefined;
-      ModelView.prototype.setModel.apply(this, arguments);
-    }
-  });
-});
-
-define('text!view/templates/ConfirmationDialog.html',[],function () { return '<div class="modal hide fade" tabindex="-1" role="dialog" aria-hidden="true">\n  <div class="modal-header">\n    <button type="button" class="close" data-dismiss="modal" aria-hidden="true">x</button>\n    <h3 id="myModalLabel">{{{headerTemplate}}}</h3>\n  </div>\n  <div class="modal-body">\n    <div class="message"></div>\n    <div class="modal-content">\n\t    {{{bodyTemplate}}}\n    </div>\n  </div>\n  <div class="modal-footer">\n  <button class="btn" data-dismiss="modal" aria-hidden="true">Cancel</button>\n    <button class="btn confirm {{buttonCls}}">{{buttonText}}</button>\n  </div>\n</div>';});
+define('text!view/templates/ConfirmationDialog.html',[],function () { return '<div class="modal hide fade" tabindex="-1" role="dialog" aria-hidden="true">\n  <div class="modal-header">\n    <div class="message"></div>\n    <button type="button" class="close" data-dismiss="modal" aria-hidden="true">x</button>\n    <h3 id="myModalLabel">{{> header}}</h3>\n\n  </div>\n  <div class="modal-body">\n\n    <div class="modal-content">\n\t    {{{bodyTemplate}}}\n    </div>\n  </div>\n  <div class="modal-footer">\n  <button class="btn" data-dismiss="modal" aria-hidden="true">Cancel</button>\n    <button class="btn confirm {{buttonCls}}">{{buttonText}}</button>\n  </div>\n</div>';});
 
 define('view/ConfirmationDialog',[
   'jquery',
@@ -14752,14 +15200,12 @@ define('view/ConfirmationDialog',[
     initialize: function(options) {
       options = options || {};
       ModalDialog.prototype.initialize.apply(this, arguments);
-      this.headerTemplate = this.initTemplate(this.headerTemplate);
       this.bodyTemplate = this.initTemplate(this.bodyTemplate);
     },
 
     getTemplateData: function() {
       var data = ModalDialog.prototype.getTemplateData.apply(this, arguments);
       return _.extend(data, {
-        headerTemplate: this.headerTemplate(data),
         bodyTemplate: this.bodyTemplate(data),
         buttonText: this.buttonText,
         buttonCls: this.buttonCls,
@@ -14870,7 +15316,7 @@ define('view/DisplayField',[
 });
 
 
-define('text!view/templates/NavView.html',[],function () { return '\n<div id="nav-top">\n  <a class="brand" href="/">\n    <span class="nav-title">{{title}}</span>\n    {{#subtitle}}<span class="nav-subtitle">{{.}}</span>{{/subtitle}}\n  </a>\n  <div id="extra-links">\n  {{#if aboutUrl}}\n    <a class="outlink" href="{{aboutUrl}}" target="_">{{aboutLabel}}</a>\n  {{/if}}\n\n  {{#if helpUrl}}\n    <a class="outlink" href="{{helpUrl}}" target="_">{{helpLabel}}</a>\n  {{/if}}\n  </div>\n\n  <div id="nav-top-right" class="nav pull-right">\n    <div class="nav-search"></div>\n  </div>\n  <div class="clear"></div>\n</div>\n\n{{#if navItems}}\n<div id="main-nav" class="navbar">\n  <div class="navbar-inner">\n    <ul class="nav-menu nav menu">\n      {{#navItems}}\n      <li class="{{className}}"><a href="{{url}}">{{label}}</a></li>\n      {{/navItems}}\n    </ul>\n\n    <ul class="nav right-nav pull-right">\n      <li class="user-menu"></li>\n    </ul>\n  </div>\n</div>\n{{/if}}';});
+define('text!view/templates/NavView.html',[],function () { return '\n<div id="nav-top">\n  <a class="brand" href="{{titleUrl}}">\n    <span class="nav-title">{{title}}</span>\n    {{#subtitle}}<span class="nav-subtitle">{{.}}</span>{{/subtitle}}\n  </a>\n  <div id="extra-links">\n  {{#if aboutUrl}}\n    <a class="outlink" href="{{aboutUrl}}" target="_">{{aboutLabel}}</a>\n  {{/if}}\n\n  {{#if helpUrl}}\n    <a class="outlink" href="{{helpUrl}}" target="_">{{helpLabel}}</a>\n  {{/if}}\n  </div>\n\n  <div id="nav-top-right" class="nav pull-right">\n    <div class="nav-search"></div>\n  </div>\n  <div class="clear"></div>\n</div>\n\n{{#if navItems}}\n<div id="main-nav" class="navbar">\n  <div class="navbar-inner">\n    <ul class="nav-menu nav menu">\n      {{#navItems}}\n      <li class="{{className}}"><a href="{{url}}">{{label}}</a></li>\n      {{/navItems}}\n    </ul>\n\n    <ul class="nav right-nav pull-right">\n      <li class="user-menu"></li>\n    </ul>\n  </div>\n</div>\n{{/if}}';});
 
 define('view/NavView',[
   'jquery',
@@ -14895,6 +15341,8 @@ define('view/NavView',[
      *
      */
     title: undefined,
+
+    titleUrl: '/',
 
     subtitle: undefined,
 
@@ -14984,6 +15432,7 @@ define('view/NavView',[
       }
       return {
         title: this.title,
+        titleUrl: this.titleUrl,
         subtitle: this.subtitle,
         navItems: navItems,
         showAbout: this.aboutTemplate !== undefined,
@@ -15487,6 +15936,7 @@ define('view/TabView',[
 ], function($, _, Backbone, Handlebars, Plumage, View, ModelView, template) {
 
   return Plumage.view.TabView = ModelView.extend({
+    /** @lends Plumage.view.ModelView.prototype */
 
     className: 'tab-view tab-theme',
 
@@ -15500,6 +15950,21 @@ define('view/TabView',[
       'click .tabs a': 'onTabClick'
     },
 
+    triggerOnTabChange: false,
+
+    /**
+     * If set, call [router.logNavigationAction]{@link Plumage.Router#logNavigationAction}nAction on tab change.
+     */
+    logTabNavigation: false,
+
+    /**
+     * Tabbed view with subviews as tab panes.
+     *
+     * Tabs are generated from subViews with the tabId and tabLabel attributes.
+     *
+     * @extends Plumage.view.ModelView
+     * @constructs
+     */
     initialize: function() {
       ModelView.prototype.initialize.apply(this, arguments);
       this.eachTabSubView(function(subView) {
@@ -15516,12 +15981,13 @@ define('view/TabView',[
     setModel: function() {
       ModelView.prototype.setModel.apply(this, arguments);
       var tab = this.model.get(this.viewStateAttr);
-      if (tab === undefined) {
+      if (!tab) {
         tab = this.getTabCookie();
         if (tab === undefined) {
           tab = _.find(this.subViews, function(subView){ return subView.tabId !== undefined;}).tabId;
         }
         this.model.set(this.viewStateAttr, tab);
+        this.model.updateUrl();
       }
     },
 
@@ -15532,10 +15998,23 @@ define('view/TabView',[
     },
 
     setActiveTab: function(tabId) {
-      if (this.model) {
-        this.model.set(this.viewStateAttr, tabId);
-        this.model.updateUrl();
+      if (this.model && tabId !== this.getActiveTab()) {
+        if (this.triggerOnTabChange) {
+          var extras = {};
+          extras[this.viewStateAttr] = tabId;
+          if (window.router) {
+            window.router.navigateWithQueryParams(this.model.viewUrlWithParams(extras), {trigger: true});
+          }
+        } else {
+          this.model.set(this.viewStateAttr, tabId);
+          this.model.updateUrl();
+        }
         this.updateTabCookie();
+        if (this.logTabNavigation) {
+          if (window.router) {
+            window.router.logNavigationAction(window.location.href, window.location.pathname);
+          }
+        }
       }
     },
 
@@ -15700,6 +16179,7 @@ define('plumage',[
   'view/form/fields/DateRangeField',
   'view/form/fields/DropdownMultiSelect',
   'view/form/fields/DropdownSelect',
+  'view/form/fields/DurationField',
   'view/form/fields/Field',
   'view/form/fields/FieldWithPicker',
   'view/form/fields/FilterCheckbox',

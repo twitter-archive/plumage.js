@@ -173,18 +173,22 @@ define([
         this.model.on('beginLoad', this.onModelBeginLoad, this);
         this.model.on('change', this.onModelChange, this);
         this.model.on('load', this.onModelLoad, this);
+        this.model.on('add', this.onModelAdd, this);
+        this.model.on('remove', this.onModelRemove, this);
         this.model.on('destroy', this.onModelDestroy, this);
         this.model.on('invalid', this.onModelInvalid, this);
         this.model.on('error', this.onModelError, this);
+
+        if (changed && this.model && this.model.fetched) {
+          this.onModelLoad();
+        }
+
+        if (this.shown) {
+          this.ensureData();
+        }
       }
 
-      if (changed && this.model && this.model.fetched) {
-        this.onModelLoad();
-      }
 
-      if (this.shown) {
-        this.ensureData();
-      }
 
       //recurse
       this.eachSubView(function(subView) {
@@ -192,10 +196,13 @@ define([
       }.bind(this));
     },
 
-    /** triggers loading of deferLoad Models. */
+    /** triggers loading of loadOnShow Models. */
     ensureData: function() {
-      if (this.model && this.model.deferLoad && !this.model.fetched) {
-        this.model.fetchIfAvailable();
+      if (this.model && this.model.loadOnShow) {
+        if(!this.model.fetched) {
+          this.model.fetchIfAvailable();
+        }
+        delete this.model.loadOnShow;
       }
     },
 
@@ -206,14 +213,10 @@ define([
      * @override
      */
     getTemplateData: function() {
-      var data = {};
       if (this.model) {
-        data = this.model.toViewJSON();
-        if (this.model.hasUrl() && !data.model_url) {
-          data.model_url = this.model.urlWithParams();
-        }
+        return this.model.toViewJSON();
       }
-      return data;
+      return {};
     },
 
     /**
@@ -275,6 +278,14 @@ define([
       this.updateViewState(model);
       this.update(true);
       this.hideLoadingAnimation();
+    },
+
+    onModelAdd: function(event, model) {
+      this.onModelChange(event, model);
+    },
+
+    onModelRemove: function(event, model) {
+      this.onModelChange(event, model);
     },
 
     onModelDestroy: function(event, model) {

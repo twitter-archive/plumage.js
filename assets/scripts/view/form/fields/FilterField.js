@@ -10,6 +10,8 @@ define([
 
   return Plumage.view.form.fields.FilterField = Field.extend({
 
+    className: 'filter-text-field',
+
     filterKey: undefined,
 
     comparison: 'contains',

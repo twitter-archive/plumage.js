@@ -2,17 +2,16 @@ define([
   'jquery',
   'underscore',
   'backbone',
-  'handlebars',
   'PlumageRoot',
   'view/form/fields/Select',
   'text!view/form/fields/templates/MultiSelect.html',
-], function($, _, Backbone, Handlebars, Plumage, Select, template) {
+], function($, _, Backbone, Plumage, Select, template) {
   /**
    * Like a normal field, except value is an array of selected values.
    */
   return Plumage.view.form.fields.MultiSelect = Select.extend({
 
-    template: Handlebars.compile(template),
+    template: template,
 
     showSelectAll: false,
 
@@ -45,6 +44,10 @@ define([
     },
 
     getValueLabel: function(value) {
+      if (!this.listModel) {
+        return '';
+      }
+
       var labels = [];
       if (value && value.length) {
         this.listModel.each(function(item) {
@@ -54,9 +57,6 @@ define([
         }.bind(this));
       }
 
-      if (!this.listModel) {
-        return '';
-      }
       if (labels.length === this.listModel.size()) {
         return this.allLabel;
       }

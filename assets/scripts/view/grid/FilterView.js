@@ -22,7 +22,7 @@ define([
    */
   return Plumage.view.grid.FilterView = Form.extend({
 
-    className: 'form-inline',
+    className: 'form-inline filter-view',
 
     template: Handlebars.compile(template),
 

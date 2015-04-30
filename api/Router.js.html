@@ -56,7 +56,7 @@ function($, _, Backbone, Plumage, History, ModelUtil) {
   return Plumage.Router = Backbone.Router.extend(
   /** @lends Plumage.Router.prototype */
   {
-    /** Routes config. Map from route pattern to a route options object. Options must include controller and method */
+    /** Routes config. Array of pairs [pattern, options]. Options must include controller and method */
     controllerRoutes: undefined,
 
     /** reference to the controllerManager for access to Controller instances*/
@@ -104,14 +104,14 @@ function($, _, Backbone, Plumage, History, ModelUtil) {
         }
       });
 
-      for (var route in this.controllerRoutes) {
-        if (!this.controllerRoutes.hasOwnProperty(route)) {
-          continue;
+      if (this.controllerRoutes) {
+        for (var i = 0; i &lt; this.controllerRoutes.length; i++) {
+          var route = this.controllerRoutes[i];
+          var routeOptions = route[1],
+            name = routeOptions.controller + '.' + routeOptions.method,
+            handler = _.bind(this.routeToController, this, routeOptions);
+          this.route(route[0], name, handler);
         }
-        var routeOptions = this.controllerRoutes[route],
-          name = routeOptions.controller + '.' + routeOptions.method,
-          handler = _.bind(this.routeToController, this, routeOptions);
-        this.route(route, name, handler);
       }
     },
 
@@ -121,13 +121,16 @@ function($, _, Backbone, Plumage, History, ModelUtil) {
 
     /** Route handler that forwards to method 'options.method'
      * in Controller 'options.controller'
+     *
+     * @params {Object} options Static options set when creating route
+     * @params {...} queryParams Remaining params used as query params
      */
-    routeToController: function(options, queryParams){
+    routeToController: function(options){
       if (this.app.navView) {
         this.app.navView.select(options.nav);
       }
       var ctrl = this.app.controllerManager.getController(options.controller);
-      ctrl[options.method].apply(ctrl, Array.prototype.slice.call(arguments, 1));
+      ctrl.runHandler(options.method, Array.prototype.slice.call(arguments, 1));
     },
 
     /**
@@ -151,11 +154,17 @@ function($, _, Backbone, Plumage, History, ModelUtil) {
         router.trigger.apply(router, ['route:' + name].concat(args));
         router.trigger('route', name, args);
         router.history.trigger('route', router, name, args);
+        router.logNavigationAction(window.location.href, window.location.pathname);
       });
+
       return this;
     },
 
     navigate: function(url, options) {
+      if (url === null || url === undefined) {
+        throw new Error('A "url" must be specified');
+      }
+
       //remove host and protocol if it's local
       if (url.indexOf(window.location.origin) === 0) {
         url = url.slice(window.location.origin.length);
@@ -170,12 +179,14 @@ function($, _, Backbone, Plumage, History, ModelUtil) {
 
     /** Special navigate method for working around Backbone's ignoring of query params. */
     navigateWithQueryParams: function(url, options) {
-      if (url === window.location.pathname + window.location.search) {
-        //already there
-        return;
-      }
-
       this.navigate(url, options);
+    },
+
+    /**
+     * Template method hook for logging, eg post to google analytics
+     */
+    logNavigationAction: function(url, pageName) {
+      // do nothing
     },
 
     /**

@@ -1,0 +1,23 @@
+*.gem
+*.rbc
+.bundle
+.config
+
+#eclipse
+.project
+.settings
+
+#idea
+.idea
+
+#test output
+/reports
+/log
+
+/assets/bower_components
+/node_modules
+/build
+.sass-cache
+/gh-pages
+.grunt
+Gemfile.lock

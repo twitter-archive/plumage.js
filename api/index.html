@@ -81,7 +81,7 @@ bower install plumagejs=../plumage.js</code></pre>
 <pre><code>&lt;script type=&quot;text/javascript&quot; src=&quot;/bower_components/plumagejs/assets/scripts/vendor/require.js&quot;&gt;&lt;/script&gt;
 &lt;script type=&quot;text/javascript&quot; src=&quot;/bower_components/plumagejs/assets/scripts/config.js&quot;&gt;&lt;/script&gt;
 &lt;!-- include your own require.js config here --&gt;</code></pre>
-<p>In your js files, require plumage, and access plumage classes from the <a href="Plumage.html">Plumage</a> object.</p>
+<p>In your js files, require plumage, and access plumage classes from the <a href="http://twitter.github.io/plumage.js/api/Plumage.html">Plumage</a> object.</p>
 <pre><code>define(['jquery', 'underscore', 'plumage'],
 function($, _, Plumage) {
   return Plumage.model.Model.extend({
@@ -89,7 +89,7 @@ function($, _, Plumage) {
   });
 });</code></pre>
 <h3>Hello Plumage</h3>
-<p>To get running, we'll need an <a href="Plumage.App.html">App</a>, a <a href="Plumage.Router.html">Router</a> and a <a href="Plumage.controller.BaseController.html">Controller</a>.</p>
+<p>To get running, we'll need an <a href="http://twitter.github.io/plumage.js/api/Plumage.App.html">App</a>, a <a href="http://twitter.github.io/plumage.js/api/Plumage.Router.html">Router</a> and a <a href="http://twitter.github.io/plumage.js/api/Plumage.controller.BaseController.html">Controller</a>.</p>
 <p><strong>controller/MyController.js</strong></p>
 <pre><code>define(['jquery', 'underscore', 'plumage'],
 function($, _, Plumage, ) {
@@ -124,8 +124,8 @@ function($, _, Plumage, MyRouter) {
 <pre><code>&lt;script type=&quot;text/javascript&quot;&gt;require(['application']);&lt;/script&gt;</code></pre>
 <p>Load the page and you should see the 'Hello Plumage!' alert.</p>
 <h3>Next Steps</h3>
-<p>Next you'll probably want some <a href="Plumage.model.Model.html">Models</a>, <a href="Plumage.collection.Collection.html">Collections</a> and
-<a href="Plumage.view.ModelView.html">Views</a>. A good place to start is the source code of the <a href="../examples/countries">Countries example</a>.</p>
+<p>Next you'll probably want some <a href="http://twitter.github.io/plumage.js/api/Plumage.model.Model.html">Models</a>, <a href="http://twitter.github.io/plumage.js/api/Plumage.collection.Collection.html">Collections</a> and
+<a href="http://twitter.github.io/plumage.js/api/Plumage.view.ModelView.html">Views</a>. A good place to start is the <a href="examples/countries.html">source code</a> of the <a href="http://twitter.github.io/plumage.js/examples/countries">Countries example</a>.</p>
 <h3>License</h3>
 <p>Copyright 2014 Twitter, Inc. and other contributors</p>
 <p>Licensed under the MIT License</p></article>

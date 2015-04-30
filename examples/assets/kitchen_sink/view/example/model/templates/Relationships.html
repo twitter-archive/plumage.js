@@ -26,19 +26,13 @@ log('related.name: ' + model.getRelated('related').get('name'));</code></pre>
 
 <div class="example">
   <h4>Async Loading</h4>
-  <p>A you can also have a related model automatically load asynchronously by setting the 'remote' flag in its relationship definition</p>
-  <p><strong>Note: You must preinstantiate the related models to get a remote relationship to load!</strong></p>
-  <p>
-    Do this by either:
-    <ol>
-      <li>Setting the 'forceCreate' flag on the relationship</li>
-      <li>Instantiating it with an empty object</li>
-    </ol>
-  </p>
-  <p>
-    Related models need to be created ahead like this so that any views or other event listeners can start listening up while the model is loading.
-    This also allows to to customize what relationships are loaded in different contexts.
-  </p>
+  <p>Related models can be loaded asynchronously by setting the remote option in their relationship definition.</p>
+  <p>The remote option can be one of 3 values, which determines when the relationship gets loaded</p>
+  <ul>
+    <li>'autoload' - Load as soon as the relation url is available.</li>
+    <li>'loadOnShow' - Load the first time a view bound to the current model is shown.</li>
+    <li>'manual' - No automatic loading. It's up to you to call load on the related model in your Controller.</li>
+  </ul>
 
   <h5>Example</h5>
   <div class="example-code">
@@ -48,7 +42,7 @@ var MyModel = Plumage.model.Model.extend({
   relationships: {
     'related': {
       modelCls: RelatedModel,
-      remote: true,
+      remote: 'autoload',
       forceCreate: true // option (1) above
     }
   }
@@ -60,9 +54,9 @@ model.load();
 </div>
 
 <div class="example">
-  <h4>Deferred Loading</h4>
-  <p>If you're not going to use related data right away (like if it's on an initially hidden tab),
-  you can set the deferLoad flag and it will hold off until explicitly loaded (usually by View.onShow)</p>
+  <h4>loadOnShow</h4>
+  <p>If you're not going to use related data right away (eg if it's on a tab),
+  you can set the remote option to 'loadOnShow' and it will hold off until explicitly it's shown.</p>
 
   <h5>Example</h5>
   <div class="example-code">
@@ -72,16 +66,14 @@ var MyModel = Plumage.model.Model.extend({
   relationships: {
     'related': {
       modelCls: RelatedModel,
-      remote: true,
-      forceCreate: true,
-      deferLoad: true
+      remote: 'loadOnShow'
     }
   }
 });
-var model = new MyModel();
+var model = new MyModel({related: {}});
 model.load();
 log('--');
-log('model marked as defered: ' + model.getRelated('related').deferLoad);
+log('model marked to loadOnShow: ' + model.getRelated('related').loadOnShow);
 model.getRelated('related').load();
 </code></pre>
   </div>

@@ -9,8 +9,11 @@
 <div>
   <h4>In the Plumage View</h4>
 
-  <p>In some views you can prevent selection of invalid values, eg DateField.</p>
+  <p>In some views you can limit the range of selectable values, eg DateField.</p>
   <div class="past-date form-horizontal"></div>
+
+  <p>DurationField validates for a number by default.</p>
+  <div class="duration-field form-horizontal"></div>
 
   <p>You can also specify validationRules and validationMessages.</p>
   <div class="validated-field form-horizontal"></div>
@@ -18,17 +21,17 @@
   <h4>In the Plumage Model</h4>
 
   <p>
-    Override <a href="http://backbonejs.org/#Model-validate">validate</a> and call <a href="http://backbonejs.org/#Model-isValid">isValid</a>.
+    It's possible to do this with Backbone's validation (Override <a href="http://backbonejs.org/#Model-validate">validate</a> and call <a href="http://backbonejs.org/#Model-isValid">isValid</a>).
   </p>
   <p>
-    Don't do this. It's too late to provide realtime feedback (like in field validation), and you'll
+    But don't do this. It's too late to provide realtime feedback (like in field validation), and you'll
     need to validate on the server anyway (protect against manually constructed POST etc.), so the only reason to do this
     is if you're not saving to a server.
   </p>
 
   <h4>On the Server</h4>
 
-  <p>Whatever else you do, you must validate on the server.</p>
+  <p>Whether or not you validate on the client, you still need to validate on the server.</p>
   <p>On save, if the response contains validation errors, the model will trigger 'invalid' instead of 'error'.</p>
   <code>{meta: {success: false, validationError: {field: 'message'}}}</code>
 

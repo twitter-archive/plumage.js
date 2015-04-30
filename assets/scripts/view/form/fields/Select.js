@@ -6,7 +6,7 @@ define([
   'PlumageRoot',
   'view/ModelView',
   'view/form/fields/Field',
-  'text!view/form/fields/templates/Select.html',
+  'text!view/form/fields/templates/Select.html'
 ], function($, _, Backbone, Handlebars, Plumage, ModelView, Field, template) {
 
 
@@ -15,7 +15,7 @@ define([
   {
     /**
      * List of {label:"", value:""} objects to use as select choices.
-     * Use either this, or listModel, or listRelationship
+     * Use either this, listModel or listRelationship
      */
     listValues: undefined,
 
@@ -42,8 +42,11 @@ define([
      */
     listLabelAttr: undefined,
 
+    selectSize: undefined,
+
     noSelectionText: undefined,
     noSelectionValue: '',
+
     noItemsText: 'No Items',
 
     fieldTemplate: template,
@@ -66,9 +69,7 @@ define([
      */
     initialize: function() {
       Field.prototype.initialize.apply(this, arguments);
-      if (this.listValues && this.defaultToFirst) {
-        this.setValue(this.listValues[0].value);
-      }
+      this.updateDefault();
     },
 
     /**
@@ -85,62 +86,57 @@ define([
 
     getTemplateData: function() {
       var data = Field.prototype.getTemplateData.apply(this, arguments);
+
       _.extend(data, {
         valueLabel: this.getValueLabel(data.value),
         noSelectionValue: this.noSelectionValue,
         noSelectionText: this.noSelectionText,
         noItemsText: this.noItemsText,
         hasSelection: this.hasSelection(),
-        defaultToFirst: this.defaultToFirst
+        defaultToFirst: this.defaultToFirst,
+        selectSize: this.selectSize,
+        listValues: this.getListValues(this.model)
       });
 
-      if (data.value === undefined || data.value === null) {
-        if (this.listModel && this.listModel.size() > 0) {
-          data.valueLabel = this.noSelectionText;
-          data.value = this.noSelectionValue;
-        } else {
-          data.valueLabel = this.noItemsText;
-        }
-      }
-
-      if (this.listModel) {
-        data.listValues = this.listModel.map(function(model){
-          return this.getItemData(model);
-        }, this);
-      } else {
-        data.listValues = this.listValues;
-      }
       return data;
     },
 
-    getValueLabel: function(value) {
-      var i;
+    getListValues: function(model) {
       if (this.listModel) {
-        for (i=0;i<this.listModel.size();i++) {
-          var listItem = this.listModel.at(i);
-          if (this.getListItemValue(listItem) === value) {
-            return this.getListItemLabel(listItem);
-          }
-        }
-      } else if (this.listValues) {
-        for (i = 0; i < this.listValues.length; i++) {
-          if (this.listValues[i].value === value) {
-            return this.listValues[i].label;
-          }
-        }
+        return this.listModel.map(function(model){
+          return this.getItemData(model);
+        }, this);
+      } else {
+        return this.listValues;
       }
     },
 
-    getValueFromModel: function() {
-      var value = Plumage.view.form.fields.Field.prototype.getValueFromModel.apply(this, arguments);
-      if (!value && this.defaultToFirst && this.listModel && this.listModel.size() > 0) {
-        return this.getListItemValue(this.listModel.at(0));
+    getValueLabel: function(value) {
+      var i,
+        listValues = this.getListValues(this.model);
+      if (listValues) {
+        for (i=0;i<listValues.length;i++) {
+          if (listValues[i].value === value) {
+            return listValues[i].label;
+          }
+        }
       }
-      return value;
     },
 
     setValue: function(value) {
       Field.prototype.setValue.apply(this, arguments);
+    },
+
+    onShow: function() {
+      Field.prototype.onShow.apply(this, arguments);
+      this.ensureListData();
+    },
+
+    /** Ensure listModel is loaded */
+    ensureListData: function() {
+      if (this.listModel && this.listModel.loadOnShow && !this.listModel.fetched) {
+        this.listModel.fetchIfAvailable();
+      }
     },
 
     /**
@@ -151,7 +147,8 @@ define([
     getItemData: function(item) {
       var data = {
         value: this.getListItemValue(item),
-        label: this.getListItemLabel(item)
+        label: this.getListItemLabel(item),
+        url: item.viewUrlWithParams() || '#'
       };
       data.selected = this.isValueSelected(data.value);
       return data;
@@ -175,6 +172,14 @@ define([
       return value !== null && value !== undefined && value !== this.noSelectionValue;
     },
 
+    updateDefault: function() {
+      var listValues = this.getListValues(this.model);
+      if (!this.hasSelection() && this.defaultToFirst && listValues && listValues.length) {
+        this.setValue(listValues[0].value, {silent: true});
+      }
+    },
+
+
     /**
      * List Model
      **************/
@@ -185,8 +190,12 @@ define([
         var listModel = this.getModelFromRoot(this.listRelationship, rootModel, parentModel);
         if (listModel) {
           this.setListModel(listModel);
+          if (this.shown) {
+            this.ensureListData();
+          }
         }
       }
+      this.updateDefault();
     },
 
     setListModel: function(listModel) {

@@ -22,6 +22,8 @@ define([
      */
     title: undefined,
 
+    titleUrl: '/',
+
     subtitle: undefined,
 
     showSearch: true,
@@ -110,6 +112,7 @@ define([
       }
       return {
         title: this.title,
+        titleUrl: this.titleUrl,
         subtitle: this.subtitle,
         navItems: navItems,
         showAbout: this.aboutTemplate !== undefined,

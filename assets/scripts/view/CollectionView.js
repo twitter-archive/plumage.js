@@ -61,14 +61,6 @@ define([
     // overrides
     //
 
-    setModel: function() {
-      ModelView.prototype.setModel.apply(this, arguments);
-      if (this.model) {
-        this.model.on('add', this.onModelAdd, this);
-        this.model.on('remove', this.onModelRemove, this);
-      }
-    },
-
     getTemplateData: function() {
       var moreUrl;
       if (this.moreUrl && this.model && this.model.hasMore()) {
@@ -124,6 +116,18 @@ define([
 
     update: function() {
       ModelView.prototype.update.apply(this, arguments);
+    },
+
+    updateModel: function(rootModel, parentModel) {
+      ModelView.prototype.updateModel.apply(this, arguments);
+      var collection = this.getModelFromRoot(this.relationship, rootModel, parentModel);
+      if (collection) {
+        collection.each(function(model, index) {
+          if (index < this.itemViews.length) {
+            this.itemViews[index].updateModel(model);
+          }
+        }.bind(this));
+      }
     },
 
     //

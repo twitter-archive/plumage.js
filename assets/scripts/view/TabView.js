@@ -11,6 +11,7 @@ define([
 ], function($, _, Backbone, Handlebars, Plumage, View, ModelView, template) {
 
   return Plumage.view.TabView = ModelView.extend({
+    /** @lends Plumage.view.ModelView.prototype */
 
     className: 'tab-view tab-theme',
 
@@ -24,6 +25,21 @@ define([
       'click .tabs a': 'onTabClick'
     },
 
+    triggerOnTabChange: false,
+
+    /**
+     * If set, call [router.logNavigationAction]{@link Plumage.Router#logNavigationAction}nAction on tab change.
+     */
+    logTabNavigation: false,
+
+    /**
+     * Tabbed view with subviews as tab panes.
+     *
+     * Tabs are generated from subViews with the tabId and tabLabel attributes.
+     *
+     * @extends Plumage.view.ModelView
+     * @constructs
+     */
     initialize: function() {
       ModelView.prototype.initialize.apply(this, arguments);
       this.eachTabSubView(function(subView) {
@@ -40,12 +56,13 @@ define([
     setModel: function() {
       ModelView.prototype.setModel.apply(this, arguments);
       var tab = this.model.get(this.viewStateAttr);
-      if (tab === undefined) {
+      if (!tab) {
         tab = this.getTabCookie();
         if (tab === undefined) {
           tab = _.find(this.subViews, function(subView){ return subView.tabId !== undefined;}).tabId;
         }
         this.model.set(this.viewStateAttr, tab);
+        this.model.updateUrl();
       }
     },
 
@@ -56,10 +73,23 @@ define([
     },
 
     setActiveTab: function(tabId) {
-      if (this.model) {
-        this.model.set(this.viewStateAttr, tabId);
-        this.model.updateUrl();
+      if (this.model && tabId !== this.getActiveTab()) {
+        if (this.triggerOnTabChange) {
+          var extras = {};
+          extras[this.viewStateAttr] = tabId;
+          if (window.router) {
+            window.router.navigateWithQueryParams(this.model.viewUrlWithParams(extras), {trigger: true});
+          }
+        } else {
+          this.model.set(this.viewStateAttr, tabId);
+          this.model.updateUrl();
+        }
         this.updateTabCookie();
+        if (this.logTabNavigation) {
+          if (window.router) {
+            window.router.logNavigationAction(window.location.href, window.location.pathname);
+          }
+        }
       }
     },
 

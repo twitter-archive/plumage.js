@@ -279,12 +279,20 @@ h2.title .light {
  */
 
 .message {
-  text-align: center;
-  width: 100%;
+  position: absolute;
+  left: 50%;
+
+  margin-left: -50px;
   margin-bottom: 20px;
-  display: none;
+
+  margin-top: -20px;
+  opacity: 0;
+
+  @include transition(opacity 1s, margin-top 1s);
   &.show {
-    display: block;
+    opacity: 1.0;
+    margin-top: 0;
+    @include transition(margin-top .1s, opacity 0.1s);
   }
 
   &:before {
@@ -313,7 +321,21 @@ h2.title .light {
         margin-left: 4px;
       }
     }
+
+    &.good {
+      @include gradient-vertical-three-colors(#5fbd55, #58b14f, 44%, #52a54a);
+      color: white;
+      a {
+        color: #ccc;
+        text-decoration: underline;
+        margin-left: 4px;
+      }
+    }
   }
+}
+
+.modal .message {
+  top: 0;
 }
 
 /**

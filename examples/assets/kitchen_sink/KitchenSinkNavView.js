@@ -9,6 +9,7 @@ define([
   return Plumage.view.NavView.extend({
 
     title: 'PlumageJS',
+    titleUrl: '/plumage.js',
     subtitle: 'Kitchen Sink Example - note: slow load due to unconcatenated source',
 
     userMenuItems: undefined,
@@ -27,6 +28,10 @@ define([
       e.preventDefault();
 
       window.router.navigate(a.attr('href'), {trigger:true});
+    },
+
+    onLinkClick: function(e) {
+      //do nothing to allow out link
     }
   });
 });

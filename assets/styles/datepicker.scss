@@ -33,6 +33,10 @@
   }
 }
 
+.date-range-field {
+  @include clearfix();
+}
+
 .date-range-field .dropdown-menu {
   max-width: none;
   width: 636px;
@@ -155,7 +159,6 @@
     left: auto;
     right: 41px;
   }
-
 }
 
 
@@ -171,6 +174,10 @@
 
   .date-field .from-date input, .date-field .to-date input {
     width: 100px;
+  }
+
+  .hour-select {
+    display: inline;
   }
 
   .hour-select .dropdown-toggle {

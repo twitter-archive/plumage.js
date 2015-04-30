@@ -83,7 +83,7 @@ define([
     // Value
     //
 
-    getValueString: function(value) {
+    processValueForDom: function(value) {
       if (value && value.length) {
         var picker = this.getPicker();
         var format = picker.showHourSelect ? this.formatWithHour : this.format;

@@ -45,7 +45,7 @@ define([
 
           setTimeout(function(){
             settings.success(env.ajaxResponse);
-            deferred.resolve();
+            deferred.resolve(env.ajaxResponse, 'success', {});
           });
         } else {
           if (env.ajaxResponseStatus === 'error') {
@@ -57,7 +57,7 @@ define([
               settings.success(env.ajaxResponse);
             }
           }
-          deferred.resolve();
+          deferred.resolve(env.ajaxResponse, 'success', {});
         }
         return deferred;
       };

@@ -72,6 +72,10 @@ function($, _, Backbone, Plumage, requestManager, ModelUtil, BufferedCollection)
      * params:
      *  - forceCreate: create the related model even if it doesn't exist in the initial data. This way
      *      They can be set on views, in preparation for later updates.
+     *  - remote: The related model needs to be loaded after the current model loads. Can be of the values:
+     *     - 'autoload' => Load as soon as url is available.
+     *     - 'loadOnShow' => Load when first shown in a view.
+     *     - 'manual' => Loaded manually.
      */
     relationships: {},
 
@@ -86,11 +90,17 @@ function($, _, Backbone, Plumage, requestManager, ModelUtil, BufferedCollection)
     /** Path where to find the response data in the response JSON.*/
     resultsPath: 'results',
 
-    /** Attribute to use as a label/title when shown in a general View */
-    labelAttr: 'name',
+    /** Attribute to display when shown in a general View, like a title */
+    displayNameAttr: undefined,
 
     /** Has this Model been loaded yet? */
     fetched: false,
+
+    /** Criterium for uniqueness is always href */
+    idAttribute: 'href',
+
+    /** field use of for url when href is undefined, ie urlRoot + '/' + urlId */
+    urlIdAttribute: 'id',
 
 
     /**
@@ -180,7 +190,16 @@ function($, _, Backbone, Plumage, requestManager, ModelUtil, BufferedCollection)
      */
     navigate: function(options) {
       options = _.extend({trigger: true}, options);
-      window.router.navigateWithQueryParams(this.urlWithParams(), options);
+      if (window.router) {
+        window.router.navigateWithQueryParams(this.viewUrlWithParams(), options);
+      }
+    },
+
+    navigateToIndex: function(options) {
+      options = _.extend({trigger: true}, options);
+      if (window.router) {
+        window.router.navigateWithQueryParams(this.urlRoot, options);
+      }
     },
 
     /**
@@ -190,7 +209,9 @@ function($, _, Backbone, Plumage, requestManager, ModelUtil, BufferedCollection)
      */
     updateUrl: function(options) {
       options = _.extend({replace: true, trigger: false}, options);
-      window.router.navigateWithQueryParams(this.urlWithParams(), options);
+      if (window.router) {
+        window.router.navigateWithQueryParams(this.viewUrlWithParams(), options);
+      }
     },
 
     /**
@@ -340,6 +361,13 @@ function($, _, Backbone, Plumage, requestManager, ModelUtil, BufferedCollection)
       return this;
     },
 
+    /** set view state
+     * @param {Object} viewState
+     */
+    setViewState: function(viewState, options) {
+      this.set(this.processViewState(viewState), options);
+    },
+
     processViewState: function(viewState) {
       var results = {};
       for ( var iAttrs = 0; iAttrs &lt; this.viewAttrs.length; iAttrs++) {
@@ -367,12 +395,18 @@ function($, _, Backbone, Plumage, requestManager, ModelUtil, BufferedCollection)
     instantiateRelationship: function(key, data, relationship) {
       var related = this.getRelated(key);
       if (related === undefined) {
+        if (relationship.remote && ['autoload', 'loadOnShow', 'manual'].indexOf(relationship.remote) === -1) {
+          throw 'invalid remote relationship param';
+        }
         var RelatedClass = ModelUtil.loadClass(relationship.modelCls);
 
         if (RelatedClass.prototype instanceof Plumage.collection.Collection) {
           related = this.createRelatedCollection(RelatedClass, relationship, data);
         } else {
           related = this.createRelatedModel(RelatedClass, relationship, data);
+        }
+        if (relationship.remote === 'loadOnShow') {
+          related.loadOnShow = true;
         }
         this.setRelated(key, related);
         return true;
@@ -509,15 +543,12 @@ function($, _, Backbone, Plumage, requestManager, ModelUtil, BufferedCollection)
      * @param {Object} data Data to set on Model.
      */
     updateRelatedModel: function(relationship, model, data) {
-      if (relationship.remote && relationship.deferLoad) {
-        model.deferLoad = true;
-      }
       if (model instanceof Plumage.collection.Collection) {
         if ($.isArray(data)) {
           data = {models: data};
         }
       }
-      model.set(data, {silent: true});
+      model.set(data, {silent: true}); //silent to prevent double render with subsequent load event.
       return !$.isEmptyObject(model.changed);
     },
 
@@ -593,16 +624,51 @@ function($, _, Backbone, Plumage, requestManager, ModelUtil, BufferedCollection)
       return this.urlFromAttributes();
     },
 
+    newUrl: function() {
+      var base =
+        _.result(this, 'urlRoot') ||
+        _.result(this.collection, 'url');
+
+      if (base) {
+        var a = document.createElement('a');
+        a.href = base;
+        return a.pathname + '/new' + a.search;
+      }
+      return null;
+    },
+
+    getUrlId: function() {
+      var urlId = this.get(this.urlIdAttribute);
+      if (urlId) {
+        return encodeURIComponent(urlId);
+      }
+    },
+
     /**
      * Generate the url for this model from its attributes. By default this returns
-     * urlRoot/id
+     * urlRoot/urlIdAttribute. If no urlRoot is specified it returns null. This is so prevent loading models
+     * whose urls' can't be derived from attributed. (eg when url depends a parent model's url)
      *
      * Override this method if you have custom urls.
      * Return null if attributes for url are not yet available.
      * @returns {string} Url or null
      */
     urlFromAttributes: function() {
-      return Backbone.Model.prototype.url.apply(this, arguments);
+       //no url so do nothing
+      if (!this.urlRoot) {
+        return null;
+      }
+
+      var base =
+        _.result(this, 'urlRoot') ||
+        _.result(this.collection, 'url');
+      if (!base) {
+        throw new Error('A "url" property or function must be specified');
+      }
+      if (this.isNew()) {
+        return this.newUrl();
+      }
+      return base.replace(/([^\/])$/, '$1/') + this.getUrlId();
     },
 
     /**
@@ -619,15 +685,21 @@ function($, _, Backbone, Plumage, requestManager, ModelUtil, BufferedCollection)
       }
       var params = this.getQueryParams();
       params = _.extend({}, params, extras);
-      if (params && !$.isEmptyObject(params)) {
-        params = $.param(params, true);
-        if (url.indexOf('?') >= 0) {
-          return url + '&' + params;
-        } else {
-          return url + '?' + params;
-        }
-      }
-      return url;
+      return this._appendParamsToUrl(url, params);
+    },
+
+    /**
+     * Sometimes you want the view url to be different than the server resource url (eg appending a subview nav id).
+     * Called by navigate and updateUrl.
+     *
+     * By default just calls urlWithParams.
+     */
+    viewUrlWithParams: function(extras) {
+      return this.urlWithParams(extras);
+    },
+
+    isNew: function() {
+      return !this.getUrlId() || this.get('href') && this.get('href').match(/\/new$/) !== null;
     },
 
     /**
@@ -661,7 +733,9 @@ function($, _, Backbone, Plumage, requestManager, ModelUtil, BufferedCollection)
       this._wrapHandlers(options);
 
       this.fireBeginLoad();
-      return this.fetch(options);
+      return this.fetch(options).then(function(resp, result, xhr) {
+        return $.Deferred().resolve(this, resp).promise();
+      }.bind(this));
     },
 
     save: function(key, val, options) {
@@ -675,7 +749,13 @@ function($, _, Backbone, Plumage, requestManager, ModelUtil, BufferedCollection)
       }
       options = options || {};
       this._wrapHandlers(options);
-      Backbone.Model.prototype.save.apply(this, [attrs, options]);
+      var xhr = Backbone.Model.prototype.save.apply(this, [attrs, options]);
+      if (xhr) {
+        xhr.then(function(resp){
+          return $.Deferred().resolve(this, resp).promise();
+        }.bind(this));
+      }
+      return false;
     },
 
     /**
@@ -699,7 +779,7 @@ function($, _, Backbone, Plumage, requestManager, ModelUtil, BufferedCollection)
         var rel = this.getRelated(key);
         if (rel && !visited[rel.cid]) {
           if (relationship.remote) {
-            if (!rel.deferLoad) {
+            if (relationship.remote === 'autoload' || relationship.remote === 'loadOnShow' && !rel.loadOnShow) {
               rel.fetchIfAvailable();
             }
           } else {
@@ -716,7 +796,7 @@ function($, _, Backbone, Plumage, requestManager, ModelUtil, BufferedCollection)
       this.trigger('beginLoad', this);
       _.each(this.relationships, function(relationship, key) {
         var rel = this.getRelated(key);
-        if (rel && relationship.remote && !rel.deferLoad) {
+        if (rel && relationship.remote === 'autoload') {
           rel.fireBeginLoad();
         }
       }, this);
@@ -729,16 +809,18 @@ function($, _, Backbone, Plumage, requestManager, ModelUtil, BufferedCollection)
     fetchIfAvailable: function() {
       var url = this.urlWithParams();
       if (url) {
-        requestManager.loadModel(this);
+        return requestManager.loadModel(this);
       }
     },
 
     /**
-     * Gets a label/title for this model
+     * Gets a 'display name'/title for this model
      * @returns {string}
      */
-    getLabel: function() {
-      return this.get(this.labelAttr);
+    getDisplayName: function() {
+      if (this.displayNameAttr !== undefined) {
+        return this.get(this.displayNameAttr);
+      }
     },
 
     /**
@@ -761,7 +843,11 @@ function($, _, Backbone, Plumage, requestManager, ModelUtil, BufferedCollection)
     toViewJSON: function(options) {
       var result = _.clone(this.attributes);
       if (result.url === undefined && this.hasUrl()) {
-        result.url = this.url();
+        result.url = this.viewUrlWithParams();
+      }
+      var displayName = this.getDisplayName();
+      if (displayName !== undefined) {
+        result.displayName = displayName;
       }
       _.each(this.relationships, function(relationship, key) {
         var related = this.getRelated(key);
@@ -784,24 +870,58 @@ function($, _, Backbone, Plumage, requestManager, ModelUtil, BufferedCollection)
     // Helpers
     //
 
+    _appendParamsToUrl: function(url, params) {
+      if (params && !$.isEmptyObject(params)) {
+        params = $.param(params, true);
+        if (url.indexOf('?') >= 0) {
+          return url + '&' + params;
+        } else {
+          return url + '?' + params;
+        }
+      }
+      return url;
+    },
+
     _wrapHandlers: function(options) {
       var success = options.success,
         error = options.error;
 
       options.success = function(model, resp, options) {
         if (resp.meta && resp.meta.success === false) {
+          var seenRelated = {};
           if (resp.meta.validationError) {
             model.validationError = resp.meta.validationError;
+            _.each(model.validationError, function(v,k) {
+              var parts = k.split('.');
+              if (parts.length > 1) {
+                var field = parts.pop();
+                var related = model.getRelated(parts.join('.'));
+                if (related) {
+                  related.validationError = related.validationError || {};
+                  related.validationError[field] = v;
+                  seenRelated[related.id] = related;
+                }
+              }
+            });
           }
           model.trigger('invalid',
             model,
             model.validationError,
-            resp.meta.message_body,
+            resp.meta.message,
             resp.meta.message_class
           );
+
+          _.each(seenRelated, function(related) {
+            related.trigger('invalid', related, related.validationError);
+          });
+
         } else {
           model.latestLoadParams = undefined;
           model.onLoad(options);
+          if (typeof theApp !== 'undefined' && resp.meta && resp.meta.message) {
+            theApp.dispatch.trigger('message', resp.meta.message, resp.meta.message_class);
+          }
+
           if (success) {
             success(model, resp, options);
           }

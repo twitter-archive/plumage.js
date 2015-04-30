@@ -250,12 +250,23 @@ h2.title .light {
  *   Message
  */
 .message {
-  text-align: center;
-  width: 100%;
+  position: absolute;
+  left: 50%;
+  margin-left: -50px;
   margin-bottom: 20px;
-  display: none; }
+  margin-top: -20px;
+  opacity: 0;
+  -webkit-transition: opacity 1s, margin-top 1s;
+  -moz-transition: opacity 1s, margin-top 1s;
+  -o-transition: opacity 1s, margin-top 1s;
+  transition: opacity 1s, margin-top 1s; }
   .message.show {
-    display: block; }
+    opacity: 1.0;
+    margin-top: 0;
+    -webkit-transition: margin-top 0.1s, opacity 0.1s;
+    -moz-transition: margin-top 0.1s, opacity 0.1s;
+    -o-transition: margin-top 0.1s, opacity 0.1s;
+    transition: margin-top 0.1s, opacity 0.1s; }
   .message:before {
     content: '';
     display: inline-block;
@@ -285,6 +296,23 @@ h2.title .light {
         color: #ccc;
         text-decoration: underline;
         margin-left: 4px; }
+    .message .message-body.good {
+      background-color: #56ae4e;
+      background-image: -webkit-gradient(linear, 0 0, 0 100%, from(#5fbd55), color-stop(44%, #58b14f), to(#52a54a));
+      background-image: -webkit-linear-gradient(#5fbd55, #58b14f 44%, #52a54a);
+      background-image: -moz-linear-gradient(top, #5fbd55, #58b14f 44%, #52a54a);
+      background-image: -o-linear-gradient(#5fbd55, #58b14f 44%, #52a54a);
+      background-image: linear-gradient(#5fbd55, #58b14f 44%, #52a54a);
+      background-repeat: no-repeat;
+      filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#FF5FBD55', endColorstr='#FF52A54A', GradientType=0);
+      color: white; }
+      .message .message-body.good a {
+        color: #ccc;
+        text-decoration: underline;
+        margin-left: 4px; }
+
+.modal .message {
+  top: 0; }
 
 /**
  *   Views
@@ -368,8 +396,7 @@ h2.title .light {
   background: #0081c2; }
 
 .inplace-field .field-value {
-  padding-top: 5px;
-  padding-left: 8px;
+  padding: 5px 0 5px 8px;
   margin-left: -8px;
   cursor: pointer; }
   .inplace-field .field-value i {
@@ -389,6 +416,11 @@ h2.title .light {
   display: block; }
 .inplace-field.editing .field-value {
   display: none; }
+.inplace-field .help-inline {
+  float: right; }
+.inplace-field .error .field-value {
+  padding: 4x 0 4px 7px;
+  border: 1px solid #b94a48; }
 
 .dropdown-select .opensleft {
   right: 0;
@@ -398,6 +430,17 @@ h2.title .light {
 
 .form-horizontal .dropdown-select .dropdown-toggle {
   margin-bottom: 0; }
+
+.duration-field select {
+  width: 85px; }
+.duration-field input {
+  width: 117px; }
+
+.form-horizontal-left .control-label {
+  text-align: left;
+  width: 100px; }
+.form-horizontal-left .controls {
+  margin-left: 100px; }
 
 .comments-count-icon {
   background: transparent url(comment-icon.png) no-repeat 50% 0;
@@ -670,9 +713,12 @@ div.comment-wrapper .item-author-header {
  */
 .filter-view {
   width: 100%;
-  height: 50px; }
+  height: 50px;
+  -webkit-box-sizing: border-box;
+  -moz-box-sizing: border-box;
+  box-sizing: border-box; }
 
-.filter-view form {
+form.filter-view {
   margin: 0;
   color: #555;
   padding: 10px;
@@ -686,13 +732,13 @@ div.comment-wrapper .item-author-header {
   border: 1px solid #ddd;
   border-bottom: none;
   *zoom: 1; }
-  .filter-view form:before, .filter-view form:after {
+  form.filter-view:before, form.filter-view:after {
     display: table;
     content: "";
     line-height: 0; }
-  .filter-view form:after {
+  form.filter-view:after {
     clear: both; }
-  .filter-view form > span {
+  form.filter-view > span {
     float: left;
     line-height: 30px; }
 
@@ -1053,6 +1099,15 @@ ul.pager {
     border-left: 6px solid transparent;
     content: ''; }
 
+.date-range-field {
+  *zoom: 1; }
+  .date-range-field:before, .date-range-field:after {
+    display: table;
+    content: "";
+    line-height: 0; }
+  .date-range-field:after {
+    clear: both; }
+
 .date-range-field .dropdown-menu {
   max-width: none;
   width: 636px; }
@@ -1151,6 +1206,8 @@ ul.pager {
   text-align: left; }
 .date-range-field .show-hour-select .date-field .from-date input, .date-range-field .show-hour-select .date-field .to-date input {
   width: 100px; }
+.date-range-field .show-hour-select .hour-select {
+  display: inline; }
 .date-range-field .show-hour-select .hour-select .dropdown-toggle {
   width: 48px;
   padding: 4px 9px;

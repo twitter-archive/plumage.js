@@ -5,21 +5,22 @@ function($, _, Backbone, Model) {
     urlRoot: '/',
 
     sync: function(method, model, options) {
-      var response = this.ajaxResponse;
-      if ($.isArray(response)) {
-        if (response.length > 1) {
-          response = response.shift();
+      var result = this.ajaxResponse;
+      if ($.isArray(result)) {
+        if (result.length > 1) {
+          result = result.shift();
         } else {
-          response = response[0];
+          result = result[0];
         }
-      } else if ($.isFunction(response)) {
-        response = response(method, model, options);
+      } else if ($.isFunction(result)) {
+        result = result(method, model, options);
       }
-      if ($.isPlainObject(response.meta)) {
-        options.success(response);
+      if ($.isPlainObject(result.meta)) {
+        options.success(result);
       } else {
-        options.error(response);
+        options.error(result);
       }
+      return $.Deferred().resolve(this, result).promise();
     }
   };
 });

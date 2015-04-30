@@ -115,8 +115,7 @@
 .inplace-field {
 
   .field-value {
-    padding-top: 5px;
-    padding-left: 8px;
+    padding: 5px 0 5px 8px;
     margin-left: -8px;
     cursor: pointer;
 
@@ -151,6 +150,15 @@
       display: none;
     }
   }
+
+  .help-inline {
+    float: right;
+  }
+
+  .error .field-value {
+    padding: 4x 0 4px 7px;
+    border: 1px solid #b94a48;
+  }
 }
 
 .dropdown-select {
@@ -167,3 +175,23 @@
 .form-horizontal .dropdown-select .dropdown-toggle {
   margin-bottom: 0;
 }
+
+.duration-field {
+  select {
+    width: 85px;
+  }
+  input {
+    width: 117px;
+  }
+}
+
+.form-horizontal-left {
+  .control-label {
+    text-align: left;
+    width: 100px;
+  }
+  .controls {
+    margin-left: 100px;
+  }
+}
+

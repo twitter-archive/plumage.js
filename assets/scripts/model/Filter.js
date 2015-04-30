@@ -4,6 +4,9 @@ function($, _, Backbone, Plumage, Model) {
   return Plumage.model.Filter = Model.extend(
   /** @lends Plumage.model.Filter.prototype */
   {
+
+    idAttribute: 'id',
+
     /**
      * Model for a Filter on a [Collection]{@link Plumage.collection.Collection}.
      *

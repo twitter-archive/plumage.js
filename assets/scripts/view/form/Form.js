@@ -60,7 +60,7 @@ define([
         this.model = new ModelCls();
       }
       if(this.isValid()) {
-        this.updateModel(this.model);
+        this.updateModel(this.rootModel);
         var error;
         if (this.model.validate) {
           error = this.model.validate(this.model.attributes);
@@ -91,8 +91,8 @@ define([
       if (resp.meta.success) {
         this.trigger('save', this, model);
       } else {
-        if (resp.meta.message_body) {
-          this.setMessage(resp.meta.message_body, resp.meta.message_class);
+        if (resp.meta.message) {
+          this.setMessage(resp.meta.message, resp.meta.message_class);
         }
       }
     },

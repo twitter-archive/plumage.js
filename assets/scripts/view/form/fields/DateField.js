@@ -42,7 +42,7 @@ define([
       viewCls: HourSelect,
       name: 'hourSelect',
       selector: '.field',
-      opens: 'left',
+      opens: 'right',
       tagName: 'span'
     }],
 
@@ -78,6 +78,7 @@ define([
       hourSelect.utc = this.utc;
       hourSelect.valueAttr = this.valueAttr;
       hourSelect.updateModelOnChange = this.updateModelOnChange;
+      hourSelect.relationship = this.relationship;
       this.setShowHourSelect(this.showHourSelect);
 
       if (this.minDate) {
@@ -121,7 +122,7 @@ define([
       //do nothing on typing. Wait for blur
     },
 
-    getValueString: function(value) {
+    processValueForDom: function(value) {
       if (value) {
         var m = this.utc ? moment.utc(value) : moment(value);
         return m.format(this.format);
@@ -138,7 +139,7 @@ define([
       if (value) {
         var m = this.utc ? moment.utc(value) : moment(value);
         var oldValue = this.getValue();
-        if (oldValue && this.keepTime) {
+        if (oldValue && (this.keepTime || this.showHourSelect)) {
           var oldM = this.utc ? moment.utc(oldValue) : moment(oldValue);
           m.hour(oldM.hour()).minute(oldM.minute()).second(oldM.second()).millisecond(oldM.millisecond());
         }

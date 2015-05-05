@@ -646,7 +646,11 @@ function($, _, Backbone, Plumage, requestManager, ModelUtil, BufferedCollection)
     },
 
     isNew: function() {
-      return !this.getUrlId() || this.get('href') && this.get('href').match(/\/new$/) !== null;
+      var href = this.get('href');
+      if (href) {
+        return href.match(/\/new$/) !== null;
+      }
+      return !this.getUrlId();
     },
 
     /**

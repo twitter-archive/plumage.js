@@ -173,7 +173,16 @@ define([
      * Override subview behavior. Don't call ModelView's versions
      */
     onModelLoad: function() {
-      this.updateActiveTab();
+      var tab = this.model.get(this.viewStateAttr);
+      if (tab) {
+        this.updateActiveTab();
+      } else {
+        tab = this.getTabCookie();
+        if (tab === undefined) {
+          tab = _.find(this.subViews, function(subView){ return subView.tabId !== undefined;}).tabId;
+        }
+        this.setActiveTab(tab);
+      }
     },
 
     onModelChange: function() {

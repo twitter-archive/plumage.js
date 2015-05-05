@@ -89,7 +89,16 @@ define([
     }
   });
 
+  //
+  // isNew
+  //
 
+  test('model with new href is new', function() {
+    var model = new Post({href: '/foo'});
+    ok(!model.isNew());
+    model.set('href', '/foo/new');
+    ok(model.isNew());
+  });
 
   //
   // Relationships

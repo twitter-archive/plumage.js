@@ -1243,7 +1243,11 @@ function($, _, Backbone, Plumage, requestManager, ModelUtil, BufferedCollection)
     },
 
     isNew: function() {
-      return !this.getUrlId() || this.get('href') && this.get('href').match(/\/new$/) !== null;
+      var href = this.get('href');
+      if (href) {
+        return href.match(/\/new$/) !== null;
+      }
+      return !this.getUrlId();
     },
 
     /**
@@ -16098,7 +16102,16 @@ define('view/TabView',[
      * Override subview behavior. Don't call ModelView's versions
      */
     onModelLoad: function() {
-      this.updateActiveTab();
+      var tab = this.model.get(this.viewStateAttr);
+      if (tab) {
+        this.updateActiveTab();
+      } else {
+        tab = this.getTabCookie();
+        if (tab === undefined) {
+          tab = _.find(this.subViews, function(subView){ return subView.tabId !== undefined;}).tabId;
+        }
+        this.setActiveTab(tab);
+      }
     },
 
     onModelChange: function() {

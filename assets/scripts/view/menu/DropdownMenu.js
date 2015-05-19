@@ -3,12 +3,12 @@ define([
   'backbone',
   'handlebars',
   'PlumageRoot',
-  'view/View',
+  'view/ModelView',
   'text!view/menu/templates/DropdownMenu.html',
   'bootstrap'
-], function($, Backbone, Handlebars, Plumage, View, template) {
+], function($, Backbone, Handlebars, Plumage, ModelView, template) {
 
-  return Plumage.view.menu.DropdownMenu = View.extend({
+  return Plumage.view.menu.DropdownMenu = ModelView.extend({
     template: template,
 
     className: 'dropdown',
@@ -31,7 +31,7 @@ define([
       return {
         label: this.label,
         iconCls: this.iconCls,
-        menuItems: this.menuItems,
+        menuItems: this.getMenuItems(),
         showCaret: this.showCaret,
         buttonStyle: this.buttonStyle,
         dropdownCls: this.opens === 'left' ? 'pull-right' : ''
@@ -41,6 +41,10 @@ define([
     setLabel: function(label) {
       this.label = label;
       this.render();
+    },
+
+    getMenuItems: function() {
+      return this.menuItems;
     },
 
     /** Methods **/

@@ -58,6 +58,7 @@ define([
   'view/form/fields/TypeAhead',
   'view/form/fields/picker/DateRangePicker',
   'view/form/fields/picker/Picker',
+  'view/form/FileDropZone',
   'view/form/Form',
   'view/form/SelectField',
   'view/grid/FilterView',

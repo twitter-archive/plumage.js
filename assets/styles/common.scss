@@ -177,6 +177,9 @@ header {
 
 .title-right {
   float: right;
+  &> div {
+    display: inline-block;
+  }
   .date-range-field {
     margin-top: 7px;
   }

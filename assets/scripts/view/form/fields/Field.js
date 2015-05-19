@@ -19,11 +19,13 @@ define([
 
     template: template,
 
+    fieldType: 'text',
+
     /**
      * Template for html input element.
      * This template is separate so that it can be reused by subclasses.
      */
-    fieldTemplate: '<input type="text" name="{{valueAttr}}" {{#placeholder}}placeholder="{{.}}"{{/placeholder}} value="{{value}}" {{#readonly}}readonly="readonly"{{/readonly}} {{#disabled}}disabled=1{{/disabled}}/>',
+    fieldTemplate: '<input type="{{fieldType}}" name="{{valueAttr}}" {{#placeholder}}placeholder="{{.}}"{{/placeholder}} value="{{value}}" {{#readonly}}readonly="readonly"{{/readonly}} {{#disabled}}disabled=1{{/disabled}}/>',
 
     /**
      * optional. model attribute to display as label
@@ -205,6 +207,7 @@ define([
 
     getTemplateData: function() {
       var data = {
+        fieldType: this.fieldType,
         label: this.getLabel(),
         valueAttr: this.valueAttr,
         value: this.processValueForDom(this.getValue()),

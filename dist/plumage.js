@@ -2366,8 +2366,8 @@ define('collection/Collection',[
      * @private
      */
     _onModelEvent: function(event, model, collection, options) {
-      //don't propagate load event
-      if (event === 'load') {
+      //don't propagate load/beginLoad event
+      if (event === 'load' || event === 'beginLoad') {
         return;
       }
 
@@ -8221,7 +8221,7 @@ function($, _, Backbone, Plumage, BaseController, ModelUtil) {
       view.setModel(model);
       this.showView(view);
 
-      return this.loadModel(model).done(function() {
+      this.loadModel(model).done(function() {
         // call setModel again, so subviews can get newly loaded related models
         if (model.related) {
           view.setModel(model);
@@ -15811,8 +15811,6 @@ define('view/form/FileDropZone',[
       addRemoveLinks: false,
       autoDiscover: false
     },
-
-    deferRender: true,
 
     initialize:function(options) {
       Dropzone.autoDiscover = false;

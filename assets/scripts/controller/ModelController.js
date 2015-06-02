@@ -151,7 +151,7 @@ function($, _, Backbone, Plumage, BaseController, ModelUtil) {
       view.setModel(model);
       this.showView(view);
 
-      return this.loadModel(model).done(function() {
+      this.loadModel(model).done(function() {
         // call setModel again, so subviews can get newly loaded related models
         if (model.related) {
           view.setModel(model);

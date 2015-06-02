@@ -793,8 +793,8 @@ define([
      * @private
      */
     _onModelEvent: function(event, model, collection, options) {
-      //don't propagate load event
-      if (event === 'load') {
+      //don't propagate load/beginLoad event
+      if (event === 'load' || event === 'beginLoad') {
         return;
       }
 

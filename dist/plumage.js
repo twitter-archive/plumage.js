@@ -8015,6 +8015,10 @@ function($, _, Backbone, Plumage, requestManager) {
       this[handlerName].apply(this, params);
     },
 
+    getCurrentView: function() {
+      return this.app.views.current;
+    },
+
     /**
      * Renders and shows a view in the el specified by [contentSelector]{@link Plumage.controller.BaseController#contentSelector}.
      * This hides and triggers onHide on the current view, cancels outstanding requests, then
@@ -8026,7 +8030,7 @@ function($, _, Backbone, Plumage, requestManager) {
      * @param {Plumage.view.View} view View to show.
      */
     showView: function(view) {
-      var currentView = this.app.views.current;
+      var currentView = this.getCurrentView();
       if (currentView) {
         if (currentView === view) {
           return;
@@ -8120,6 +8124,7 @@ function($, _, Backbone, Plumage, BaseController, ModelUtil) {
       this.indexModelOptions = options.indexModelOptions ? options.indexModelOptions : this.indexModelOptions;
       this.indexViewCls = ModelUtil.loadClass(options.indexViewCls ? options.indexViewCls : this.indexViewCls);
       this.detailViewCls = ModelUtil.loadClass(options.detailViewCls ? options.detailViewCls : this.detailViewCls);
+      this.editViewCls = ModelUtil.loadClass(options.editViewCls ? options.editViewCls : this.editViewCls);
     },
 
     /** override to set activeModel*/
@@ -8168,6 +8173,11 @@ function($, _, Backbone, Plumage, BaseController, ModelUtil) {
       return this.showEditModel(model);
     },
 
+    showEdit: function(urlId, params){
+      var model = this.createEditModel(urlId, {}, params);
+      return this.showEditModel(model);
+    },
+
     /** Logic for binding a model to, and then showing the index view */
     showIndexModel: function(model) {
       this.indexModel = model;
@@ -8193,7 +8203,7 @@ function($, _, Backbone, Plumage, BaseController, ModelUtil) {
       var view = this.getDetailView();
 
       var result;
-      if (model !== this.detailModel) {
+      if (this.getCurrentView() !== view || model !== this.detailModel) {
         if (this.detailModel) {
           this.detailModel.off('error', this.onModelError, this);
         }

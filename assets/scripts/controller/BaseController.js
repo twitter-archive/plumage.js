@@ -40,6 +40,10 @@ function($, _, Backbone, Plumage, requestManager) {
       this[handlerName].apply(this, params);
     },
 
+    getCurrentView: function() {
+      return this.app.views.current;
+    },
+
     /**
      * Renders and shows a view in the el specified by [contentSelector]{@link Plumage.controller.BaseController#contentSelector}.
      * This hides and triggers onHide on the current view, cancels outstanding requests, then
@@ -51,7 +55,7 @@ function($, _, Backbone, Plumage, requestManager) {
      * @param {Plumage.view.View} view View to show.
      */
     showView: function(view) {
-      var currentView = this.app.views.current;
+      var currentView = this.getCurrentView();
       if (currentView) {
         if (currentView === view) {
           return;

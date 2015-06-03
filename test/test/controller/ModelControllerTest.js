@@ -31,6 +31,7 @@ define([
       modelCls: 'example/model/Post',
       indexModelCls: 'example/collection/PostCollection',
       detailViewCls: NoRenderModelView,
+      editViewCls: NoRenderModelView,
       indexViewCls: IndexView,
       indexModelOptions: {foo:true}
     });
@@ -58,7 +59,6 @@ define([
     ok(ctrl.getDetailView().shown, 'should show detail view');
     ok(!ctrl.getIndexView().shown, 'should hide index view');
 
-    ok(ctrl.showView.calledTwice, 'do not show if already shown');
   });
 
   asyncTest('update url on model change', function() {
@@ -99,5 +99,14 @@ define([
     ok(ctrl.showView.calledTwice);
     ok(ctrl.getDetailView().setModel.notCalled);
     equal(this.ajaxCount, 1, 'should not load same model twice');
+
+    ctrl.showEdit(1);
+    equal(this.ajaxCount, 2);
+
+    ctrl.showDetail(1);
+
+    ok(ctrl.getDetailView().setModel.called);
+    equal(this.ajaxCount, 3, 'should load model again when coming from a different view');
+
   });
 });

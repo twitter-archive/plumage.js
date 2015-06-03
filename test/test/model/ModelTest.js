@@ -175,6 +175,9 @@ define([
     equal(eventLog.log[1].emitter, model.getRelated('comments'), 'collection should fire load second');
   });
 
+
+
+
   asyncTest('Does not load again while already loading', function(){
     var model = new Post({id: 1, comments: []});
     this.ajaxResponse = {results: ExampleData.POST_DATA_WITH_RELATED};
@@ -284,6 +287,9 @@ define([
 
     ok(!comments.resetInMemory.called, 'remote relationship should not be reset in memory');
     equal(this.ajaxCount, 2, 'should fetch both parent and remote children');
+
+    post.load();
+    equal(this.ajaxCount, 4, 'should fetch again when root model loads');
   });
 
   test('do not autoload for remote = manual', function(){
@@ -309,9 +315,19 @@ define([
 
     equal(this.ajaxCount, 1, 'should fetch both parent and remote children');
 
-    equal(post.getRelated('comments').loadOnShow, true, 'should flag model as defer load');
-    ok(!post.getRelated('comments').fetched, 'loadOnShow children should not be fetched');
+    var comments = post.getRelated('comments');
+    equal(comments.loadOnShow, true, 'should flag model as defer load');
+    ok(!comments.fetched, 'loadOnShow children should not be fetched');
+    comments.fetch();
+    delete comments.loadOnShow;
+
+    equal(this.ajaxCount, 2);
+
+    post.load();
+
+    equal(this.ajaxCount, 4);
   });
+
 
 
   test('Force create relationship', function(){

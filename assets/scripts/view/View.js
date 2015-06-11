@@ -35,6 +35,11 @@ define([
      */
     deferRender: false,
 
+    /**
+     * Options passed into [spin.js]{@link http://fgnass.github.io/spin.js/}
+     */
+    loadingAnimationOptions: undefined,
+
     pathRegex: /^(\S*\/)\S+?\.[^.]*$/,
 
     //
@@ -211,6 +216,11 @@ define([
 
     /** Show the loading animation. Uses spin.js */
     showLoadingAnimation: function() {
+      if (!this.isRendered) {
+        this.on('afterRender', this.showLoadingAnimation.bind(this));
+        return;
+      }
+
       var opts = {
           lines: 13, // The number of lines to draw
           length: 7, // The length of each line
@@ -228,6 +238,8 @@ define([
           top: 'auto', // Top position relative to parent in px
           left: 'auto' // Left position relative to parent in px
         };
+
+      opts = _.extend(opts, this.loadingAnimationOptions);
 
       var offset = $(this.el).offset();
       if(!this.loader){
@@ -249,12 +261,12 @@ define([
 
     /** Hide the loading animation. */
     hideLoadingAnimation: function() {
+      this.off('afterRender', this.showLoadingAnimation.bind(this));
       if(this.loader){
         this.loader.fadeOut('fast', function() {
           this.spinner.stop();
         }.bind(this));
       }
-      this.isLoading = false;
     }
   });
 });

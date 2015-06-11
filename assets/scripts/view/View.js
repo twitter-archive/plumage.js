@@ -216,7 +216,8 @@ define([
 
     /** Show the loading animation. Uses spin.js */
     showLoadingAnimation: function() {
-      if (!this.isRendered) {
+      var width = $(this.el).width(), height = $(this.el).height();
+      if (!this.isRendered || width === 0 && height === 0) {
         this.on('afterRender', this.showLoadingAnimation.bind(this));
         return;
       }
@@ -251,8 +252,8 @@ define([
       this.loader.css({
         left: offset.left,
         top: offset.top,
-        width: $(this.el).width(),
-        height: $(this.el).height()
+        width: width,
+        height: height
       });
       this.loader.show();
       this.spinner.spin($('.spinner-box', this.loader)[0]);

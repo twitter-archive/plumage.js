@@ -5,7 +5,10 @@
     "Michael Lin <mlin@twitter.com>"
   ],
   "description": "Build data intensive web apps. Show off your data with Plumage JS. ",
-  "main": ["dist/plumage.css", "dist/plumage.js"],
+  "main": [
+    "dist/plumage.css",
+    "dist/plumage.js"
+  ],
   "license": "?",
   "private": true,
   "ignore": [
@@ -28,11 +31,11 @@
     "d3": "~3.3.6",
     "linkify": "latest",
     "jquery.scrollTo": "~1.4.7",
-    "jquery.cookie": "~1.4.1"
+    "jquery.cookie": "~1.4.1",
+    "dropzone": "~4.0.1"
   },
-  "devDependencies" : {
+  "devDependencies": {
     "blanket": "latest",
     "qunit": "1.16"
   }
-
 }

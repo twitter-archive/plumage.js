@@ -17,7 +17,7 @@ define([
 ], function($, _, Backbone, sinon, Environment, EventLog, ViewBuilder, View, Field, DateField, Select, testViewTemplate) {
 
 //use Environment to mock ajax
-  module('Router', _.extend(new Environment(), {
+  module('ViewBuilder', _.extend(new Environment(), {
     setup: function() {
       Environment.prototype.setup.apply(this, arguments);
     },

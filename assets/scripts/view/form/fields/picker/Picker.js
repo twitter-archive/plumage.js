@@ -3,8 +3,9 @@ define([
   'underscore',
   'backbone',
   'PlumageRoot',
-  'view/ModelView',
-], function($, _, Backbone, Plumage, ModelView) {
+  'model/Model',
+  'view/ModelView'
+], function($, _, Backbone, Plumage, Model, ModelView) {
 
   return  Plumage.view.form.fields.picker.Picker = ModelView.extend(
   /** @lends Plumage.view.form.fields.picker.Picker.prototype */
@@ -26,7 +27,7 @@ define([
     },
 
     defaultSubViewOptions: {
-      updateModelOnChange: true,
+      updateModelOnChange: true
     },
 
     /**
@@ -39,7 +40,7 @@ define([
         valueAttr: options.pickerModelAttr || this.pickerModelAttr
       };
       ModelView.prototype.initialize.apply(this, arguments);
-      this.setModel(new Plumage.model.Model({}, {urlRoot: '/'}), null, true);
+      this.setModel(new Model({}, {urlRoot: '/'}), null, true);
     },
 
     onModelChange: function() {

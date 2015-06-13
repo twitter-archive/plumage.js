@@ -51,7 +51,7 @@ header {
     float: left;
     display: block;
     font-weight: 200;
-    color: #777777;
+    color: #777;
     background: transparent url(twitter-bird.png) no-repeat 20px 50%;
     padding: 0 0 0 20px;
     font-size: 30px;
@@ -286,11 +286,11 @@ h2.title .light {
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2); }
     .message .message-body.bad {
       background-color: #8e0121;
-      background-image: -webkit-gradient(linear, 0 0, 0 100%, from(#a90329), color-stop(44%, #8f0222), to(#8c0020));
-      background-image: -webkit-linear-gradient(#a90329, #8f0222 44%, #8c0020);
-      background-image: -moz-linear-gradient(top, #a90329, #8f0222 44%, #8c0020);
-      background-image: -o-linear-gradient(#a90329, #8f0222 44%, #8c0020);
-      background-image: linear-gradient(#a90329, #8f0222 44%, #8c0020);
+      background-image: -webkit-gradient(linear, 0 0, 0 100%, from(#a90329), color-stop(44%, #8f0222), to(#8C0020));
+      background-image: -webkit-linear-gradient(#a90329, #8f0222 44%, #8C0020);
+      background-image: -moz-linear-gradient(top, #a90329, #8f0222 44%, #8C0020);
+      background-image: -o-linear-gradient(#a90329, #8f0222 44%, #8C0020);
+      background-image: linear-gradient(#a90329, #8f0222 44%, #8C0020);
       background-repeat: no-repeat;
       filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#FFA90329', endColorstr='#FF8C0020', GradientType=0);
       color: white; }
@@ -646,7 +646,7 @@ div.comment-wrapper .item-author-header {
     margin: 0; }
 
 .grid-canvas .slick-cell a, .grid-canvas .slick-cell a:hover {
-  color: #0088cc; }
+  color: #08c; }
 
 .slick-row.odd {
   background: #F2F4F5; }
@@ -1267,7 +1267,6 @@ ul.pager {
     -ms-transform: translateY(40px);
     -o-transform: translateY(40px);
     transform: translateY(40px); }
-
   30%, 70% {
     opacity: 1;
     -webkit-transform: translateY(0px);
@@ -1275,7 +1274,6 @@ ul.pager {
     -ms-transform: translateY(0px);
     -o-transform: translateY(0px);
     transform: translateY(0px); }
-
   100% {
     opacity: 0;
     -webkit-transform: translateY(-40px);
@@ -1291,7 +1289,6 @@ ul.pager {
     -ms-transform: translateY(40px);
     -o-transform: translateY(40px);
     transform: translateY(40px); }
-
   30%, 70% {
     opacity: 1;
     -webkit-transform: translateY(0px);
@@ -1299,7 +1296,6 @@ ul.pager {
     -ms-transform: translateY(0px);
     -o-transform: translateY(0px);
     transform: translateY(0px); }
-
   100% {
     opacity: 0;
     -webkit-transform: translateY(-40px);
@@ -1315,7 +1311,6 @@ ul.pager {
     -ms-transform: translateY(40px);
     -o-transform: translateY(40px);
     transform: translateY(40px); }
-
   30%, 70% {
     opacity: 1;
     -webkit-transform: translateY(0px);
@@ -1323,7 +1318,6 @@ ul.pager {
     -ms-transform: translateY(0px);
     -o-transform: translateY(0px);
     transform: translateY(0px); }
-
   100% {
     opacity: 0;
     -webkit-transform: translateY(-40px);
@@ -1339,7 +1333,6 @@ ul.pager {
     -ms-transform: translateY(40px);
     -o-transform: translateY(40px);
     transform: translateY(40px); }
-
   30% {
     opacity: 1;
     -webkit-transform: translateY(0px);
@@ -1355,7 +1348,6 @@ ul.pager {
     -ms-transform: translateY(40px);
     -o-transform: translateY(40px);
     transform: translateY(40px); }
-
   30% {
     opacity: 1;
     -webkit-transform: translateY(0px);
@@ -1371,7 +1363,6 @@ ul.pager {
     -ms-transform: translateY(40px);
     -o-transform: translateY(40px);
     transform: translateY(40px); }
-
   30% {
     opacity: 1;
     -webkit-transform: translateY(0px);
@@ -1386,14 +1377,12 @@ ul.pager {
     -ms-transform: scale(1);
     -o-transform: scale(1);
     transform: scale(1); }
-
   10% {
     -webkit-transform: scale(1.1);
     -moz-transform: scale(1.1);
     -ms-transform: scale(1.1);
     -o-transform: scale(1.1);
     transform: scale(1.1); }
-
   20% {
     -webkit-transform: scale(1);
     -moz-transform: scale(1);
@@ -1407,14 +1396,12 @@ ul.pager {
     -ms-transform: scale(1);
     -o-transform: scale(1);
     transform: scale(1); }
-
   10% {
     -webkit-transform: scale(1.1);
     -moz-transform: scale(1.1);
     -ms-transform: scale(1.1);
     -o-transform: scale(1.1);
     transform: scale(1.1); }
-
   20% {
     -webkit-transform: scale(1);
     -moz-transform: scale(1);
@@ -1428,14 +1415,12 @@ ul.pager {
     -ms-transform: scale(1);
     -o-transform: scale(1);
     transform: scale(1); }
-
   10% {
     -webkit-transform: scale(1.1);
     -moz-transform: scale(1.1);
     -ms-transform: scale(1.1);
     -o-transform: scale(1.1);
     transform: scale(1.1); }
-
   20% {
     -webkit-transform: scale(1);
     -moz-transform: scale(1);
@@ -1489,7 +1474,7 @@ ul.pager {
 .dropzone .dz-preview.dz-file-preview .dz-image {
   border-radius: 20px;
   background: #999;
-  background: linear-gradient(to bottom, #eeeeee, #dddddd); }
+  background: linear-gradient(to bottom, #eee, #ddd); }
 
 .dropzone .dz-preview.dz-file-preview .dz-details {
   opacity: 1; }
@@ -1647,7 +1632,7 @@ ul.pager {
 
 .dropzone .dz-preview .dz-progress .dz-upload {
   background: #333;
-  background: linear-gradient(to bottom, #666666, #444444);
+  background: linear-gradient(to bottom, #666, #444);
   position: absolute;
   top: 0;
   left: 0;
@@ -1922,12 +1907,12 @@ classes should alter those!
 @-moz-keyframes slickgrid-invalid-hilite {
   from {
     box-shadow: 0 0 6px red; }
-
   to {
     box-shadow: none; } }
 @-webkit-keyframes slickgrid-invalid-hilite {
   from {
     box-shadow: 0 0 6px red; }
-
   to {
     box-shadow: none; } }
+
+/*# sourceMappingURL=plumage.css.map */

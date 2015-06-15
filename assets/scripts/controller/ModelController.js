@@ -55,15 +55,15 @@ function($, _, Backbone, Plumage, BaseController, ModelUtil) {
 
     /** override to set activeModel*/
     runHandler: function(handlerName, params) {
-      //this.setActiveModel(undefined);
-      //var promise = this[handlerName].apply(this, params);
-      //if (promise) {
-      //  return promise.done(function (model, resp) {
-      //    if (model) {
-      //      this.setActiveModel(model);
-      //    }
-      //  }.bind(this));
-      //}
+      this.setActiveModel(undefined);
+      var promise = this[handlerName].apply(this, params);
+      if (promise) {
+        return promise.done(function (model, resp) {
+          if (model) {
+            this.setActiveModel(model);
+          }
+        }.bind(this));
+      }
     },
 
     /** Get the most recently used index model */
@@ -268,19 +268,19 @@ function($, _, Backbone, Plumage, BaseController, ModelUtil) {
     },
 
     setActiveModel: function(model) {
-      //if (this.activeModel) {
-      //  this.activeModel.off('change', this.onActiveModelChange, this);
-      //}
-      //this.activeModel = model;
-      //if (this.activeModel) {
-      //  this.activeModel.on('change', this.onActiveModelChange, this);
-      //}
+      if (this.activeModel) {
+        this.activeModel.off('change', this.onActiveModelChange, this);
+      }
+      this.activeModel = model;
+      if (this.activeModel) {
+        this.activeModel.on('change', this.onActiveModelChange, this);
+      }
     },
 
     // Event Handlers
 
     onActiveModelChange: function() {
-      //this.activeModel.updateUrl();
+      this.activeModel.updateUrl();
     },
 
     /** Show detail view on index item select */

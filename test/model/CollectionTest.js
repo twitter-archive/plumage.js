@@ -74,15 +74,16 @@ define([
     ok(errorHandler.calledOnce, 'error handler should have been called');
   });
 
-  asyncTest('Does not load again while already loading', function(){
+  test('Does not load again while already loading', function(assert){
     var collection = new PostCollection();
+    var done = assert.async();
 
     this.ajaxResponse = {results: ExampleData.POSTS};
     this.ajaxAsync = true;
 
     collection.load({success: function() {
       equal(this.ajaxCount, 1, 'should not load while loading');
-      start();
+      done();
     }.bind(this)});
 
     collection.load({success: function() {
@@ -92,8 +93,9 @@ define([
     this.ajaxAsync = false;
   });
 
-  asyncTest('Do load again while already loading if params have changed', function(){
+  test('Do load again while already loading if params have changed', function(assert){
     var collection = new PostCollection();
+    var done = assert.async();
 
     this.ajaxResponse = {results: ExampleData.POSTS};
     this.ajaxAsync = true;
@@ -104,7 +106,7 @@ define([
 
     collection.load({success: function() {
       equal(this.ajaxCount, 2, 'should load again after param change');
-      start();
+      done();
     }.bind(this)});
 
     this.ajaxAsync = false;

@@ -170,7 +170,7 @@ define([
 
     onUserMenuClick: function(menu, value) {
       if (value === 'logout') {
-        window.location = this.logoutUrl;
+        //window.location = this.logoutUrl;
       }
     },
 

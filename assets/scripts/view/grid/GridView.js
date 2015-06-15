@@ -200,7 +200,7 @@ define([
       var csv = titles.join(',') + '\n';
       csv += _.map(data, function(rowData) { return rowData.join(','); }).join('\n');
 
-      window.location = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv);
+      //window.location = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv);
     },
 
     /*

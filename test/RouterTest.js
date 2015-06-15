@@ -36,7 +36,10 @@ define([
       qParam = queryParams.q;
     });
 
-    router.start();
+
+    sinon.stub(router.history, 'navigate', function(fragment) {
+      this.loadUrl(fragment);
+    });
     router.navigate(fragment, {trigger: true});
 
     equal(qParam, 'sdf');

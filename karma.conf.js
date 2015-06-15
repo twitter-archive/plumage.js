@@ -40,8 +40,18 @@ module.exports = function(config) {
     // test results reporter to use
     // possible values: 'dots', 'progress'
     // available reporters: https://npmjs.org/browse/keyword/karma-reporter
-    reporters: ['progress'],
+    reporters: ['progress', 'coverage'],
 
+    preprocessors: {
+      // source files, that you wanna generate coverage for
+      // do not include tests or libraries
+      // (these files will be instrumented by Istanbul)
+      'assets/scripts/collection/**/*.js': ['coverage'],
+      'assets/scripts/model/**/*.js': ['coverage'],
+      'assets/scripts/util/**/*.js': ['coverage'],
+      'assets/scripts/view/**/*.js': ['coverage'],
+      'assets/scripts/*.js': ['coverage']
+    },
 
     // web server port
     port: 9876,
@@ -67,6 +77,11 @@ module.exports = function(config) {
 
     // Continuous Integration mode
     // if true, Karma captures browsers, runs the tests and exits
-    singleRun: false
+    singleRun: false,
+
+    coverageReporter: {
+      type: 'lcov', // lcov or lcovonly are required for generating lcov.info files
+      dir: 'coverage/'
+    }
   });
 };

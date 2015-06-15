@@ -12,6 +12,7 @@
 
 #test output
 /reports
+/coverage
 /log
 
 /assets/bower_components

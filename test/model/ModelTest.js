@@ -175,17 +175,15 @@ define([
     equal(eventLog.log[1].emitter, model.getRelated('comments'), 'collection should fire load second');
   });
 
-
-
-
-  asyncTest('Does not load again while already loading', function(){
+  test('Does not load again while already loading', function(assert){
     var model = new Post({id: 1, comments: []});
     this.ajaxResponse = {results: ExampleData.POST_DATA_WITH_RELATED};
     this.ajaxAsync = true;
+    var done = assert.async();
 
     model.load({success: function() {
       equal(this.ajaxCount, 1, 'should not load while loading');
-      start();
+      done();
     }.bind(this)});
 
     model.load({success: function() {

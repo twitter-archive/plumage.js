@@ -61,18 +61,22 @@ define([
 
   });
 
-  asyncTest('update url on model change', function() {
+  QUnit.test('update url on model change', function(assert) {
     var ctrl = createModelController();
+    var done = assert.async();
 
     this.ajaxResponse = ExampleData.POSTS;
-    ctrl.runHandler('showIndex').then(function(){
+    ctrl.runHandler('showIndex').done(function(){
       equal(ctrl.getIndexCollection(), ctrl.activeModel, 'showIndex sets activeModel');
-      start();
+      done();
     });
 
-    //this.ajaxResponse = ExampleData.POST_DATA;
-    //ctrl.runHandler('showDetail');
-    //equal(ctrl.getDetailModel(), ctrl.activeModel, 'showDetail sets activeModel');
+    done = assert.async();
+    this.ajaxResponse = ExampleData.POST_DATA;
+    ctrl.runHandler('showDetail').done(function(){
+      equal(ctrl.getDetailModel(), ctrl.activeModel, 'showDetail sets activeModel');
+      done();
+    });
   });
 
   test('current model updates url on change', function() {

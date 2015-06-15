@@ -36,6 +36,7 @@
   },
   "devDependencies": {
     "blanket": "latest",
+    "sinonjs": "latest",
     "qunit": "1.16"
   }
 }

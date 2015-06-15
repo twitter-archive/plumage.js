@@ -9,7 +9,7 @@ define([
   'view/form/fields/Field',
   'view/form/fields/FieldWithPicker',
   'view/form/fields/Calendar',
-  'view/form/fields/HourSelect',
+  'view/form/fields/HourSelect'
 ], function($, _, Backbone, Handlebars, moment, Plumage, DateTimeUtil, Field, FieldWithPicker, Calendar, HourSelect) {
 
   return Plumage.view.form.fields.DateField = FieldWithPicker.extend(
@@ -25,7 +25,7 @@ define([
 
     events: {
       'click input': 'onInputClick',
-      'click button': 'onButtonClick',
+      'click button': 'onButtonClick'
     },
 
     pickerOptions: {

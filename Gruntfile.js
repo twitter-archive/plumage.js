@@ -51,18 +51,6 @@ module.exports = function (grunt) {
           }
         }
       },
-      test: {
-        options: {
-          middleware: function (connect) {
-            return [
-              mountFolder(connect, 'build'),
-              mountFolder(connect, 'test'),
-              mountFolder(connect, 'examples/assets'),
-              mountFolder(connect, 'assets')
-            ];
-          }
-        }
-      },
       docs: {
         options: {
           middleware: function (connect) {
@@ -114,11 +102,21 @@ module.exports = function (grunt) {
       ]
     },
 
-    qunit: {
-      all: {
-        options: {
-          urls: ['http://localhost:9000/']
-        }
+    // Karma test runner configuration options
+    karma: {
+      options: {
+        configFile: 'karma.conf.js',
+        browsers: [
+          'Firefox'
+        ]
+      },
+      dev: {
+        singleRun: false,
+        autoWatch: true
+      },
+      ci: {
+        singleRun: true,
+        autoWatch: false
       }
     },
 
@@ -305,18 +303,8 @@ module.exports = function (grunt) {
     'watch'
   ]);
 
-  grunt.registerTask('test-browser', [
-    'jshint',
-    'connect:test',
-    'open:server',
-    'watch'
-  ]);
-
-  grunt.registerTask('test', [
-    'jshint',
-    'connect:test',
-    'qunit'
-  ]);
+  grunt.registerTask('test', ['jshint', 'karma:dev']);
+  grunt.registerTask('test-ci', ['jshint', 'karma:ci']);
 
   grunt.registerTask('build', [
     'jshint',
@@ -329,7 +317,7 @@ module.exports = function (grunt) {
   grunt.registerTask('docs', [
     'jekyll:build',
     'sass:docs',
-    'jsdoc:build',
+    'jsdoc:build'
   ]);
 
   grunt.registerTask('gh-pages-deploy', [

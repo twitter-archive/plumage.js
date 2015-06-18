@@ -187,6 +187,11 @@ define([
      * Not used by default. Add to events if necessary.
      */
     onLinkClick: function(e) {
+      //allow command click to open in new tab
+      if (e.metaKey) {
+        return;
+      }
+
       var a = $(e.target).closest('a');
       if (!a.hasClass('outlink')) {
         e.preventDefault();

@@ -9025,6 +9025,11 @@ define('view/View',[
      * Not used by default. Add to events if necessary.
      */
     onLinkClick: function(e) {
+      //allow command click to open in new tab
+      if (e.metaKey) {
+        return;
+      }
+
       var a = $(e.target).closest('a');
       if (!a.hasClass('outlink')) {
         e.preventDefault();
@@ -11954,8 +11959,9 @@ define('view/form/fields/picker/Picker',[
   'underscore',
   'backbone',
   'PlumageRoot',
-  'view/ModelView',
-], function($, _, Backbone, Plumage, ModelView) {
+  'model/Model',
+  'view/ModelView'
+], function($, _, Backbone, Plumage, Model, ModelView) {
 
   return  Plumage.view.form.fields.picker.Picker = ModelView.extend(
   /** @lends Plumage.view.form.fields.picker.Picker.prototype */
@@ -11977,7 +11983,7 @@ define('view/form/fields/picker/Picker',[
     },
 
     defaultSubViewOptions: {
-      updateModelOnChange: true,
+      updateModelOnChange: true
     },
 
     /**
@@ -11990,7 +11996,7 @@ define('view/form/fields/picker/Picker',[
         valueAttr: options.pickerModelAttr || this.pickerModelAttr
       };
       ModelView.prototype.initialize.apply(this, arguments);
-      this.setModel(new Plumage.model.Model({}, {urlRoot: '/'}), null, true);
+      this.setModel(new Model({}, {urlRoot: '/'}), null, true);
     },
 
     onModelChange: function() {
@@ -12477,7 +12483,7 @@ define('view/form/fields/DateField',[
   'view/form/fields/Field',
   'view/form/fields/FieldWithPicker',
   'view/form/fields/Calendar',
-  'view/form/fields/HourSelect',
+  'view/form/fields/HourSelect'
 ], function($, _, Backbone, Handlebars, moment, Plumage, DateTimeUtil, Field, FieldWithPicker, Calendar, HourSelect) {
 
   return Plumage.view.form.fields.DateField = FieldWithPicker.extend(
@@ -12493,7 +12499,7 @@ define('view/form/fields/DateField',[
 
     events: {
       'click input': 'onInputClick',
-      'click button': 'onButtonClick',
+      'click button': 'onButtonClick'
     },
 
     pickerOptions: {
@@ -16488,7 +16494,7 @@ define('view/grid/GridView',[
       var csv = titles.join(',') + '\n';
       csv += _.map(data, function(rowData) { return rowData.join(','); }).join('\n');
 
-      window.location = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv);
+      //window.location = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv);
     },
 
     /*
@@ -17340,7 +17346,7 @@ define('view/NavView',[
 
     onUserMenuClick: function(menu, value) {
       if (value === 'logout') {
-        window.location = this.logoutUrl;
+        //window.location = this.logoutUrl;
       }
     },
 

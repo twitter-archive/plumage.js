@@ -103,7 +103,7 @@ define([
 
     onAddPostClick: function() {
       var index = this.model.size() + 1;
-      this.model.add(new Post({id: index, title: 'my post ' + index, body: 'my body ' + index}));
+      this.model.add(new Post({id: index, href: '/posts/' + index, title: 'my post ' + index, body: 'my body ' + index}));
     }
   });
 });

@@ -175,7 +175,8 @@ module.exports = function (grunt) {
     },
 
     webpack: {
-      build: require('./webpack.config.js')
+      dist: require('./webpack.config.js'),
+      examples: require('./examples/webpack.config.js')
     },
 
     /** optimize js */
@@ -263,7 +264,11 @@ module.exports = function (grunt) {
       },
       webpack: {
         files: ['assets/scripts/**/*.{js,html}'],
-        tasks: ['webpack']
+        tasks: ['webpack:dist']
+      },
+      'webpack-examples': {
+        files: ['examples/**/*.{js,html}'],
+        tasks: ['webpack:examples']
       },
       docs: {
         files: ['docs/**/*.{html,scss}'],
@@ -297,7 +302,7 @@ module.exports = function (grunt) {
   grunt.registerTask('build', [
     'jshint',
     'sass:dist',
-    'webpack',
+    'webpack:dist',
     'uglify',
     'copy:dist'
   ]);

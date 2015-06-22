@@ -2,7 +2,7 @@ define([
   'jquery',
   'backbone',
   'plumage',
-  'text!countries/view/country/templates/CityDetail.html'
+  'countries/view/country/templates/CityDetail.html'
 ], function($, Backbone, Plumage, template) {
 
   return Plumage.view.ModelView.extend({

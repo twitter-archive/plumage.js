@@ -6,7 +6,7 @@ define([
   'kitchen_sink/view/example/BaseExample',
   'example/model/Post',
   'example/collection/PostCollection',
-  'text!kitchen_sink/view/example/view/templates/CollectionViews.html'
+  'kitchen_sink/view/example/view/templates/CollectionViews.html'
 ], function($, _, Backbone, Plumage, BaseExample, Post, PostCollection, template) {
 
   return BaseExample.extend({

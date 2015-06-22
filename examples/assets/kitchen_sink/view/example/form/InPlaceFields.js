@@ -6,8 +6,8 @@ define([
   'plumage',
   'example/ExampleData',
   'example/model/User',
-  'text!kitchen_sink/view/example/form/templates/InPlaceFields.html',
-  'text!data/countries.json'
+  'kitchen_sink/view/example/form/templates/InPlaceFields.html',
+  'data/countries.json'
 ], function($, _, Backbone, Handlebars, Plumage, ExampleData, User, template, countries) {
 
   return Plumage.view.ModelView.extend({

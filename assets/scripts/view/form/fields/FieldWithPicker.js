@@ -7,7 +7,7 @@ define([
   'PlumageRoot',
   'view/form/fields/Field',
   'view/form/fields/picker/Picker',
-  'text!view/form/fields/templates/FieldWithPicker.html'
+  'view/form/fields/templates/FieldWithPicker.html'
 ], function($, _, Backbone, Handlebars, moment, Plumage, Field, Picker, template) {
 
   return  Plumage.view.form.fields.FieldWithPicker = Field.extend(
@@ -36,6 +36,9 @@ define([
      * @extends Plumage.view.form.fields.Field
      */
     initialize:function(options) {
+      if (!this.subViews) {
+        this.subViews = [];
+      }
       this.subViews = this.subViews.concat([_.extend({
         viewCls: this.pickerCls,
         name: 'picker',

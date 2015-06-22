@@ -6,11 +6,11 @@ define([
   'view/form/Form',
   'view/form/fields/TextArea',
   'model/Comment'
-], function($, Backbone, Handlebars, Plumage, Form, TextArea) {
+], function($, Backbone, Handlebars, Plumage, Form, TextArea, Comment) {
 
   return Plumage.view.comment.CommentForm = Form.extend({
 
-    modelCls: 'model/Comment',
+    modelCls: Comment,
 
     actionLabel: 'Comment',
 

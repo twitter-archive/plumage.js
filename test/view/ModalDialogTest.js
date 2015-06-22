@@ -15,7 +15,7 @@ define([
 
 
   //use Environment to mock ajax
-  module('ModalDialog', _.extend(new Environment(), {
+  QUnit.module('ModalDialog', _.extend(new Environment(), {
     setup: function() {
       Environment.prototype.setup.apply(this, arguments);
     }

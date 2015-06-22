@@ -9,7 +9,7 @@ define([
   'view/form/fields/Field',
   'view/form/fields/HourSelect',
   'view/form/fields/Calendar',
-  'text!view/form/fields/picker/templates/DateRangePicker.html',
+  'view/form/fields/picker/templates/DateRangePicker.html',
 ], function($, _, Backbone, Handlebars, moment, Plumage, Picker, Field, HourSelect, Calendar, template) {
 
   return  Plumage.view.form.fields.picker.DateRangePicker = Picker.extend(

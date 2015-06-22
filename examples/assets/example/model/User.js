@@ -1,11 +1,11 @@
-define(['jquery', 'underscore', 'backbone', 'model/Model'],
-function($, _, Backbone, Model) {
+define(['jquery', 'underscore', 'backbone', 'model/Model', 'model/Data'],
+function($, _, Backbone, Model, Data) {
 
   return Model.extend({
     urlRoot: '/users',
     relationships: {
       company: {
-        modelCls: 'model/Data'
+        modelCls: Data
       }
     }
   });

@@ -17,28 +17,30 @@ define([ 'jquery', 'underscore', 'backbone',
     initialize: function(options) {
       options = options || {};
       _.extend(this, options);
-
-      this.defaultViewCls = this.defaultViewCls || 'view/ModelView';
-      if (typeof(this.defaultViewCls) === 'string') {
-        this.defaultViewCls = require(this.defaultViewCls);
-      }
     },
 
-    buildView: function(config) {
+    buildView: function(config, defaultViewCls, defaultViewOptions) {
       if (config instanceof View) {
         return config;
       }
 
-      config = _.extend({}, this.defaultViewOptions, config);
+      defaultViewCls = defaultViewCls || View;
+      defaultViewOptions = defaultViewOptions || {};
 
-      var viewCls = config.viewCls || this.defaultViewCls;
-      delete config.viewCls;
-      if(typeof(viewCls) === 'string') {
-        viewCls = require(viewCls);
+      config = _.extend({}, defaultViewOptions, config);
+
+      var viewCls = config.viewCls || defaultViewCls;
+      if (viewCls === undefined) {
+        throw 'No view class';
       }
+      delete config.viewCls;
 
-      return new viewCls(config);
-    }
+      var view = new viewCls(config);
+
+      return view;
+    },
+
+
   });
 
 

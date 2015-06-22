@@ -6,9 +6,6 @@ function($, _, Backbone, Plumage, History, ModelUtil) {
     /** Routes config. Array of pairs [pattern, options]. Options must include controller and method */
     controllerRoutes: undefined,
 
-    /** reference to the controllerManager for access to Controller instances*/
-    controllerManager: undefined,
-
     /** Root url of the application. Passed on to History */
     rootUrl: '/',
 
@@ -28,6 +25,10 @@ function($, _, Backbone, Plumage, History, ModelUtil) {
       options = options || {};
       if (options.app !== undefined) {
         this.app = options.app;
+      }
+
+      if (options.controllers !== undefined) {
+        this.controllers = options.controllers;
       }
       if (options.defaultUrl !== undefined) {
         this.defaultUrl = options.defaultUrl;
@@ -76,8 +77,8 @@ function($, _, Backbone, Plumage, History, ModelUtil) {
       if (this.app.navView) {
         this.app.navView.select(options.nav);
       }
-      var ctrl = this.app.controllerManager.getController(options.controller);
-      ctrl.runHandler(options.method, Array.prototype.slice.call(arguments, 1));
+      var controller = this.controllers[options.controller];
+      controller.runHandler(options.method, Array.prototype.slice.call(arguments, 1));
     },
 
     /**

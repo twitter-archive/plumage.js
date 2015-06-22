@@ -12,25 +12,11 @@ define([
     urlIdAttribute: 'name',
     urlRoot: '/',
 
-    sourceLoaded: false,
 
     relationships: {
       'examples': {
         modelCls: ExampleCollection,
         reverse: 'parent'
-      }
-    },
-
-    preloadSource: function(callback) {
-      if (!this.sourceLoaded) {
-        var paths = this.getRelated('examples').map(function(example) {
-          return example.getViewClsPath();
-        });
-        require(paths, function(){
-          this.getRelated('examples').each(function(example){example.requireSrc();});
-          callback();
-        }.bind(this));
-        this.sourceLoaded = true;
       }
     },
 

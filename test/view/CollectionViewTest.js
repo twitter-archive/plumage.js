@@ -13,9 +13,9 @@ define([
   'example/ExampleData',
   'example/view/NoRenderModelView'
 ], function($, _, Backbone, sinon, Environment, EventLog, CollectionView,
-      Post, ExampleData) {
+      Post, ExampleData, NoRenderModelView) {
 
-  module('CollectionView', _.extend(new Environment(), {
+  QUnit.module('CollectionView', _.extend(new Environment(), {
     setup: function() {
       Environment.prototype.setup.apply(this, arguments);
     }
@@ -31,7 +31,7 @@ define([
     return new CollectionView(_.extend({
       el: $('<div></div>'),
       relationship: 'comments',
-      itemViewCls: 'example/view/NoRenderModelView'
+      itemViewCls: NoRenderModelView
     }, options));
   }
 

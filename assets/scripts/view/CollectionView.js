@@ -51,9 +51,6 @@ define([
       if (typeof(this.emptyTemplate) === 'string') {
         this.emptyTemplate = Handlebars.compile(this.emptyTemplate);
       }
-      if (typeof(this.itemViewCls) === 'string') {
-        this.itemViewCls = requirejs(this.itemViewCls);
-      }
       this.itemViews = [];
     },
 

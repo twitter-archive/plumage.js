@@ -11,7 +11,7 @@ define([
 
 
   //use Environment to mock ajax
-  module('ModelUtil', _.extend(new Environment(), {
+  QUnit.module('ModelUtil', _.extend(new Environment(), {
     setup: function() {
       Environment.prototype.setup.apply(this, arguments);
     }

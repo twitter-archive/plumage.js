@@ -17,34 +17,32 @@ function($, _, Backbone, Plumage) {
       return this.urlRoot + '/';
     },
 
-    getViewClsPath: function() {
+    getViewCls: function() {
       var name = this.get('name');
       var section = this.collection.getRelated('parent').get('name');
-      return 'kitchen_sink/view/example/' + section + '/' + name;
+      return require('kitchen_sink/view/example/' + section + '/' + name);
     },
 
-    getSource: function(sourceType, callback) {
-      var name = this.get('name');
-      var section = this.collection.getRelated('parent').get('name');
-
-      if (this.get(sourceType) === undefined) {
-        var path;
-        if (sourceType === 'js') {
-          path = 'text!' + this.getViewClsPath() + '.js';
-        } else {
-          path = 'text!kitchen_sink/view/example/'+ section + '/templates/' + name + '.html';
-        }
-        require([path], function(source){
-          this.set(sourceType, source);
-          callback(source);
-        }.bind(this));
-      } else {
-        return this.get(sourceType);
+    getJsSource: function() {
+      var result = this.get('js');
+      if (!result) {
+        var name = this.get('name');
+        var section = this.collection.getRelated('parent').get('name');
+        result = require('raw!kitchen_sink/view/example/' + section + '/' + name + '.js');
+        this.set('js', result);
       }
+      return result;
     },
 
-    requireSrc: function() {
-      this.set('viewCls', require(this.getViewClsPath()));
+    getHtmlSource: function() {
+      var result = this.get('html');
+      if (!result) {
+        var name = this.get('name');
+        var section = this.collection.getRelated('parent').get('name');
+        result = require('kitchen_sink/view/example/' + section + '/templates/' + name + '.html');
+        this.set('html', result);
+      }
+      return result;
     }
   });
 });

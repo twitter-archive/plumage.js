@@ -4,7 +4,7 @@ define([
   'handlebars',
   'PlumageRoot',
   'view/form/fields/Field',
-  'text!view/form/fields/templates/SearchField.html'
+  'view/form/fields/templates/SearchField.html'
 ], function($, Backbone, Handlebars, Plumage, Field, template) {
 
   return Plumage.view.form.SearchField = Field.extend(

@@ -6,7 +6,7 @@ define([
   'plumage',
   'kitchen_sink/view/example/ExampleView',
   'kitchen_sink/view/example/SourceView',
-  'text!kitchen_sink/view/example/templates/ExampleWithSourceView.html'
+  'kitchen_sink/view/example/templates/ExampleWithSourceView.html'
 ], function($, _, Backbone, Handlebars, Plumage, ExampleView, SourceView, template) {
 
   return Plumage.view.ModelView.extend({

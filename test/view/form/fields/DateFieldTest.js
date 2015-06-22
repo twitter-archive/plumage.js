@@ -11,15 +11,18 @@ define([
   'test/EventLog',
   'example/ExampleData',
   'example/model/Post',
-  'view/form/fields/DateField'
-], function($, _, Backbone, moment, sinon, Environment, EventLog, ExampleData, Post, DateField) {
+  'view/form/fields/DateField',
+  'App'
+], function($, _, Backbone, moment, sinon, Environment, EventLog, ExampleData, Post, DateField, App) {
 
   //use Environment to mock ajax
-  module('DateField', _.extend(new Environment(), {
+  QUnit.module('DateField', _.extend(new Environment(), {
     setup: function() {
       Environment.prototype.setup.apply(this, arguments);
     }
   }));
+
+  var theApp = new App();
 
   var defaultOptions = {
     valueAttr: 'post_date'

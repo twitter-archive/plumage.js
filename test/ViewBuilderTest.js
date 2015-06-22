@@ -8,16 +8,17 @@ define([
   'sinon',
   'test/environment',
   'test/EventLog',
+  'view/ModelView',
   'ViewBuilder',
   'view/View',
   'view/form/fields/Field',
   'view/form/fields/DateField',
   'view/form/fields/Select',
-  'text!test/templates/TestView.html'
-], function($, _, Backbone, sinon, Environment, EventLog, ViewBuilder, View, Field, DateField, Select, testViewTemplate) {
+  'test/templates/TestView.html'
+], function($, _, Backbone, sinon, Environment, EventLog, ModelView, ViewBuilder, View, Field, DateField, Select, testViewTemplate) {
 
 //use Environment to mock ajax
-  module('ViewBuilder', _.extend(new Environment(), {
+  QUnit.module('ViewBuilder', _.extend(new Environment(), {
     setup: function() {
       Environment.prototype.setup.apply(this, arguments);
     },
@@ -30,10 +31,11 @@ define([
     var viewBuilder = new ViewBuilder();
     var view = viewBuilder.buildView({
       attr1: 'foo',
-      template: 'test/templates/TestView.html'
-    });
+      template: testViewTemplate
+    }, ModelView);
 
     equal(view.attr1, 'foo', 'should set config attrs');
+    ok(view instanceof ModelView, 'should use defaultViewCls');
     equal(typeof(view.template), 'function', 'should compile template');
     equal(view.template(), testViewTemplate, 'should be correct template');
   });
@@ -41,8 +43,10 @@ define([
   test('build nested view', function() {
     var viewBuilder = new ViewBuilder();
     var view = viewBuilder.buildView({
+      viewCls: ModelView,
       template: 'test/templates/TestView.html',
       subViews: [{
+        viewCls: ModelView,
         template: 'test/templates/TestView.html',
         selector: '.section1',
         subViews: [{
@@ -68,7 +72,7 @@ define([
     });
 
     equal(view.subViews.length, 4, 'should have subviews');
-    ok(view.subViews[0] instanceof View, 'should instantiate subviews');
+    ok(view.subViews[0] instanceof ModelView, 'should instantiate subviews');
     ok(view.subViews[0].subViews[0] instanceof View, 'should instantiate subviews subviews');
   });
 });

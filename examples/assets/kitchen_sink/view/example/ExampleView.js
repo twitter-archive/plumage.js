@@ -3,7 +3,7 @@ define([
   'underscore',
   'backbone',
   'handlebars',
-  'plumage',
+  'plumage'
 ], function($, _, Backbone, Handlebars, Plumage) {
 
   return Plumage.view.ModelView.extend({
@@ -13,8 +13,13 @@ define([
 
     updateOnChange: false,
 
+    initialize: function() {
+      this.subViews = [];
+      Plumage.view.ModelView.prototype.initialize.apply(this, arguments);
+    },
+
     onModelLoad: function() {
-      var viewCls = this.model.get('viewCls');
+      var viewCls = this.model.getViewCls();
       if (viewCls) {
         this.subViews = _.without(this.subViews, this.example);
         this.example = new viewCls({selector: '.the-example'});

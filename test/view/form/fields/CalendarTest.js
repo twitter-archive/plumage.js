@@ -14,7 +14,7 @@ define([
 ], function($, _, Backbone, moment, sinon, Environment, EventLog, DummyEvent, Calendar) {
 
   //use Environment to mock ajax
-  module('Calendar', _.extend(new Environment(), {
+  QUnit.module('Calendar', _.extend(new Environment(), {
     setup: function() {
       Environment.prototype.setup.apply(this, arguments);
     }

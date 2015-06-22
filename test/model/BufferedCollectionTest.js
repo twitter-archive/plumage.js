@@ -14,7 +14,7 @@ define([
 
 
   //use Environment to mock ajax
-  module('BufferedCollection', _.extend(new Environment(), {
+  QUnit.module('BufferedCollection', _.extend(new Environment(), {
     setup: function() {
       Environment.prototype.setup.apply(this, arguments);
     }

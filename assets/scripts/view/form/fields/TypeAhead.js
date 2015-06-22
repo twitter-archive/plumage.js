@@ -7,8 +7,8 @@ define([
   'view/form/fields/Field',
   'view/form/fields/Select',
   'RequestManager',
-  'text!view/form/fields/templates/TypeAhead.html',
-  'text!view/form/fields/templates/TypeAheadMenu.html'
+  'view/form/fields/templates/TypeAhead.html',
+  'view/form/fields/templates/TypeAheadMenu.html'
 ], function($, _, Backbone, Handlebars, Plumage, Field, Select, requestManager, template, menuTemplate) {
 
   return Plumage.view.form.fields.TypeAhead = Select.extend(

@@ -4,11 +4,10 @@ define([
   'backbone',
   'handlebars',
   'PlumageRoot',
-  'ControllerManager',
   'util/Logger'
 ],
 
-function($, _, Backbone, Handlebars, Plumage, ControllerManager, Logger) {
+function($, _, Backbone, Handlebars, Plumage, Logger) {
 
   /**
    * Global object responsible for initializing your App as well as the Controllers and Nav etc.
@@ -24,14 +23,6 @@ function($, _, Backbone, Handlebars, Plumage, ControllerManager, Logger) {
   _.extend(App.prototype, Backbone.Events,
   /** @lends Plumage.App.prototype */
   {
-    /**
-     * Array of [Controllers]{@link Plumage.controller.BaseController} to instantiate.
-     * Don't forget to require your controllers in your App's js file.
-     *
-     * @see [ControllerManager]{@link Plumage.ControllerManager}
-     */
-    controllers: undefined,
-
     /** Keeps track of the current top level view */
     views: {current: null},
 
@@ -43,8 +34,6 @@ function($, _, Backbone, Handlebars, Plumage, ControllerManager, Logger) {
       _.extend(this, options);
 
       this.registerHandlebarsHelpers();
-
-      this.controllerManager = new ControllerManager(this, this.controllers);
 
       if (this.initCSRFToken) {
         $.ajaxSetup({

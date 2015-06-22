@@ -1,9 +1,9 @@
 define([
   'plumage',
   'example/model/Country'
-], function(Plumage) {
+], function(Plumage, Country) {
 
   return Plumage.collection.Collection.extend({
-    model: 'example/model/Country'
+    model: Country
   });
 });

@@ -4,7 +4,7 @@ define([
   'handlebars',
   'PlumageRoot',
   'view/ModelView',
-  'text!view/templates/MessageView.html'
+  'view/templates/MessageView.html'
 ], function($, Backbone, Handlebars, Plumage, ModelView, template) {
 
   /**

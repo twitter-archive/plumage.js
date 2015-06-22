@@ -98,7 +98,7 @@ module.exports = function (grunt) {
         'assets/scripts/**/*.js',
         'test/example/**/*.js',
         'test/test/**/*.js',
-        'examples/**/*.js',
+        'examples/assets/**/*.js',
       ]
     },
 
@@ -157,7 +157,7 @@ module.exports = function (grunt) {
             'build/docs/styles',
             'assets/bower_components',
             'assets/bower_components/twitter-bootstrap-sass/vendor/assets/stylesheets'
-          ],
+          ]
         },
         files: {
           'build/docs/styles/docs.css': 'docs/styles/docs.scss'
@@ -174,20 +174,8 @@ module.exports = function (grunt) {
       }
     },
 
-    /** Concatenate js with require.js */
-    requirejs: {
-      build: {
-        // Options: https://github.com/jrburke/r.js/blob/master/build/example.build.js
-        options: {
-          mainConfigFile: 'assets/scripts/config.js',
-          baseUrl: 'assets/scripts',
-          out: 'build/scripts/plumage.js',
-          name: 'plumage',
-          exclude: ['jquery', 'underscore','backbone','handlebars', 'text', 'bootstrap', 'd3', 'moment', 'spinjs'],
-          optimize: 'none',
-          preserveLicenseComments: false
-        }
-      }
+    webpack: {
+      build: require('./webpack.config.js')
     },
 
     /** optimize js */
@@ -273,9 +261,9 @@ module.exports = function (grunt) {
         files: ['assets/styles/**/*.{scss,sass}', 'examples/styles/**/*.{scss,sass}'],
         tasks: ['sass', 'copy']
       },
-      requirejs: {
+      webpack: {
         files: ['assets/scripts/**/*.{js,html}'],
-        tasks: ['requirejs']
+        tasks: ['webpack']
       },
       docs: {
         files: ['docs/**/*.{html,scss}'],
@@ -296,7 +284,7 @@ module.exports = function (grunt) {
 
   grunt.registerTask('examples', [
     'sass',
-    'requirejs',
+    'webpack',
     'copy:gh-pages',
     'connect:gh-pages',
     'open:examples',
@@ -309,7 +297,7 @@ module.exports = function (grunt) {
   grunt.registerTask('build', [
     'jshint',
     'sass:dist',
-    'requirejs',
+    'webpack',
     'uglify',
     'copy:dist'
   ]);

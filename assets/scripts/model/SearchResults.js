@@ -1,7 +1,7 @@
 define(['jquery', 'underscore', 'backbone', 'PlumageRoot',
         'model/Model',
         'collection/DataCollection'],
-function($, _, Backbone, Plumage, Model) {
+function($, _, Backbone, Plumage, Model, DataCollection) {
 
   return Plumage.model.SearchResults = Model.extend({
 
@@ -9,7 +9,7 @@ function($, _, Backbone, Plumage, Model) {
 
     relationships: {
       'results': {
-        modelCls: 'collection/DataCollection',
+        modelCls: DataCollection,
         forceCreate: true,
         reverse: 'searchResult'
       }

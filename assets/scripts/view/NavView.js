@@ -7,7 +7,7 @@ define([
   'view/menu/DropdownMenu',
   'view/form/fields/SearchField',
   'model/SearchResults',
-  'text!view/templates/NavView.html',
+  'view/templates/NavView.html',
   'bootstrap'
 ], function($, _, Backbone, Plumage, ContainerView, DropdownMenu, SearchField, SearchResults, template) {
 

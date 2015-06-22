@@ -4,7 +4,7 @@ define([
   'backbone',
   'handlebars',
   'spinjs',
-  'PlumageRoot'
+  '../PlumageRoot'
 ], function($, _, Backbone, Handlebars, Spinner, Plumage) {
 
   return Plumage.view.View = Backbone.View.extend(
@@ -40,8 +40,6 @@ define([
      */
     loadingAnimationOptions: undefined,
 
-    pathRegex: /^(\S*\/)\S+?\.[^.]*$/,
-
     //
     // Life Cycle
     ///////////////
@@ -75,12 +73,6 @@ define([
 
     initTemplate: function(template) {
       if (typeof(template) === 'string') {
-        if (template.slice(0, 'text!'.length) === 'text!') {
-          throw 'Don\'t include text! in template path';
-        }
-        if (template.match(this.pathRegex)) {
-          template = require('text!' + template);
-        }
         template = Handlebars.compile(template);
       }
       return template;

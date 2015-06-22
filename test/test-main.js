@@ -19,9 +19,6 @@ require.config({
 
   paths: {
     slickgrid: 'vendor/slickgrid',
-    'slickgrid/lib/jquery-ui': 'vendor/slickgrid/lib/jquery-ui-1.10.4.custom.min',
-    'slickgrid/lib/jquery.event.drag': 'vendor/slickgrid/lib/jquery.event.drag-2.2',
-    'slickgrid/lib/jquery.event.drop': 'vendor/slickgrid/lib/jquery.event.drop-2.2',
 
     'jquery.scrollTo': '../bower_components/jquery.scrollTo/jquery.scrollTo.min',
     linkify: '../bower_components/linkify/jquery.linkify',

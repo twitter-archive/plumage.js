@@ -4,15 +4,16 @@ define([
   'handlebars',
   'moment',
   'PlumageRoot',
+  'model/Comment',
   'view/ModelView',
-  'text!view/comment/templates/CommentView.html',
+  'view/comment/templates/CommentView.html',
   'linkify'
-], function($, Backbone, Handlebars, moment, Plumage, ModelView, template) {
+], function($, Backbone, Handlebars, moment, Plumage, Comment, ModelView, template) {
 
   return Plumage.view.comment.CommentView = ModelView.extend({
     className: 'comment',
 
-    modelCls: 'model/Comment',
+    modelCls: Comment,
 
     template: Handlebars.compile(template),
 

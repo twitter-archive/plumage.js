@@ -3,7 +3,7 @@ define([
   'underscore',
   'plumage',
   'kitchen_sink/view/example/BaseExample',
-  'text!kitchen_sink/view/example/model/templates/Collections.html'
+  'kitchen_sink/view/example/model/templates/Collections.html'
 ], function($, _, Plumage, BaseExample, template) {
 
   return BaseExample.extend({
@@ -12,7 +12,6 @@ define([
 
     initialize:function(options) {
       options = options || {};
-      this.subViews = [];
       BaseExample.prototype.initialize.apply(this, arguments);
     }
   });

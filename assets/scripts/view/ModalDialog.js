@@ -5,7 +5,8 @@ define([
   'handlebars',
   'PlumageRoot',
   'view/ModelView',
-  'text!view/templates/ModalDialog.html'
+  'view/templates/ModalDialog.html',
+  'bootstrap'
 ], function($, _, Backbone, Handlebars, Plumage, ModelView, template) {
 
   return Plumage.view.ModalDialog = ModelView.extend({

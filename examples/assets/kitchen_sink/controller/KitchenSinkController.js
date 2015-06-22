@@ -5,7 +5,7 @@ define([
   'plumage',
   'kitchen_sink/view/example/ExampleSectionView',
   'kitchen_sink/model/ExampleSection',
-  'text!data/examples.json'
+  'data/examples.json'
 ],
 
 function($, _, Backbone, Plumage, ExampleSectionView, ExampleSection, examples) {
@@ -33,12 +33,10 @@ function($, _, Backbone, Plumage, ExampleSectionView, ExampleSection, examples) 
     showSectionWithExample: function(section, example, options) {
       var model = this.exampleSections[section];
       if (!model) {
-        var exampleSectionData = JSON.parse(examples)[section];
+        var exampleSectionData = examples[section];
         if (exampleSectionData) {
           model = new ExampleSection(exampleSectionData);
-          model.preloadSource(function(){
-            this.doShowSection(model, example, options);
-          }.bind(this));
+          this.doShowSection(model, example, options);
           model.onLoad();
         }
         this.exampleSections[section] = model;

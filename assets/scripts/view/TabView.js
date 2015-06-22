@@ -6,7 +6,7 @@ define([
   'PlumageRoot',
   'view/View',
   'view/ModelView',
-  'text!view/templates/TabView.html',
+  'view/templates/TabView.html',
   'jquery.cookie'
 ], function($, _, Backbone, Handlebars, Plumage, View, ModelView, template) {
 
@@ -62,7 +62,6 @@ define([
           tab = _.find(this.subViews, function(subView){ return subView.tabId !== undefined;}).tabId;
         }
         this.model.set(this.viewStateAttr, tab);
-        this.model.updateUrl();
       }
     },
 

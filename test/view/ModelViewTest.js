@@ -9,17 +9,19 @@ define([
   'test/environment',
   'test/EventLog',
   'test/DummyEvent',
+  'view/View',
   'view/ModelView',
   'view/ContainerView',
   'model/Model',
   'example/model/Post',
   'example/collection/PostCollection',
+  'example/model/User',
   'example/ExampleData'
-], function($, _, Backbone, sinon, Environment, EventLog, DummyEvent, ModelView, ContainerView, Model, Post, PostCollection, ExampleData) {
+], function($, _, Backbone, sinon, Environment, EventLog, DummyEvent, View, ModelView, ContainerView, Model, Post, PostCollection, User, ExampleData) {
 
 
   //use Environment to mock ajax
-  module('ModelView', _.extend(new Environment(), {
+  QUnit.module('ModelView', _.extend(new Environment(), {
     setup: function() {
       Environment.prototype.setup.apply(this, arguments);
     }
@@ -35,8 +37,6 @@ define([
     var view = new ModelView();
     sinon.spy(view, 'onModelChange');
     sinon.spy(view, 'onModelLoad');
-//    sinon.spy(view, 'onModelDestroy');
-//    sinon.spy(view, 'onModelError');
 
     view.setModel(model);
     ok(!view.onModelLoad.called, 'should not fire load on set unlead');
@@ -77,23 +77,23 @@ define([
     equal(view.model, model.getRelated('author'), 'should set related model correctly');
 
     view.model = undefined;
-    view.modelCls = 'example/model/Post';
+    view.modelCls = Post;
     view.setModel(model);
     equal(view.model, undefined, 'should ingnore inconrrect modelCls');
 
-    view.modelCls = 'example/model/User';
+    view.modelCls = User;
     view.setModel(model);
     equal(view.model, model.getRelated('author'), 'should set related model correctly');
   });
 
   test('Ignore setting wrong root model class', function() {
     var model = new Post(ExampleData.POST_DATA_WITH_RELATED);
-    var view = new ModelView({rootModelCls: 'example/model/User', relationship: 'author'});
+    var view = new ModelView({rootModelCls: User, relationship: 'author'});
 
     view.setModel(model);
     equal(view.model, undefined, 'should ingnore inconrrect rootModelCls');
 
-    view.rootModelCls = 'example/model/Post';
+    view.rootModelCls = Post;
     view.setModel(model);
     equal(view.model, model.getRelated('author'), 'should successfully set correct rootModelCls');
   });
@@ -103,7 +103,8 @@ define([
     var author = model.getRelated('author');
     var company = author.getRelated('company');
     var view = new ModelView({
-      modelCls: 'example/model/User',
+      defaultSubViewCls: ModelView,
+      modelCls: User,
       relationship: 'author',
       subViews: [
         {relationship: 'author.company'},
@@ -175,7 +176,7 @@ define([
     equal(view.subViews[0].subViews[0].model, author);
   });
 
-  test('test build subivews', function(){
+  test('test build subviews', function(){
     var view = new ModelView({
       template: '<div class="section1"></div>',
       subViews: [{
@@ -184,7 +185,7 @@ define([
       }]
     });
 
-    ok(view.subViews[0] instanceof ModelView, 'should instantiate subviews');
+    ok(view.subViews[0] instanceof View, 'should instantiate subviews');
   });
 
   test('onLinkClick short circuits view state only navigation', function() {

@@ -1,8 +1,8 @@
 define([
-  'slickgrid/slick.core',
-  'slickgrid/slick.grid',
-  'slickgrid/plugins/slick.rowselectionmodel',
-  'slickgrid/controls/slick.columnpicker'
+  './vendor/slickgrid/slick.core',
+  './vendor/slickgrid/slick.grid',
+  './vendor/slickgrid/plugins/slick.rowselectionmodel',
+  './vendor/slickgrid/controls/slick.columnpicker'
 ],
 function() {
   return window.Slick;

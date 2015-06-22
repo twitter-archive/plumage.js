@@ -4,7 +4,7 @@ define([
   'handlebars',
   'PlumageRoot',
   'view/form/fields/Radio',
-  'text!view/form/fields/templates/RadioButtonGroup.html'
+  'view/form/fields/templates/RadioButtonGroup.html'
 ], function($, Backbone, Handlebars, Plumage, Radio, template) {
   return Plumage.view.form.fields.RadioButtonGroup = Radio.extend({
 

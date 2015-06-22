@@ -6,8 +6,8 @@ define([
   'plumage',
   'example/ExampleData',
   'example/model/User',
-  'text!kitchen_sink/view/example/form/templates/FieldsAndForms.html',
-  'text!data/countries.json'
+  'kitchen_sink/view/example/form/templates/FieldsAndForms.html',
+  'data/countries.json'
 ], function($, _, Backbone, Handlebars, Plumage, ExampleData, User, template, countries) {
 
   var Form1 = Plumage.view.form.Form.extend();
@@ -40,6 +40,7 @@ define([
           {viewCls: Plumage.view.form.fields.Checkbox, selector: '.fields', label: 'Billing?', valueAttr: 'billing'},
           {viewCls: Plumage.view.form.fields.Field, selector: '.fields', label: 'Name', valueAttr: 'name'},
           {
+            viewCls: Plumage.view.ModelView,
             name: 'addressFields',
             selector: '.address',
             className: 'well',
@@ -58,6 +59,7 @@ define([
           }
         ],
       }, {
+        viewCls: Plumage.view.ModelView,
         selector: '.results1',
         className: 'form-horizontal',
         defaultSubViewCls: Plumage.view.DisplayField,
@@ -77,7 +79,7 @@ define([
 
       this.getSubView('updateOnChange').on('change', this.onUpdateOnChangeClick.bind(this));
 
-      var countryData = new Plumage.collection.DataCollection(JSON.parse(countries));
+      var countryData = new Plumage.collection.DataCollection(countries);
       this.getSubView('form1.addressFields.countrySelect').setListModel(countryData);
 
       var model = new User();

@@ -6,40 +6,20 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <script type="text/javascript">
-window.isStatic = true;
+  window.isStatic = true;
 
-//single page app, so must use absolute urls
-var rootUrl = '/plumage.js', i;
+  //single page app, so must use absolute urls
+  var rootUrl = '/plumage.js', i;
 
-var css = ["/plumage.css", "/examples/assets/styles/countries.css"];
-var js = ["/assets/scripts/vendor/require.js", "/assets/scripts/config.js"];
+  var css = ["/plumage.css", "/examples/assets/styles/countries.css"];
+  var js = ["/examples/dist/vendor.bundle.js", "/examples/dist/countries.js"];
 
-for (i=0; i<css.length; i++) {
-  document.write('<link rel="stylesheet" href="'+ rootUrl + css[i] + '">');
-}
-for (i=0; i<js.length; i++) {
-  document.write('<script type="text/javascript" src="'+ rootUrl + js[i] +'"></scr'+'ipt>');
-}
-</script>
-
-<script type="text/javascript">
-require.config({
-  baseUrl: rootUrl + '/assets/scripts',
-  paths: {
-//    plumage: rootUrl + '/plumage.min', // remove this line to use uncompiled source
-    data: rootUrl + '/examples/assets/data',
-    example: rootUrl + '/examples/assets/example',
-    countries: rootUrl + '/examples/assets/countries',
-    test: rootUrl + '/test/test'
-  },
-  shim: {
-    plumage: {deps: ['jquery']},
-    bootstrap: {deps: ['jquery']}
+  for (i=0; i<css.length; i++) {
+    document.write('<link rel="stylesheet" href="'+ rootUrl + css[i] + '">');
   }
-});
-</script>
-<script type="text/javascript">
-require(['countries/application']);
+  for (i=0; i<js.length; i++) {
+    document.write('<script type="text/javascript" src="'+ rootUrl + js[i] +'"></scr'+'ipt>');
+  }
 </script>
 
 </head>
@@ -57,6 +37,7 @@ require(['countries/application']);
 </div>
 <div id="page">
 </div>
+
 
 </body>
 </html>

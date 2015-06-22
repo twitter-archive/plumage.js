@@ -11,15 +11,18 @@ define([
   'test/EventLog',
   'example/ExampleData',
   'example/model/Vacation',
-  'view/form/fields/picker/DateRangePicker'
-], function($, _, Backbone, moment, sinon, Environment, EventLog, ExampleData, Vacation, DateRangePicker) {
+  'view/form/fields/picker/DateRangePicker',
+  'App'
+], function($, _, Backbone, moment, sinon, Environment, EventLog, ExampleData, Vacation, DateRangePicker, App) {
 
   //use Environment to mock ajax
-  module('DateRangePicker', _.extend(new Environment(), {
+  QUnit.module('DateRangePicker', _.extend(new Environment(), {
     setup: function() {
       Environment.prototype.setup.apply(this, arguments);
     }
   }));
+
+  var theApp = new App();
 
   var defaultOptions = {
   };

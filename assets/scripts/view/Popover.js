@@ -5,7 +5,7 @@ define([
   'PlumageRoot',
   'view/ModelView',
   'view/View',
-  'text!view/templates/Popover.html'
+  'view/templates/Popover.html'
 ], function($, _, Backbone, Plumage, ModelView, View, template) {
 
   return Plumage.view.Popover = ModelView.extend({

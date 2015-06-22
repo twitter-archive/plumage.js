@@ -45,7 +45,7 @@ define([
         f(Plumage, exampleConsole.log, this.testEnv);
       }
       $(el).append($('<div class="example-result"><a>Result</a><pre><code>'+ result +'</code></pre></div>'));
-      hljs.highlightBlock(code[0]);
+      hljs.highlightBlock(code[0], ['javascript']);
     },
 
     onExampleResultClick: function(event) {

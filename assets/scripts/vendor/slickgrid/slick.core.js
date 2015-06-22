@@ -1,10 +1,15 @@
+
 /***
  * Contains core SlickGrid classes.
  * @module Core
  * @namespace Slick
  */
 
-(function ($) {
+define(['jquery', './lib/jquery-ui', './lib/jquery.event.drag-2.2', './lib/jquery.event.drop-2.2'],
+function ($) {
+
+
+
   // register namespace
   $.extend(true, window, {
     "Slick": {
@@ -462,6 +467,6 @@
       return (activeEditController ? activeEditController.cancelCurrentEdit() : true);
     };
   }
-})(jQuery);
+});
 
 

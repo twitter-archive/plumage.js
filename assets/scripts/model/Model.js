@@ -345,7 +345,7 @@ function($, _, Backbone, Plumage, requestManager, ModelUtil, BufferedCollection)
         if (relationship.remote && ['autoload', 'loadOnShow', 'manual'].indexOf(relationship.remote) === -1) {
           throw 'invalid remote relationship param';
         }
-        var RelatedClass = ModelUtil.loadClass(relationship.modelCls);
+        var RelatedClass = relationship.modelCls;
 
         if (RelatedClass.prototype instanceof Plumage.collection.Collection) {
           related = this.createRelatedCollection(RelatedClass, relationship, data);

@@ -5,7 +5,7 @@ define([
   'handlebars',
   'kitchen_sink/highlight',
   'plumage',
-  'text!kitchen_sink/view/example/templates/SourceView.html'
+  'kitchen_sink/view/example/templates/SourceView.html'
 ], function($, _, Backbone, Handlebars, hljs, Plumage, template) {
 
   return Plumage.view.ModelView.extend({
@@ -20,9 +20,14 @@ define([
     getTemplateData: function(){
       var data = Plumage.view.ModelView.prototype.getTemplateData.apply(this, arguments);
 
-      data.source = this.model.getSource(this.sourceType, this.onSourceLoad.bind(this));
+      if (this.sourceType === 'js') {
+        data.source = this.model.getJsSource();
+      } else {
+        data.source = this.model.getHtmlSource();
+      }
+
       if (data.source) {
-        data.source = hljs.highlightAuto(data.source).value;
+        data.source = hljs.highlightAuto(data.source, ['javascript', 'html']).value;
       }
       data.title = this.getTitle();
       return data;
@@ -30,10 +35,6 @@ define([
 
     getTitle: function() {
       return this.model.get('name') + '.' + this.suffix;
-    },
-
-    onSourceLoad: function() {
-      this.render();
     }
   });
 });

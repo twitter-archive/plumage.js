@@ -6,7 +6,7 @@ define([
   'plumage',
   'example/ExampleData',
   'example/model/Post',
-  'text!kitchen_sink/view/example/form/templates/MultiSelectFields.html'
+  'kitchen_sink/view/example/form/templates/MultiSelectFields.html'
 ], function($, _, Backbone, Handlebars, Plumage, ExampleData, Post, template) {
 
   return Plumage.view.ModelView.extend({

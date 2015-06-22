@@ -5,7 +5,7 @@ define([
   'plumage',
   'kitchen_sink/view/example/BaseExample',
   'example/model/Post',
-  'text!kitchen_sink/view/example/view/templates/ModelViews.html'
+  'kitchen_sink/view/example/view/templates/ModelViews.html'
 ], function($, _, Backbone, Plumage, BaseExample, Post, template) {
 
   return BaseExample.extend({

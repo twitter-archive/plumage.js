@@ -4,7 +4,7 @@ define([
   'backbone',
   'PlumageRoot',
   'view/form/fields/Field',
-  'text!view/form/fields/templates/DurationField.html'
+  'view/form/fields/templates/DurationField.html'
 ], function($, _, Backbone, Plumage, Field, template) {
   return Plumage.view.form.fields.DurationField = Field.extend({
 

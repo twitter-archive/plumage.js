@@ -2,10 +2,10 @@ define([
   'PlumageRoot',
   'collection/Collection',
   'kitchen_sink/model/Example'
-], function(Plumage, Collection) {
+], function(Plumage, Collection, Example) {
 
   return Collection.extend({
-    model: 'kitchen_sink/model/Example',
+    model: Example,
 
     url: function() {
       return this.getRelated('parent').url();

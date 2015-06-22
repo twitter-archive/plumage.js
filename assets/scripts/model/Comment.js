@@ -1,6 +1,6 @@
 define(['jquery', 'underscore', 'backbone', 'PlumageRoot', 'model/Model',
         'model/User'],
-function($, _, Backbone, Plumage, Model) {
+function($, _, Backbone, Plumage, Model, User) {
 
   return Plumage.model.Comment = Model.extend({
 
@@ -8,7 +8,7 @@ function($, _, Backbone, Plumage, Model) {
 
     relationships: {
       'user': {
-        modelCls: 'model/User',
+        modelCls: User,
         forceCreate: false
       }
     },

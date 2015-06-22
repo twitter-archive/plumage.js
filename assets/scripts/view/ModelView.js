@@ -4,11 +4,12 @@ define([
   'backbone',
   'handlebars',
   'PlumageRoot',
+  'view/View',
   'view/ContainerView',
   'util/ModelUtil',
   'ViewBuilder',
-  'text!view/templates/LoadError.html'
-], function($, _, Backbone, Handlebars, Plumage, ContainerView, ModelUtil, ViewBuilder, errorTemplate) {
+  'view/templates/LoadError.html'
+], function($, _, Backbone, Handlebars, Plumage, View, ContainerView, ModelUtil, ViewBuilder, errorTemplate) {
 
 
 
@@ -83,24 +84,10 @@ define([
     initialize:function (options) {
       ContainerView.prototype.initialize.apply(this, arguments);
 
-      this.buildSubViews();
-
       //Backbone.View constructor will already set model if it's passed in.
       if (this.model) {
         throw 'Do not pass model into constructor. call setModel';
       }
-    },
-
-    buildSubViews: function() {
-      var viewBuilder = new ViewBuilder({
-        defaultViewCls: this.defaultSubViewCls,
-        defaultViewOptions: this.defaultSubViewOptions
-      });
-
-      this.subViews = $.isArray(this.subViews) ? this.subViews : [this.subViews];
-      this.subViews = _.map(this.subViews, function(subView) {
-        return viewBuilder.buildView(subView);
-      });
     },
 
     /**
@@ -142,8 +129,7 @@ define([
     setModel: function(rootModel, parentModel, force) {
       if (!force) {
         if (this.rootModelCls && rootModel) {
-          var rootModelCls = requirejs(this.rootModelCls);
-          if (!(rootModel instanceof rootModelCls)) {
+          if (!(rootModel instanceof this.rootModelCls)) {
             return;
           }
         }
@@ -156,7 +142,7 @@ define([
         if (this.modelCls === false) {
           return;
         }
-        if (model && !(model instanceof ModelUtil.loadClass(this.modelCls))) {
+        if (model && !(model instanceof this.modelCls)) {
           return;
         }
       }
@@ -249,7 +235,7 @@ define([
     },
 
     shouldRender: function(isLoad) {
-      var hasSubViews = this.subViews.length > 0;
+      var hasSubViews = this.subViews && this.subViews.length > 0;
       var shouldRenderFlag = isLoad ? this.renderOnLoad : this.renderOnChange;
       return shouldRenderFlag !== undefined && shouldRenderFlag ||
         shouldRenderFlag === undefined && !hasSubViews;

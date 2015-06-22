@@ -6,11 +6,9 @@ define([
   'kitchen_sink/view/example/BaseExample',
   'example/model/AsyncModelMixin',
   'example/collection/CountryCollection',
-  'text!kitchen_sink/view/example/grid/templates/InfiniteScroll.html',
-  'text!data/country_data.json'
+  'kitchen_sink/view/example/grid/templates/InfiniteScroll.html',
+  'data/country_data.json'
 ], function($, _, Backbone, Plumage, BaseExample, AsyncModelMixin, CountryCollection, template, countryData) {
-
-  countryData = JSON.parse(countryData);
 
   return BaseExample.extend({
 

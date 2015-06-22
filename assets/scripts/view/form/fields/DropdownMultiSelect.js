@@ -5,7 +5,7 @@ define([
   'handlebars',
   'PlumageRoot',
   'view/form/fields/MultiSelect',
-  'text!view/form/fields/templates/DropdownMultiSelect.html'
+  'view/form/fields/templates/DropdownMultiSelect.html'
 ], function($, _, Backbone, Handlebars, Plumage, MultiSelect, template) {
   /**
    * Like a normal field, except value is an array of selected values.

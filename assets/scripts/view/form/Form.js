@@ -56,8 +56,7 @@ define([
 
     submit: function() {
       if (!this.model) {
-        var ModelCls = ModelUtil.loadClass(this.modelCls);
-        this.model = new ModelCls();
+        this.model = new this.modelCls();
       }
       if(this.isValid()) {
         this.updateModel(this.rootModel);

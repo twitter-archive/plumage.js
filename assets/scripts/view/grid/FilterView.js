@@ -10,7 +10,7 @@ define([
   'view/form/fields/SearchField',
   'view/menu/DropdownMenu',
   'util/ModelUtil',
-  'text!view/grid/templates/FilterView.html'
+  'view/grid/templates/FilterView.html'
 ], function($, _, Backbone, Handlebars, Plumage, Form, ModelView, FilterField, SearchField,
     DropdownMenu, ModelUtil, template) {
 
@@ -43,7 +43,7 @@ define([
       options = options || {};
 
       this.filterFields = [];
-      this.subViews = _.clone(this.subViews);
+      this.subViews = _.clone(this.subViews) || [];
 
       _.each(this.filterConfigs, function(config){
         var filterConfig = _.extend({}, {
@@ -80,9 +80,8 @@ define([
 
       _.each(this.filterFields, function(filterField){
         if (filterField.listModelCls) {
-          var ListModelCls = ModelUtil.loadClass(filterField.listModelCls);
           var listModelParams = filterField.listModelParams || {};
-          var model = this.createFilterListModel(ListModelCls, listModelParams);
+          var model = this.createFilterListModel(filterField.listModelCls, listModelParams);
           filterField.setListModel(model);
         }
       }, this);

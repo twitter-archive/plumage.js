@@ -6,7 +6,7 @@ define([
   'handlebars',
   'PlumageRoot',
   'view/ModelView',
-  'text!view/templates/DisplayField.html'
+  'view/templates/DisplayField.html'
 ], function($, _, Backbone, Handlebars, Plumage, ModelView, template) {
 
   /**

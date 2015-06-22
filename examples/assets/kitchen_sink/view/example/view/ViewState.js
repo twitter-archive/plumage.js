@@ -5,7 +5,7 @@ define([
   'kitchen_sink/view/example/BaseExample',
   'example/ExampleData',
   'example/model/Post',
-  'text!kitchen_sink/view/example/view/templates/ViewState.html'
+  'kitchen_sink/view/example/view/templates/ViewState.html'
 ], function($, _, Plumage, BaseExample, ExampleData, Post, template) {
 
   return BaseExample.extend({
@@ -23,6 +23,7 @@ define([
       ],
       updateModelOnChange: true
     }, {
+      viewCls: Plumage.view.ModelView,
       selector: '.query-string',
       template: '<label>Query String:</label><span>{{queryParams}}</span>',
       getTemplateData: function() {

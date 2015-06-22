@@ -89,9 +89,6 @@ define([
       if (options.model) {
         this.model = options.model;
       }
-      if (typeof(this.model) === 'string') {
-        this.model = require(this.model);
-      }
 
       this._reset();
       if (models) {

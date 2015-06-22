@@ -5,7 +5,7 @@ define([
   'countries/view/country/CountryFields',
   'countries/view/country/CityDetail',
   'countries/view/country/LanguagesView',
-  'text!countries/view/country/templates/CountryDetail.html'
+  'countries/view/country/templates/CountryDetail.html'
 ], function($, Backbone, Plumage, CountryFields, CityDetail, LanguagesView, template) {
 
   return Plumage.view.ModelView.extend({

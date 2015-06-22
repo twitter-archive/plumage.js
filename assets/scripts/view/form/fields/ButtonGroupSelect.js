@@ -4,7 +4,7 @@ define([
   'handlebars',
   'PlumageRoot',
   'view/form/fields/CategorySelect',
-  'text!view/form/fields/templates/ButtonGroupSelect.html'
+  'view/form/fields/templates/ButtonGroupSelect.html'
 ], function($, Backbone, Handlebars, Plumage, CategorySelect, template) {
 
   return Plumage.view.form.fields.ButtonGroupSelect = CategorySelect.extend({

@@ -4,9 +4,9 @@ define([
   'PlumageRoot',
   'collection/Collection',
   'model/User'
-], function($, Backbone, Plumage, Collection) {
+], function($, Backbone, Plumage, Collection, User) {
 
   return Plumage.collection.UserCollection = Collection.extend({
-    model: 'model/User'
+    model: User
   });
 });

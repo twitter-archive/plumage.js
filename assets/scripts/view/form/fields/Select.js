@@ -6,7 +6,7 @@ define([
   'PlumageRoot',
   'view/ModelView',
   'view/form/fields/Field',
-  'text!view/form/fields/templates/Select.html'
+  'view/form/fields/templates/Select.html'
 ], function($, _, Backbone, Handlebars, Plumage, ModelView, Field, template) {
 
 

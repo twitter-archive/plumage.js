@@ -4,7 +4,7 @@ define([
   'handlebars',
   'PlumageRoot',
   'view/form/fields/Select',
-  'text!view/form/templates/SelectField.html'
+  'view/form/templates/SelectField.html'
 ], function($, Backbone, Handlebars, Plumage, Select, template) {
 
   return Plumage.view.form.SelectField = Select.extend({

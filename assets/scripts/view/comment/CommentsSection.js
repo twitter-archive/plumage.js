@@ -7,9 +7,9 @@ define([
   'view/comment/CommentForm',
   'model/Comment',
   'view/CollectionView',
-  'text!view/comment/templates/CommentsSection.html',
-  'view/comment/CommentView'
-], function($, Backbone, Handlebars, Plumage, ModelView, CommentForm, Comment, CollectionView, template) {
+  'view/comment/CommentView',
+  'view/comment/templates/CommentsSection.html'
+], function($, Backbone, Handlebars, Plumage, ModelView, CommentForm, Comment, CollectionView, CommentView, template) {
 
   return Plumage.view.comment.CommentsSection = ModelView.extend({
 
@@ -66,7 +66,7 @@ define([
       this.subViews = [
         this.commentsView = new CollectionView({
           selector: '.comments',
-          itemViewCls: 'view/comment/CommentView',
+          itemViewCls: CommentView,
           relationship: 'comments',
           emptyTemplate: emptyTemplate
         }),

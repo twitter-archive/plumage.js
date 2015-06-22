@@ -5,7 +5,7 @@ define([
   'moment',
   'plumage',
   'example/model/Vacation',
-  'text!kitchen_sink/view/example/form/templates/DateFields.html'
+  'kitchen_sink/view/example/form/templates/DateFields.html'
 ], function($, _, Handlebars, moment, Plumage, Vacation, template) {
 
   return Plumage.view.ModelView.extend({

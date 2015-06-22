@@ -4,10 +4,10 @@ define([
   'backbone',
   'handlebars',
   'plumage',
-  'text!kitchen_sink/view/example/templates/ExampleSectionView.html',
   'kitchen_sink/view/example/ExampleWithSourceView',
+  'kitchen_sink/view/example/templates/ExampleSectionView.html',
   'jquery.scrollTo'
-], function($, _, Backbone, Handlebars, Plumage, template) {
+], function($, _, Backbone, Handlebars, Plumage, ExampleWithSourceView, template) {
 
   return Plumage.view.ModelView.extend({
     className: 'example-section-view',
@@ -30,7 +30,7 @@ define([
       name: 'examplesView',
       selector: '.examples',
       relationship: 'examples',
-      itemViewCls: 'kitchen_sink/view/example/ExampleWithSourceView'
+      itemViewCls: ExampleWithSourceView
     }],
 
     initialize:function(options) {

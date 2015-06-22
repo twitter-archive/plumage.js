@@ -6,7 +6,7 @@ define([
   'PlumageRoot',
   'view/ModalDialog',
   'view/MessageView',
-  'text!view/templates/ConfirmationDialog.html'
+  'view/templates/ConfirmationDialog.html'
 ], function($, _, Backbone, Handlebars, Plumage, ModalDialog, MessageView, template) {
 
   return Plumage.view.ConfirmationDialog = ModalDialog.extend({

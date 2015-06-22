@@ -15,11 +15,11 @@ define([
   'example/model/Post',
   'example/collection/PostCollection'
 ], function($, _, Backbone, sinon, Environment, EventLog, ModelController, IndexView,
-    NoRenderModelView, ExampleData, Post) {
+    NoRenderModelView, ExampleData, Post, PostCollection) {
 
 
   //use Environment to mock ajax
-  module('ModelController', _.extend(new Environment(), {
+  QUnit.module('ModelController', _.extend(new Environment(), {
     setup: function() {
       Environment.prototype.setup.apply(this, arguments);
     }
@@ -28,8 +28,8 @@ define([
   function createModelController() {
     var app = {views: {}};
     return new ModelController(app, {
-      modelCls: 'example/model/Post',
-      indexModelCls: 'example/collection/PostCollection',
+      modelCls: Post,
+      indexModelCls: PostCollection,
       detailViewCls: NoRenderModelView,
       editViewCls: NoRenderModelView,
       indexViewCls: IndexView,

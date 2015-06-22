@@ -4,7 +4,7 @@ define([
   'handlebars',
   'PlumageRoot',
   'view/form/fields/Field',
-  'text!view/form/fields/templates/InPlaceTextField.html'
+  'view/form/fields/templates/InPlaceTextField.html'
 ], function($, Backbone, Handlebars, Plumage, Field, template) {
   return Plumage.view.form.fields.InPlaceTextField = Field.extend({
     template: template,

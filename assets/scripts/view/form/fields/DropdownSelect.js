@@ -5,7 +5,7 @@ define([
   'handlebars',
   'PlumageRoot',
   'view/form/fields/Select',
-  'text!view/form/fields/templates/DropdownSelect.html',
+  'view/form/fields/templates/DropdownSelect.html',
   'bootstrap'
 ], function($, _, Backbone, Handlebars, Plumage, Select, template) {
 

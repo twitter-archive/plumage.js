@@ -2,7 +2,7 @@
 
 define(['jquery', 'underscore', 'backbone', 'handlebars', 'PlumageRoot', 'moment', 'model/Model',
         'model/User'],
-function($, _, Backbone, Handlebars, Plumage, moment, Model) {
+function($, _, Backbone, Handlebars, Plumage, moment, Model, User) {
 
   return Plumage.model.Activity = Model.extend({
 
@@ -20,7 +20,7 @@ function($, _, Backbone, Handlebars, Plumage, moment, Model) {
 
     relationships: {
       'user': {
-        modelCls: 'model/User',
+        modelCls: User,
         forceCreate: false
       }
     },

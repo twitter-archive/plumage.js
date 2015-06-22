@@ -13,7 +13,7 @@ define([
 
 
   //use Environment to mock ajax
-  module('View', _.extend(new Environment(), {
+  QUnit.module('View', _.extend(new Environment(), {
     setup: function() {
       Environment.prototype.setup.apply(this, arguments);
     }

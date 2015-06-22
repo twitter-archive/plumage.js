@@ -4,7 +4,7 @@ define([
   'handlebars',
   'PlumageRoot',
   'view/ModelView',
-  'text!view/menu/templates/DropdownMenu.html',
+  'view/menu/templates/DropdownMenu.html',
   'bootstrap'
 ], function($, Backbone, Handlebars, Plumage, ModelView, template) {
 

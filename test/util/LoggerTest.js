@@ -12,13 +12,13 @@ define([
 
 
   //use Environment to mock ajax
-  module('Logger', _.extend(new Environment(), {
+  QUnit.module('Logger', _.extend(new Environment(), {
     setup: function() {
       Environment.prototype.setup.apply(this, arguments);
     }
   }));
 
-  test('Logging', function(){
+  QUnit.test('Logging', function(){
     var logger = new Logger({url: '/foo'});
 
     logger.error('foo_type', 'there was an error');
@@ -28,7 +28,7 @@ define([
     equal(data.message, 'there was an error', 'should log message');
   });
 
-  test('Save and retry on fail', function(){
+  QUnit.test('Save and retry on fail', function(){
     var logger = new Logger({url: '/foo'});
     this.ajaxResponseStatus = 'error';
 

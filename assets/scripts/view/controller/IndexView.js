@@ -29,14 +29,6 @@ define([
     initialize:function (options) {
       ModelView.prototype.initialize.apply(this, arguments);
 
-      if (typeof(this.gridViewCls) === 'string') {
-        this.gridViewCls = require(this.gridViewCls);
-      }
-
-      if (typeof(this.filterViewCls) === 'string') {
-        this.filterViewCls = require(this.filterViewCls);
-      }
-
       this.subViews = this.subViews || [];
 
       var gridView = this.getGridView();

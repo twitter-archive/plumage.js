@@ -4,7 +4,7 @@ define([
   'backbone',
   'PlumageRoot',
   'view/form/fields/Select',
-  'text!view/form/fields/templates/MultiSelect.html',
+  'view/form/fields/templates/MultiSelect.html',
 ], function($, _, Backbone, Plumage, Select, template) {
   /**
    * Like a normal field, except value is an array of selected values.

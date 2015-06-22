@@ -4,16 +4,15 @@ define([
   'example/collection/CountryCollection',
   'countries/view/country/CountryIndex',
   'countries/view/country/CountryDetail',
-  'text!data/country_data.json'
+  'data/country_data.json'
 ],
 
 function($, _, Backbone, Plumage,
     Country, CountryCollection, CountryIndex, CountryDetail, countryData) {
 
-
-  var data = JSON.parse(countryData);
-
   return Plumage.controller.ModelController.extend({
+
+    name: 'CountryController',
 
     modelCls: Country,
     indexModelCls: CountryCollection,
@@ -23,7 +22,7 @@ function($, _, Backbone, Plumage,
 
     showDetail: function(name, params){
 
-      var attributes = _.find(data, function(country) {
+      var attributes = _.find(countryData, function(country) {
         return country.name === name;
       });
 
@@ -34,7 +33,7 @@ function($, _, Backbone, Plumage,
     },
 
     createIndexModel: function(options, params) {
-      var collection =  new CountryCollection(data, {meta: params, processInMemory: true});
+      var collection =  new CountryCollection(countryData, {meta: params, processInMemory: true});
       collection.onLoad();
       collection.on('change', this.onIndexChange.bind(this));
       return collection;

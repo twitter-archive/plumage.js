@@ -2,9 +2,6 @@ define([
   'jquery', 'PlumageRoot'
 ], function($, Plumage) {
   return Plumage.util.ModelUtil = {
-    loadClass: function(cls) {
-      return typeof(cls) === 'string' ? require(cls) : cls;
-    },
 
     /**
      * Merge options arguments with class values, including deeper prototypes if specified

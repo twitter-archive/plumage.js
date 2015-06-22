@@ -2,7 +2,8 @@ define([
   'jquery',
   'backbone',
   'plumage',
-], function($, Backbone, Plumage) {
+  'example/collection/CountryCollection'
+], function($, Backbone, Plumage, CountryCollection) {
 
   function capitalFormatter(row, cell, value, columnDef, dataContext) {
     var capital = dataContext.getRelated('capital');
@@ -13,7 +14,7 @@ define([
 
   return Plumage.view.grid.GridView.extend({
 
-    modelCls: 'example/collection/CountryCollection',
+    modelCls: CountryCollection,
 
     infiniteScroll: false,
 

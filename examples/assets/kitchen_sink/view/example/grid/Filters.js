@@ -5,8 +5,8 @@ define([
   'plumage',
   'kitchen_sink/view/example/BaseExample',
   'example/collection/CountryCollection',
-  'text!kitchen_sink/view/example/grid/templates/Filters.html',
-  'text!data/country_data.json'
+  'kitchen_sink/view/example/grid/templates/Filters.html',
+  'data/country_data.json'
 ], function($, _, Backbone, Plumage, BaseExample, CountryCollection, template, countryData) {
 
   return BaseExample.extend({
@@ -42,7 +42,7 @@ define([
     initialize:function(options) {
       BaseExample.prototype.initialize.apply(this, arguments);
 
-      var model =  new CountryCollection(JSON.parse(countryData), {processInMemory: true});
+      var model =  new CountryCollection(countryData, {processInMemory: true});
       model.on('change', function() {
         model.load();
       });

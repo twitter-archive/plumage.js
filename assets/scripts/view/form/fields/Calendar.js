@@ -5,10 +5,11 @@ define([
   'handlebars',
   'moment',
   'PlumageRoot',
+  'view/ModelView',
   'view/form/fields/Field',
   'util/DateTimeUtil',
-  'text!view/form/fields/templates/Calendar.html'
-], function($, _, Backbone, Handlebars, moment, Plumage, Field, DateTimeUtil, template) {
+  'view/form/fields/templates/Calendar.html'
+], function($, _, Backbone, Handlebars, moment, Plumage, ModelView, Field, DateTimeUtil, template) {
 
   return Plumage.view.form.fields.Calendar = Field.extend(
   /** @lends Plumage.view.calendar.Calendar.prototype */
@@ -47,8 +48,8 @@ define([
     locale: {
       weekLabel: 'W',
       customRangeLabel: 'Custom Range',
-      daysOfWeek: moment()._lang._weekdaysMin.slice(),
-      monthNames: moment()._lang._monthsShort.slice(),
+      daysOfWeek: moment.weekdaysMin().slice(),
+      monthNames: moment.monthsShort().slice(),
       firstDay: 0
     },
 

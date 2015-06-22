@@ -5,7 +5,7 @@ define([
   'dropzone',
   'PlumageRoot',
   'view/ModelView',
-  'text!view/form/templates/FileDropZone.html'
+  'view/form/templates/FileDropZone.html'
 
 ], function($, _, Backbone, Dropzone, Plumage, ModelView, template) {
 

@@ -5,14 +5,15 @@ define([
   'handlebars',
   'PlumageRoot',
   'view/View',
-], function($, _, Backbone, Handlebars, Plumage, View) {
+  'ViewBuilder'
+], function($, _, Backbone, Handlebars, Plumage, View, ViewBuilder) {
 
   return Plumage.view.ContainerView = View.extend(
   /** @lends Plumage.view.ContainerView.prototype */
   {
 
     /** Array of subViews. */
-    subViews: [],
+    subViews: undefined,
 
     rootModelCls: undefined,
 
@@ -32,6 +33,20 @@ define([
      */
     initialize:function (options) {
       View.prototype.initialize.apply(this, arguments);
+
+      this.buildSubViews();
+    },
+
+    buildSubViews: function() {
+      if (this.subViews === undefined) {
+        return;
+      }
+
+      var viewBuilder = new ViewBuilder();
+
+      this.subViews = _.map(this.subViews, function(subView) {
+        return viewBuilder.buildView(subView, this.defaultSubViewCls, this.defaultSubViewOptions);
+      }.bind(this));
     },
 
     /**

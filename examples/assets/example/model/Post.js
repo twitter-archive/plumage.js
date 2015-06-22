@@ -1,6 +1,6 @@
 define(['jquery', 'underscore', 'backbone', 'model/Model', 'collection/DataCollection',
         'example/collection/CommentCollection', 'example/model/User'],
-function($, _, Backbone, Model) {
+function($, _, Backbone, Model, DataCollection, CommentCollection, User) {
 
   return Model.extend({
 
@@ -12,14 +12,14 @@ function($, _, Backbone, Model) {
 
     relationships: {
       'comments': {
-        modelCls: 'example/collection/CommentCollection',
+        modelCls: CommentCollection,
         reverse: 'post'
       },
       'author': {
-        modelCls: 'example/model/User'
+        modelCls: User
       },
       'categories': {
-        modelCls: 'collection/DataCollection'
+        modelCls: DataCollection
       }
     }
   });

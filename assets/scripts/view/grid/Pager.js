@@ -4,7 +4,7 @@ define([
   'backbone',
   'PlumageRoot',
   'view/ModelView',
-  'text!view/grid/templates/Pager.html'
+  'view/grid/templates/Pager.html'
 ], function($, _, Backbone, Plumage, ModelView, template) {
 
   return Plumage.view.grid.Pager = ModelView.extend({

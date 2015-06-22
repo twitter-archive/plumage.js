@@ -4,15 +4,15 @@ define([
   'handlebars',
   'PlumageRoot',
   'view/ModelView',
-  'text!view/comment/templates/ExpandableComments.html',
-  'view/comment/CommentView'
-], function($, Backbone, Handlebars, Plumage, ModelView, template) {
+  'view/comment/CommentView',
+  'view/comment/templates/ExpandableComments.html'
+], function($, Backbone, Handlebars, Plumage, ModelView, CommentView, template) {
 
   return Plumage.view.comment.ExpandableComments = ModelView.extend({
 
     template: Handlebars.compile(template),
 
-    itemViewCls: 'view/comment/CommentView',
+    itemViewCls: CommentView,
 
     events: {
       'click .comments-action': 'onActionClick'

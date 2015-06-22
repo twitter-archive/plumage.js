@@ -44,13 +44,13 @@ function($, _, Backbone, Plumage, BaseController, ModelUtil) {
     initialize : function(app, options) {
       BaseController.prototype.initialize.apply(this, arguments);
       options = options || {};
-      this.modelCls = ModelUtil.loadClass(options.modelCls ? options.modelCls : this.modelCls);
+      this.modelCls = options.modelCls ? options.modelCls : this.modelCls;
 
-      this.indexModelCls = ModelUtil.loadClass(options.indexModelCls ? options.indexModelCls : this.indexModelCls);
+      this.indexModelCls = options.indexModelCls ? options.indexModelCls : this.indexModelCls;
       this.indexModelOptions = options.indexModelOptions ? options.indexModelOptions : this.indexModelOptions;
-      this.indexViewCls = ModelUtil.loadClass(options.indexViewCls ? options.indexViewCls : this.indexViewCls);
-      this.detailViewCls = ModelUtil.loadClass(options.detailViewCls ? options.detailViewCls : this.detailViewCls);
-      this.editViewCls = ModelUtil.loadClass(options.editViewCls ? options.editViewCls : this.editViewCls);
+      this.indexViewCls = options.indexViewCls ? options.indexViewCls : this.indexViewCls;
+      this.detailViewCls = options.detailViewCls ? options.detailViewCls : this.detailViewCls;
+      this.editViewCls = options.editViewCls ? options.editViewCls : this.editViewCls;
     },
 
     /** override to set activeModel*/

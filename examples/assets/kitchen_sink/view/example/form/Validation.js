@@ -6,8 +6,8 @@ define([
   'plumage',
   'example/model/User',
   'example/model/AsyncModelMixin',
-  'text!kitchen_sink/view/example/form/templates/Validation.html',
-  'text!data/countries.json'
+  'kitchen_sink/view/example/form/templates/Validation.html',
+  'data/countries.json'
 ], function($, _, Backbone, moment, Plumage, User, AsyncModelMixin, template, countries) {
 
   return Plumage.view.ModelView.extend({

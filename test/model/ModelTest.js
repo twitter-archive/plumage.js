@@ -11,11 +11,11 @@ define([
   'example/ExampleData',
   'example/model/Post',
   'example/collection/CommentWithPostCollection'
-], function($, _, Backbone, sinon, Environment, EventLog, ExampleData, Post) {
+], function($, _, Backbone, sinon, Environment, EventLog, ExampleData, Post, CommentWithPostCollection) {
 
 
   //use Environment to mock ajax
-  module('Model', _.extend(new Environment(), {
+  QUnit.module('Model', _.extend(new Environment(), {
     setup: function() {
       Environment.prototype.setup.apply(this, arguments);
     },
@@ -353,7 +353,7 @@ define([
   test('Circular Relationship', function() {
     var PostCirc = Post.extend({relationships: _.clone(Post.prototype.relationships)});
     PostCirc.prototype.relationships.comments = _.extend({}, PostCirc.prototype.relationships.comments, {
-      modelCls: 'example/collection/CommentWithPostCollection'
+      modelCls: CommentWithPostCollection
     });
 
     this.ajaxResponse = {results: ExampleData.POST_DATA_WITH_RELATED};

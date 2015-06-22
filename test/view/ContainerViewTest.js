@@ -10,12 +10,12 @@ define([
   'test/EventLog',
   'view/View',
   'view/ContainerView',
-  'text!test/templates/TestView.html'
+  'test/templates/TestView.html'
 ], function($, _, Backbone, sinon, Environment, EventLog, View, ContainerView, template) {
 
 
   //use Environment to mock ajax
-  module('ContainerView', _.extend(new Environment(), {
+  QUnit.module('ContainerView', _.extend(new Environment(), {
     setup: function() {
       Environment.prototype.setup.apply(this, arguments);
     }

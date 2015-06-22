@@ -4,7 +4,7 @@ define([
   'backbone',
   'PlumageRoot',
   'view/form/fields/Field',
-  'text!view/form/fields/templates/Checkbox.html'
+  'view/form/fields/templates/Checkbox.html'
 ], function($, _, Backbone, Plumage, Field, template) {
   return Plumage.view.form.fields.Checkbox = Field.extend(
   /** @lends Plumage.view.form.fields.Checkbox.prototype */

@@ -1,5 +1,5 @@
 define(['jquery', 'underscore', 'backbone', 'model/Model', 'model/User'],
-function($, _, Backbone, Model) {
+function($, _, Backbone, Model, User) {
 
   return Model.extend({
 
@@ -9,7 +9,7 @@ function($, _, Backbone, Model) {
 
     relationships: {
       'user': {
-        modelCls: 'model/User'
+        modelCls: User
       },
 
       //test circular relationship

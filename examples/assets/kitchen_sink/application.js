@@ -2,23 +2,27 @@
 
 theApp = null;
 
-require([
-  'jquery',
-  'backbone',
-  'plumage',
-  'kitchen_sink/KitchenSinkRouter',
-  'kitchen_sink/KitchenSinkNavView',
-  'kitchen_sink/controller/KitchenSinkController',
-],
+var $ = require('jquery');
 
-function($, Backbone, Plumage, KitchenSinkRouter, KitchenSinkNavView) {
+var Backbone = require('backbone');
+var Plumage = require('plumage');
+var KitchenSinkRouter = require('kitchen_sink/KitchenSinkRouter');
+var KitchenSinkNavView = require('kitchen_sink/KitchenSinkNavView');
+var KitchenSinkController = require('kitchen_sink/controller/KitchenSinkController');
+
+Backbone.$ = $;
+
+
+$(function() {
   var navView = new KitchenSinkNavView();
   theApp = new Plumage.App({
-    controllers: [
-      'kitchen_sink/controller/KitchenSinkController'
-    ],
     navView: navView
   });
+
+  var controllers = {
+    'kitchenSinkController': new KitchenSinkController(theApp)
+  };
+
   $('#nav').html(navView.render().el);
 
   var isStatic = Boolean(window.isStatic);
@@ -26,6 +30,7 @@ function($, Backbone, Plumage, KitchenSinkRouter, KitchenSinkNavView) {
 
   window.router = new KitchenSinkRouter({
     app: theApp,
+    controllers: controllers,
     defaultUrl: rootUrl,
     rootUrl: rootUrl,
     pushState: !Boolean(window.isStatic)

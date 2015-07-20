@@ -8,7 +8,7 @@ define([
 ], function($, _, Backbone, Plumage, Field, template) {
   return Plumage.view.form.fields.DurationField = Field.extend({
 
-    className: 'duration-field control-group',
+    className: 'duration-field field form-group',
 
     fieldTemplate: template,
 
@@ -21,7 +21,7 @@ define([
     validationRules: {number: true, minValue: 0},
 
     events: {
-      'change select': 'onUnitChange'
+      'click .dropdown-menu a': 'onUnitChange'
     },
 
     /**
@@ -43,6 +43,7 @@ define([
         var result =  _.clone(unit);
         if (this.selectedUnit !== undefined && result.value === this.selectedUnit) {
           result.selected = true;
+          data.selected_unit = result.label;
         }
         return result;
       }.bind(this));
@@ -98,9 +99,10 @@ define([
     // Events
     //
 
-    onUnitChange: function() {
-      this.selectedUnit = Number($(arguments[0].target).val());
-      this.update();
+    onUnitChange: function(e) {
+      e.preventDefault();
+      this.selectedUnit = Number($(e.target).data('value'));
+      this.render();
     }
   });
 });

@@ -11,8 +11,6 @@ define([
   'view/templates/LoadError.html'
 ], function($, _, Backbone, Handlebars, Plumage, View, ContainerView, ModelUtil, ViewBuilder, errorTemplate) {
 
-
-
   return Plumage.view.ModelView = ContainerView.extend(
   /** @lends Plumage.view.ModelView.prototype */
   {

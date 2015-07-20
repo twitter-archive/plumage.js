@@ -1,25 +1,26 @@
-<div class="navbar navbar-fixed-top">
-  <div class="navbar-inner">
-    <div class="container">
-      <button type="button" class="btn btn-navbar" data-toggle="collapse" data-target=".nav-collapse">
+<div class="navbar navbar-default navbar-fixed-top">
+  <div class="container-fluid">
+    <div class="navbar-header">
+      <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#nav-collapse-1">
+        <span class="sr-only">Toggle navigation</span>
         <span class="icon-bar"></span>
         <span class="icon-bar"></span>
         <span class="icon-bar"></span>
       </button>
-      <a class="brand" href="{{relative}}./">PlumageJS</a>
-      <div class="nav-collapse collapse">
-        <ul class="nav">
-          <li class="{% if page.sectionid == 'home' %}active{% endif %}">
-            <a href="{{relative}}./">Home</a>
-          </li>
-          <li class="{% if page.sectionid == 'api' %}active{% endif %}">
-            <a href=" {{relative}}api/index.html">API</a>
-          </li>
-          <li class="{% if page.sectionid == 'examples' %}active{% endif %}">
-            <a href="{{relative}}examples.html">Examples</a>
-          </li>
-        </ul>
-      </div>
+      <a class="navbar-brand" href="{{relative}}./">PlumageJS</a>
+    </div>
+    <div class="collapse navbar-collapse" id="nav-collapse-1">
+      <ul class="nav navbar-nav">
+        <li class="{% if page.sectionid == 'home' %}active{% endif %}">
+          <a href="{{relative}}./">Home</a>
+        </li>
+        <li class="{% if page.sectionid == 'api' %}active{% endif %}">
+          <a href=" {{relative}}api/index.html">API</a>
+        </li>
+        <li class="{% if page.sectionid == 'examples' %}active{% endif %}">
+          <a href="{{relative}}examples.html">Examples</a>
+        </li>
+      </ul>
     </div>
   </div>
 </div>

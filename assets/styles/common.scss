@@ -1,4 +1,6 @@
-$nav-height: 100px;
+$nav-height: 60px;
+$nav-sm-height: 100px;
+$navbarBrandColor: #fff;
 $link-color: #08c;
 $slickGridImagePath: ".";
 
@@ -23,6 +25,9 @@ form {
 
 #page.with-nav {
   padding-top: $nav-height;
+  @media (min-width: $screen-sm-min) {
+    padding-top: $nav-sm-height;
+  }
 }
 
 header {
@@ -34,123 +39,6 @@ header {
   @include box-sizing(border-box);
   overflow-y: auto;
   overflow-x: hidden;
-}
-
-.navbar {
-  margin-bottom: 0;
-  @include clearfix();
-}
-
-#nav {
-  position: absolute;
-  width: 100%;
-  z-index: 1000;
-}
-
-#nav-top {
-
-  background: #fff;
-  height: 60px;
-
-  .brand {
-    float: left;
-    display: block;
-    font-weight: 200;
-    color: $navbarBrandColor;
-    background: transparent url(twitter-bird.png) no-repeat 20px 50%;
-    padding: 0 0 0 20px;
-    font-size: 30px;
-    line-height: 60px;
-
-    span {
-      display: block;
-      float: left;
-    }
-
-    .nav-subtitle {
-      font-size: 18px;
-      line-height: 50px;
-      margin: 10px 10px 0 10px;
-      color: #999;
-    }
-
-    @include clearfix();
-  }
-
-   #extra-links {
-     display: block;
-     float: left;
-     line-height: 50px;
-     margin-top: 10px;
-     margin-left: 6px;
-     a {
-       margin-right: 12px;
-     }
-   }
-}
-
-#nav-top-right {
-  .nav-search {
-    position: absolute;
-    right: 10px;
-    padding: 5px 0;
-    margin: 10px 0;
-
-    input {
-      @include transition(width 0.2s);
-    }
-  }
-}
-
-
-#main-nav {
-  margin-top: -1px;
-
-  @include clearfix;
-  .navbar-inner {
-    border-radius: 0;
-    border-top: 1px solid #eee;
-    background: #fff;
-
-    .nav-menu {
-      li {
-        a {
-          font-weight: bold;
-          text-shadow: 0px 1px 0px #fff;
-        }
-
-        &.active a {
-          background: #73B0E6;
-          color: #fff;
-          text-shadow: 0px 0px 0px #eee, 0px 1px 0px #888;
-          border-right: 0;
-        }
-      }
-      clear: both;
-    }
-  }
-}
-
-
-#nav .right-nav.expand-search {
-  .nav {
-    opacity: 0;
-    @include transition-delay(0s);
-  }
-
-  .nav-search {
-    padding-left: 60px;
-    label {
-      margin-left: -60px;
-      visibility: visible;
-      width: auto;
-      @include transition-delay(0.2s);
-    }
-    input {
-      width: 400px;
-      @include transition-delay(0.2s);
-    }
-  }
 }
 
 .title-wrap {
@@ -350,6 +238,7 @@ h2.title .light {
   list-style-type: none;
 
   > .items {
+    padding: 0;
     margin: 0;
     list-style-type: none;
     > li {

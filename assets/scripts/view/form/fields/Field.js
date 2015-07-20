@@ -15,7 +15,7 @@ define([
   return Plumage.view.form.fields.Field = ModelView.extend(
   /** @lends Plumage.view.form.fields.Field.prototype */
   {
-    className: 'control-group',
+    className: 'form-group',
 
     template: template,
 
@@ -25,7 +25,7 @@ define([
      * Template for html input element.
      * This template is separate so that it can be reused by subclasses.
      */
-    fieldTemplate: '<input type="{{fieldType}}" name="{{valueAttr}}" {{#placeholder}}placeholder="{{.}}"{{/placeholder}} value="{{value}}" {{#readonly}}readonly="readonly"{{/readonly}} {{#disabled}}disabled=1{{/disabled}}/>',
+    fieldTemplate: '<input type="{{fieldType}}" name="{{valueAttr}}" class="form-control" {{#placeholder}}placeholder="{{.}}"{{/placeholder}} value="{{value}}" {{#readonly}}readonly="readonly"{{/readonly}} {{#disabled}}disabled=1{{/disabled}}/>',
 
     /**
      * optional. model attribute to display as label
@@ -177,6 +177,9 @@ define([
     },
 
     getInputEl: function() {
+      if (!this.el) {
+        return undefined;
+      }
       var selector = this.getInputSelector();
       return selector ? this.$(selector).first() : this.$el;
     },

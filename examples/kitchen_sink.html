@@ -5,29 +5,14 @@
 <title>PlumageJS Kitchen Sink Example</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<script type="text/javascript">
-window.isStatic = true;
-
-  //single page app, so must use absolute urls
-  var rootUrl = '/plumage.js', i;
-
-  var css = ["/plumage.css", "/examples/assets/styles/kitchensink.css"];
-  var js = ["/examples/dist/vendor.bundle.js", "/examples/dist/kitchen_sink.js"];
-
-  for (i=0; i<css.length; i++) {
-    document.write('<link rel="stylesheet" href="'+ rootUrl + css[i] + '">');
-  }
-  for (i=0; i<js.length; i++) {
-    document.write('<script type="text/javascript" src="'+ rootUrl + js[i] +'"></scr'+'ipt>');
-  }
-</script>
-
+<link rel="stylesheet" href="./kitchensink.css"/>
 </head>
 
 <body>
 <div id="nav"></div>
 <div id="page" class="with-nav">
 </div>
-
+<script type="text/javascript" src="./vendor.bundle.js"></script>
+<script type="text/javascript" src="./kitchen_sink.js"></script>
 </body>
 </html>

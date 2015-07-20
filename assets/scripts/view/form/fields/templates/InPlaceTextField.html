@@ -1,10 +1,10 @@
-<div class="control-group {{#if validationState}}{{validationState}}{{/if}}">
+<div class="form-group {{#if validationState}}{{validationState}}{{/if}}">
 {{#if label}}
   <label class="control-label" for="{{valueAttr}}">{{label}}</label>
   <div class="controls">
 {{/if}}
     <div class="field-value {{#unless hasValue}}no-value{{/unless}}">
-      <i class="icon-pencil"></i>
+      <span class="glyphicon glyphicon-pencil"></span>
       <span>{{#if hasValue}}{{value}}{{else}}{{placeholder}}{{/if}}</span>
 	  </div>
     {{> field}}

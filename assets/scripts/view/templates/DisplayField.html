@@ -1,18 +1,19 @@
 {{#if label}}
-<div class="control-group">
-  {{#label}}
-  <label class="control-label">{{.}}</label>
-  {{/label}}
-  <div class="controls">
-{{/if}}
-    <div class="field-value">
-      {{#if loading}}
-        <span class="loading">loading...</span>
-      {{else}}
-        {{value}}
-      {{/if}}
-    </div>
-{{#if label}}
+<label class="col-sm-4 control-label" for="{{valueAttr}}">{{label}}</label>
+<div class="col-sm-8">
+  <div class="field-value">
+    {{#if loading}}
+    <span class="loading">loading...</span>
+    {{else}}
+      {{value}}
+    {{/if}}
   </div>
 </div>
+{{else}}
+<div class="field-value">
+  {{#if loading}}
+    <span class="loading">loading...</span>
+  {{else}}
+    {{value}}
+  {{/if}}
 {{/if}}

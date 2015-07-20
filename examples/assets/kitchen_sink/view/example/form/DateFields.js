@@ -78,7 +78,7 @@ define([
     initialize: function(options) {
       Plumage.view.form.fields.Field.prototype.initialize.apply(this, arguments);
 
-      var model = new Vacation({fromDate: moment().subtract('day', 7).valueOf(), toDate: moment().valueOf(), duration: 3600000});
+      var model = new Vacation({fromDate: moment().subtract(7, 'day').valueOf(), toDate: moment().valueOf(), duration: 3600000});
       this.setModel(model);
     }
   });

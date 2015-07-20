@@ -258,7 +258,7 @@ define([
           week.push({
             date: curDate,
           });
-          var m = moment(curDate).add('day', 1);
+          var m = moment(curDate).add(1, 'day');
           curDate = [m.year(), m.month(), m.date()];
         }
         calendar.push(week);
@@ -271,7 +271,7 @@ define([
      */
     getFirstDate: function(month, year) {
       var firstDay = moment([year, month, 1]),
-        monthAgo = moment(firstDay).subtract('month', 1);
+        monthAgo = moment(firstDay).subtract(1, 'month');
 
       var daysInLastMonth = monthAgo.daysInMonth(),
         dayOfWeek = firstDay.day(),
@@ -310,8 +310,8 @@ define([
     getShadowClass: function(date, row, col) {
       if (!this.isDateTupleInMonth(date)) {
         if (row < 2) {
-          var nextWeek = this.toDateTuple(moment(date).add('day', 7)),
-            tomorrow = this.toDateTuple(moment(date).add('day', 1));
+          var nextWeek = this.toDateTuple(moment(date).add(7, 'day')),
+            tomorrow = this.toDateTuple(moment(date).add(1, 'day'));
           if (this.isDateTupleInMonth(nextWeek)) {
             if (col < 6 && this.isDateTupleInMonth(tomorrow)) {
               return 'shadow-bottom-right';
@@ -320,8 +320,8 @@ define([
             }
           }
         } else {
-          var lastWeek = this.toDateTuple(moment(date).subtract('day', 7)),
-            yesterday = this.toDateTuple(moment(date).subtract('day', 1));
+          var lastWeek = this.toDateTuple(moment(date).subtract(7, 'day')),
+            yesterday = this.toDateTuple(moment(date).subtract(1, 'day'));
           if (this.isDateTupleInMonth(lastWeek)) {
             if (col > 0 && this.isDateTupleInMonth(yesterday)) {
               return 'shadow-top-left';
@@ -357,13 +357,13 @@ define([
     },
 
     isPrevMonthAvailable: function() {
-      var m = moment([this.year, this.month, 1]).subtract('day', 1);
+      var m = moment([this.year, this.month, 1]).subtract(1, 'day');
       return this.isDateInMinMax(this.toDateTuple(m));
     },
 
     isNextMonthAvailable: function() {
       var firstDate = moment([this.year, this.month, 1]),
-        m = moment([this.year, this.month, firstDate.daysInMonth()]).add('day', 1);
+        m = moment([this.year, this.month, firstDate.daysInMonth()]).add(1, 'day');
       return this.isDateInMinMax(this.toDateTuple(m));
     },
 
@@ -375,9 +375,9 @@ define([
       if (td.hasClass('off')) {
         var offMonth = moment([this.year, this.month, 1]);
         if (td.data('row') < 3) {
-          offMonth = offMonth.subtract('month', 1);
+          offMonth = offMonth.subtract(1, 'month');
         } else {
-          offMonth = offMonth.add('month', 1);
+          offMonth = offMonth.add(1, 'month');
         }
         return this.toDateTuple(offMonth.date(dateNumber));
       }
@@ -397,7 +397,7 @@ define([
     onPrevClick: function(e) {
       e.preventDefault();
       e.stopPropagation();
-      var lastMonth = moment([this.year, this.month, 1]).subtract('month', 1);
+      var lastMonth = moment([this.year, this.month, 1]).subtract(1, 'month');
       this.setMonth(lastMonth.month(), lastMonth.year());
 
       this.trigger('prevclick', this);
@@ -406,7 +406,7 @@ define([
     onNextClick: function(e) {
       e.preventDefault();
       e.stopPropagation();
-      var nextMonth = moment([this.year, this.month, 1]).add('month', 1);
+      var nextMonth = moment([this.year, this.month, 1]).add(1, 'month');
       this.setMonth(nextMonth.month(), nextMonth.year());
 
       this.trigger('nextclick', this);

@@ -132,8 +132,7 @@ form.filter-view {
   padding: 10px;
   background: #f9f9f9;
 
-  @include border-top-left-radius(4px);
-  @include border-top-right-radius(4px);
+  @include border-top-radius(4px);
 
   border: 1px solid #ddd;
   border-bottom: none;

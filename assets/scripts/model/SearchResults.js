@@ -3,7 +3,9 @@ define(['jquery', 'underscore', 'backbone', 'PlumageRoot',
         'collection/DataCollection'],
 function($, _, Backbone, Plumage, Model, DataCollection) {
 
-  return Plumage.model.SearchResults = Model.extend({
+  return Plumage.model.SearchResults = Model.extend(
+  /** @lends Plumage.model.SearchResults */
+  {
 
     urlRoot: '/search',
 

@@ -10,11 +10,15 @@ define([
 
     title: 'PlumageJS',
     titleUrl: '/plumage.js',
-    subtitle: 'Kitchen Sink Example - note: slow load due to unconcatenated source',
+    subtitle: 'Kitchen Sink Example',
 
     userMenuItems: undefined,
 
-    showSearch: false,
+    showSearch: true,
+
+    aboutUrl: '#',
+
+    helpUrl: '#',
 
     navItems: [
       {id: 'grid', label: 'Models', url: 'model', className: 'model-menu'},

@@ -3,9 +3,11 @@ define([ 'jquery', 'underscore', 'backbone',
   'view/ModelView' ], function($, _, Backbone, Plumage, ModelView) {
 
   /**
-   * ListView is a CollectionView that renders a selectable, navigable UL.
+   * Default ItemView for ListView
    */
-  return Plumage.view.ListItemView = ModelView.extend({
+  return Plumage.view.ListItemView = ModelView.extend(
+  /** @lends Plumage.view.ListItemView.prototype */
+  {
 
     tagName : 'li',
 
@@ -15,7 +17,7 @@ define([ 'jquery', 'underscore', 'backbone',
       'click': 'onClick'
     },
 
-    /** Event Handlers */
+    /* Event Handlers */
 
     onClick: function() {
       this.trigger('select', this, this.model);

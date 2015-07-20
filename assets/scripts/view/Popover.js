@@ -8,7 +8,9 @@ define([
   'view/templates/Popover.html'
 ], function($, _, Backbone, Plumage, ModelView, View, template) {
 
-  return Plumage.view.Popover = ModelView.extend({
+  return Plumage.view.Popover = ModelView.extend(
+    /** @lends Plumage.view.Popover.prototype */
+  {
 
     template: template,
 
@@ -16,8 +18,15 @@ define([
 
     title: undefined,
 
+    /**
+     * View to show as content of the popover.
+     */
     content: undefined,
 
+    /**
+     * Element to use for positioning the popover.
+     * Note: regardless of the targetEl, the popover element will be appended to the body element.
+     */
     targetEl: undefined,
 
     /**
@@ -36,6 +45,12 @@ define([
       'click a': 'onLinkClick'
     },
 
+
+    /**
+     * A popover view that displays above other views.
+     * @constructs
+     * @extends Plumage.view.ModelView
+     */
     initialize: function(options) {
 
 
@@ -153,7 +168,7 @@ define([
       }
     },
 
-    /**
+    /*
      * Event Handlers
      */
     update: function () {
@@ -178,7 +193,7 @@ define([
       this.updatePosition();
     },
 
-    /**
+    /*
      * Helpers
      */
 

@@ -9,15 +9,11 @@ define([
   'view/templates/DisplayField.html'
 ], function($, _, Backbone, Handlebars, Plumage, ModelView, template) {
 
-  /**
-   * Displays a non-editable value with an optional label.
-   *
-   * Useful for detail views with lists of fields.
-   *
-   */
-  return Plumage.view.DisplayField = ModelView.extend({
+  return Plumage.view.DisplayField = ModelView.extend(
+  /** @lends Plumage.view.DisplayField.prototype */
+  {
 
-    className: 'display-field',
+    className: 'display-field form-group',
 
     template: template,
 
@@ -45,6 +41,17 @@ define([
      * Used when value is null/undefined
      */
     defaultValue: '',
+
+    /**
+     * Displays a non-editable value in the format of a form field.
+     *
+     * Useful for detail views with lists of fields.
+     * @constructs
+     * @extends Plumage.view.ModelView
+     */
+    initialize: function() {
+      ModelView.prototype.initialize.apply(this, arguments);
+    },
 
     getTemplateData: function() {
       var data = {

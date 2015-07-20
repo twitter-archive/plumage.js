@@ -200,7 +200,7 @@ define([
       var csv = titles.join(',') + '\n';
       csv += _.map(data, function(rowData) { return rowData.join(','); }).join('\n');
 
-      //window.location = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv);
+      window.location = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv);
     },
 
     /*
@@ -229,13 +229,15 @@ define([
       if (this.gridEl.closest('html').length === 0) {
         $(this.el).append(this.gridEl);
       }
-      if (this.firstShow) {
-        this.firstShow = false;
-        this.grid.init();
-      } else {
-        this.grid.scrollToLastRendered();
-      }
-      this.grid.resizeCanvas();
+      if (this.isRendered) {
+        if (this.firstShow) {
+          this.firstShow = false;
+          this.grid.init();
+        } else {
+          this.grid.scrollToLastRendered();
+        }
+        this.grid.resizeCanvas();
+        }
     },
 
     onHide: function() {

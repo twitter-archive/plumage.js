@@ -3,7 +3,7 @@ define([
   'underscore',
   'backbone',
   'handlebars',
-  'spinjs',
+  'spin.js',
   '../PlumageRoot'
 ], function($, _, Backbone, Handlebars, Spinner, Plumage) {
 

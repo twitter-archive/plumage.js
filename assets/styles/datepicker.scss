@@ -57,7 +57,7 @@
     input {
       background: #fff;
       cursor: auto;
-      width: 156px;
+      width: 166px;
     }
   }
 
@@ -88,7 +88,7 @@
         background: #f5f5f5;
         border: 1px solid #f5f5f5;
         color: #08c;
-        padding: 3px 12px;
+        padding: 6px 12px;
         margin-bottom: 8px;
         -webkit-border-radius: 5px;
         -moz-border-radius: 5px;
@@ -128,7 +128,7 @@
   .dropdown-menu:before {
     position: absolute;
     top: -7px;
-    left: 40px;
+    left: 15px;
     margin-left: -3px;
     display: inline-block;
     border-right: 7px solid transparent;
@@ -141,7 +141,7 @@
   .dropdown-menu:after {
     position: absolute;
     top: -6px;
-    left: 40px;
+    left: 15px;
     margin-left: -2px;
     display: inline-block;
     border-right: 6px solid transparent;
@@ -173,7 +173,7 @@
   }
 
   .date-field .from-date input, .date-field .to-date input {
-    width: 100px;
+    width: 110px;
   }
 
   .hour-select {
@@ -181,8 +181,8 @@
   }
 
   .hour-select .dropdown-toggle {
-    width: 48px;
-    padding: 4px 9px;
+    width: 66px;
+    padding: 6px 9px;
     margin-bottom: 0;
   }
 }
@@ -190,7 +190,7 @@
 .hour-select {
 
   .dropdown-menu {
-    width: 324px;
+    width: 332px;
     padding: 5px 3px;
     li{
 

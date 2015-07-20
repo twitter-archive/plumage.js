@@ -10,7 +10,7 @@ module.exports = {
   },
 
   output: {
-    path: __dirname + "/dist",
+    path: __dirname + "/../build/docs/examples",
     filename: "[name].js"
   },
 
@@ -37,20 +37,13 @@ module.exports = {
     ],
     extensions: ['', '.js', '.jsx'],
     alias: {
+      bootstrap: 'bootstrap-sass',
       slickgrid: '../assets/scripts/vendor/slickgrid',
-
-      //plumage: __dirname + '/../assets/scripts/plumage',
-      jquery: __dirname + '/../assets/bower_components/jquery/dist/jquery',
-      underscore: __dirname + '/../assets/bower_components/underscore/underscore',
-      backbone: __dirname + '/../assets/bower_components/backbone/backbone',
-      bootstrap: __dirname + '/../assets/bower_components/bootstrap/docs/assets/js/bootstrap',
-      handlebars: __dirname + '/../assets/bower_components/handlebars/handlebars',
-      spinjs: __dirname + '/../assets/bower_components/spinjs/spin',
-      'jquery.cookie': __dirname + '/../assets/bower_components/jquery.cookie/jquery.cookie',
-      linkify: __dirname + '/../assets/bower_components/linkify/jquery.linkify',
-      'jquery.scrollTo': __dirname + '/../assets/bower_components/jquery.scrollTo/jquery.scrollTo.min',
-
+      linkify: __dirname + '/../assets/scripts/vendor/jquery.linkify',
       test: __dirname + '/../test'
     }
+  },
+  node: {
+    fs: 'empty' // for handlebars
   }
 };

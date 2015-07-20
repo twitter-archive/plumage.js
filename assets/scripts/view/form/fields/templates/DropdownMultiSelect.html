@@ -8,7 +8,7 @@
 {{/listValues}}
 </select>
 
-<a class="btn dropdown-toggle {{buttonCls}}" data-toggle="dropdown" href="#">
+<a class="btn btn-default dropdown-toggle {{buttonCls}}" data-toggle="dropdown" href="#">
   {{#iconCls}}
     <i class="{{.}} icon-white"></i>
   {{/iconCls}}
@@ -22,7 +22,7 @@
 <ul class="dropdown-menu {{#if showSelectOnly}}show-select-only{{/if}}">
   {{#if showSelectAll}}
   <li class="select-all {{#allSelected}}active{{/allSelected}}">
-      <a><input type="checkbox" {{#allSelected}} checked{{/allSelected}}/>Select All</a>
+      <a class="item"><input type="checkbox" {{#allSelected}} checked{{/allSelected}}/>Select All</a>
   </li>
   {{/if}}
   {{#listValues}}

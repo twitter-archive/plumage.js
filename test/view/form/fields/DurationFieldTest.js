@@ -66,19 +66,19 @@ define([
     var data = field.getTemplateData();
     equal(data.units[1].selected, true);
     equal(data.value, 12);
-    equal(field.$('select').val(), data.units[1].value);
+    equal(data.selected_unit, data.units[1].label);
 
     model.set('duration', 60000 * 10);
     data = field.getTemplateData();
     equal(data.units[0].selected, true);
     equal(data.value, 10);
-    equal(field.$('select').val(), data.units[0].value);
+    equal(data.selected_unit, data.units[0].label);
 
     model.set('duration', 86400000);
     data = field.getTemplateData();
     equal(data.units[2].selected, true);
     equal(data.value, 1);
-    equal(field.$('select').val(), data.units[2].value);
+    equal(data.selected_unit, data.units[2].label);
   });
 
   test('get correct value from dom', function(){

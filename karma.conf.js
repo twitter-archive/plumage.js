@@ -1,10 +1,7 @@
+//turn on to disable coverage for easier debugging
+var debugging = true;
 
-// Karma configuration
-// Generated on Fri Jun 12 2015 16:34:53 GMT-0700 (PDT)
-
-var debugging = false; //turn on to disable coverage for easier debugging
-
-var oneFile = 'test/ViewBuilderTest.js';
+var oneFile = 'test/RouterTest.js';
 
 var webpackConfig = require("./webpack.config.js");
 webpackConfig.plugins.pop(); //remove CommonChunksPlugin for testing

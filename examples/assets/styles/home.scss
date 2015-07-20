@@ -32,7 +32,7 @@
     background: #7C84E6; /* purple */
     opacity: 0.8;
 
-    @include border-radius(50%);
+    border-radius: 50%;
     border-bottom-right-radius: 25%;
     transform-origin: 105% 70%;
     -webkit-transform-origin: 105% 70%;

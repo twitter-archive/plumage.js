@@ -15,7 +15,7 @@ define([
     className: 'search-field',
 
     //need to add bootstrap search-query class
-    fieldTemplate: '<input type="text" class="search-query" name="{{valueAttr}}" {{#placeholder}}placeholder="{{.}}"{{/placeholder}} value="{{value}}"/>',
+    fieldTemplate: '<input type="text" class="search-query form-control" name="{{valueAttr}}" {{#placeholder}}placeholder="{{.}}"{{/placeholder}} value="{{value}}"/>',
 
     valueAttr: 'query',
 

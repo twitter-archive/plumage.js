@@ -5,15 +5,16 @@ define([
   'handlebars',
   'moment',
   'PlumageRoot',
+  'util/DateTimeUtil',
   'view/form/fields/FieldWithPicker',
-  'view/form/fields/picker/DateRangePicker',
-], function($, _, Backbone, Handlebars, moment, Plumage, FieldWithPicker, DateRangePicker) {
+  'view/form/fields/picker/DateRangePicker'
+], function($, _, Backbone, Handlebars, moment, Plumage, DateTimeUtil, FieldWithPicker, DateRangePicker) {
 
   return  Plumage.view.form.fields.DateRangeField = FieldWithPicker.extend(
   /** @lends Plumage.view.form.fields.DateRangeField.prototype */
   {
 
-    fieldTemplate: '<div class="input-prepend"><button class="btn" data-toggle="dropdown" data-target="#"><i class="icon-calendar"></i></button>'+FieldWithPicker.prototype.fieldTemplate+'</div>',
+    fieldTemplate: '<div class="input-group"><span class="input-group-btn"><button class="btn btn-default" data-toggle="dropdown" data-target="#"><span class="glyphicon glyphicon-calendar"></span></button></span>'+FieldWithPicker.prototype.fieldTemplate+'</div>',
 
     className: 'date-range-field',
 
@@ -107,8 +108,9 @@ define([
         return false;
       }
       var utc = this.getPicker().utc,
-        fromDate = utc ? moment.utc(values[0].trim()) : moment(values[0].trim()),
-        toDate = utc ? moment.utc(values[1].trim()) : moment(values[1].trim());
+        fromDate = DateTimeUtil.parseDateStringFromUser(values[0], utc),
+        toDate = DateTimeUtil.parseDateStringFromUser(values[1], utc);
+
 
       if (!fromDate.isValid() || !toDate.isValid()) {
         return false;
@@ -129,8 +131,8 @@ define([
       var format = this.getPicker().showHourSelect ? this.formatWithHour : this.format;
       var values = value.split('-'),
         utc = this.getPicker().utc,
-        m0 = utc ? moment.utc(values[0].trim(), format) : moment(values[0].trim()),
-        m1 = utc ? moment.utc(values[1].trim(), format) : moment(values[1].trim()),
+        m0 = DateTimeUtil.parseDateStringFromUser(values[0], utc),
+        m1 = DateTimeUtil.parseDateStringFromUser(values[1], utc),
         fromDate = m0.valueOf(),
         toDate = m1.valueOf();
       return [fromDate, toDate];

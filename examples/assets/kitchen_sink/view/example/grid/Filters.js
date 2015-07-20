@@ -29,6 +29,7 @@ define([
       viewCls: Plumage.view.grid.GridView,
       selector: '.grid-view',
       infiniteScroll: false,
+
       columns: [
         {id: 'name', name: 'Name', field: 'name', sortable: true},
         {id: 'region', name: 'Region', field: 'region', sortable: true},

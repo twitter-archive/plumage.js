@@ -52,7 +52,7 @@ define([
     helpLabel: 'Help',
 
     events: {
-      'click .nav-menu a': 'onNavClick',
+      'click .navbar-nav a': 'onNavClick',
       'click a.brand': 'onLinkClick'
     },
 
@@ -71,7 +71,7 @@ define([
 
       if (this.showSearch) {
         this.searchField = new SearchField({
-          selector: '.nav-search',
+          selector: '.navbar-search',
           placeholder: 'Search'
         });
         this.subViews.push(this.searchField);

@@ -8,6 +8,13 @@ define([
 
   return Plumage.util.DateTimeUtil = {
 
+    parseDateStringFromUser: function(value, utc) {
+      if (!value) {
+        return null;
+      }
+      return utc ? moment.utc(new Date(value + ' GMT')) : moment(new Date(value));
+    },
+
     parseRelativeDate: function(date, utc) {
       var today = utc ? moment.utc({hour: 0}) : moment({hour: 0});
       if (date === 'today') {

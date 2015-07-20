@@ -1,8 +1,10 @@
 <span class="typeahead-select {{#if menuShown}}open{{/if}}">
-<span class="input-append">
-  <input type="text" placeholder="{{noSelectionText}}" value="{{value}}">
-  <button class="btn cancel-typeahead"><i class="icon-remove"></i></button>
-</span>
+<div class="input-group">
+  <input type="text" class="form-control" placeholder="{{noSelectionText}}" value="{{value}}">
+  <span class="input-group-btn">
+    <button class="btn btn-default" type="button"><span class="glyphicon glyphicon-remove"></span></button>
+  </span>
+</div>
 
 <ul class="dropdown-menu">
 </ul>

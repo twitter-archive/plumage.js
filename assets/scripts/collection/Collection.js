@@ -281,7 +281,7 @@ define([
         if (this.originalModels) {
           i = _.indexOf(this.originalModels, model);
           if (i >=0 ) {
-            delete this.originalModels[i];
+            this.originalModels.splice(i, 1);
           }
         }
 

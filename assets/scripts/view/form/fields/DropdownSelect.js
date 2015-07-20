@@ -19,7 +19,7 @@ define([
 
     noSelectionValue: '',
 
-    buttonCls: undefined,
+    buttonCls: 'btn-default',
 
     iconCls: undefined,
 

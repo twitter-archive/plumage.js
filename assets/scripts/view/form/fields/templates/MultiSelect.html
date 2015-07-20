@@ -1,4 +1,4 @@
-<select {{#if fieldName}}name="{{fieldName}}{{/if}}" multiple="multiple">
+<select {{#if fieldName}}name="{{fieldName}}{{/if}}" multiple="multiple" class="form-control">
 {{#if noSelectionText}}
 <option value="{{noSelectionValue}}" {{^hasSelection}}selected="true"{{/hasSelection}}>{{noSelectionText}}</option>
 {{/if}}

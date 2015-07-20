@@ -10,8 +10,10 @@ define([
   'jquery.cookie'
 ], function($, _, Backbone, Handlebars, Plumage, View, ModelView, template) {
 
-  return Plumage.view.TabView = ModelView.extend({
-    /** @lends Plumage.view.ModelView.prototype */
+  return Plumage.view.TabView = ModelView.extend(
+    /** @lends Plumage.view.TabView.prototype */
+    {
+
 
     className: 'tab-view tab-theme',
 
@@ -37,8 +39,8 @@ define([
      *
      * Tabs are generated from subViews with the tabId and tabLabel attributes.
      *
-     * @extends Plumage.view.ModelView
      * @constructs
+     * @extends Plumage.view.ModelView
      */
     initialize: function() {
       ModelView.prototype.initialize.apply(this, arguments);

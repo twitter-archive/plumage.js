@@ -76,7 +76,13 @@ define([
 
     onChange: function(e) {
       if (this.updateModelOnChange) {
-        this.onSubmit(e);
+        if(this.isValid()) {
+          this.updateModel(this.rootModel);
+          var error;
+          if (this.model.validate) {
+            error = this.model.validate(this.model.attributes);
+          }
+        }
       }
       this.trigger('change', this, e);
     },

@@ -17,6 +17,7 @@ define([
     template: template,
 
     subViews: [{
+      viewCls: Plumage.view.ModelView,
       selector: '.form1',
       subViews: [{
         viewCls: Plumage.view.form.fields.InPlaceTextField,
@@ -29,6 +30,7 @@ define([
         valueAttr: 'city'
       }]
     }, {
+      viewCls: Plumage.view.ModelView,
       selector: '.results1',
       subViews: [{
         viewCls: Plumage.view.DisplayField,

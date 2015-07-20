@@ -32,7 +32,8 @@
         line-height: 20px;
         display: block;
         cursor: pointer;
-        @include border-radius(4px 4px 0 0);
+
+        @include border-top-radius(4px);
       }
 
       &.active {

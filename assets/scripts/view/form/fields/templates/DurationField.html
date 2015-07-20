@@ -1,6 +1,11 @@
-<input type="text" name="{{valueAttr}}" {{#placeholder}}placeholder="{{.}}"{{/placeholder}} value="{{value}}" {{#readonly}}readonly="readonly"{{/readonly}} {{#disabled}}disabled="true"{{/disabled}}/>
-<select {{#readonly}}readonly="readonly"{{/readonly}} {{#disabled}}disabled="true"{{/disabled}}>
-{{#units}}
-    <option value="{{value}}" class="{{value}}" {{#selected}}selected{{/selected}}>{{label}}</option>
-{{/units}}
-</select>
+<div class="input-group">
+  <input type="text" name="{{valueAttr}}" class="form-control" {{#placeholder}}placeholder="{{.}}"{{/placeholder}} value="{{value}}" {{#readonly}}readonly="readonly"{{/readonly}} {{#disabled}}disabled="true"{{/disabled}}/>
+  <div class="input-group-btn">
+    <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">{{selected_unit}} <span class="caret"></span></button>
+    <ul class="dropdown-menu dropdown-menu-right">
+      {{#units}}
+      <li><a data-value="{{value}}" href="#">{{label}}</a></li>
+      {{/units}}
+    </ul>
+  </div>
+</div>

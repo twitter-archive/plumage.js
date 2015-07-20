@@ -10,8 +10,7 @@ var KitchenSinkRouter = require('kitchen_sink/KitchenSinkRouter');
 var KitchenSinkNavView = require('kitchen_sink/KitchenSinkNavView');
 var KitchenSinkController = require('kitchen_sink/controller/KitchenSinkController');
 
-Backbone.$ = $;
-
+//Backbone.$ = $;
 
 $(function() {
   var navView = new KitchenSinkNavView();
@@ -25,15 +24,14 @@ $(function() {
 
   $('#nav').html(navView.render().el);
 
-  var isStatic = Boolean(window.isStatic);
-  var rootUrl = '/examples/kitchen_sink.html';
+  var rootUrl = '/kitchen_sink.html';
 
   window.router = new KitchenSinkRouter({
     app: theApp,
     controllers: controllers,
     defaultUrl: rootUrl,
     rootUrl: rootUrl,
-    pushState: !Boolean(window.isStatic)
+    pushState: false
   });
   window.router.start();
 });

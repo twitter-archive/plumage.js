@@ -1,8 +1,9 @@
 $iconSpritePath:          "/plumage.js/assets/images/glyphicons-halflings.png";
 $iconWhiteSpritePath:     "/plumage.js//assets/images/glyphicons-halflings-white.png";
 
-@import 'bootstrap';
-@import 'bootstrap-responsive';
+@import '../../../assets/styles/plumage';
+
+@import '../../../node_modules/bootstrap-sass/assets/stylesheets/_bootstrap';
 @import 'home';
 @import 'example';
 

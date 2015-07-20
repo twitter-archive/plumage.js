@@ -36,6 +36,12 @@ define([
 
         className: 'form-horizontal',
         template: '<div class="fields"></div><div class="address"></div><input type="submit" value="Submit"/>',
+
+        onSubmit: function(e) {
+          e.preventDefault();
+          this.updateModel(this.rootModel); //don't really submit
+        },
+
         subViews: [
           {viewCls: Plumage.view.form.fields.Checkbox, selector: '.fields', label: 'Billing?', valueAttr: 'billing'},
           {viewCls: Plumage.view.form.fields.Field, selector: '.fields', label: 'Name', valueAttr: 'name'},

@@ -27,14 +27,4 @@ define([
     }, options));
 
   }
-
-  test('expand and contract searchfield', function() {
-    var navView = createView();
-    navView.render();
-    navView.onSearchValueChange();
-    ok(navView.$('.right-nav').hasClass('expand-search'), 'should expand search view');
-
-    navView.onSearchBlur();
-    ok(!navView.$('.right-nav').hasClass('expand-search'), 'should contract search');
-  });
 });

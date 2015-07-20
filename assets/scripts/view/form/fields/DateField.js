@@ -16,7 +16,7 @@ define([
   /** @lends Plumage.view.form.fields.DateField.prototype */
   {
 
-    fieldTemplate: '<div class="input-prepend"><button class="btn" data-toggle="dropdown" data-target="#"><i class="icon-calendar"></i></button>'+FieldWithPicker.prototype.fieldTemplate+'</div>',
+    fieldTemplate: '<div class="input-group"><span class="input-group-btn"><button class="btn btn-default" data-toggle="dropdown" data-target="#"><span class="glyphicon glyphicon-calendar"></span></button></span>'+FieldWithPicker.prototype.fieldTemplate+'</div>',
 
     className: 'date-field',
 
@@ -107,7 +107,6 @@ define([
 
     setShowHourSelect: function(showHourSelect) {
       this.showHourSelect = showHourSelect;
-      this.$el.toggleClass('show-hour-select', this.showHourSelect);
       if(this.isRendered) {
         this.render();
       }
@@ -117,6 +116,13 @@ define([
     //
     // Overrides
     //
+
+    onRender: function() {
+      FieldWithPicker.prototype.onRender.apply(this, arguments);
+      if (this.$el) {
+        this.$el.toggleClass('show-hour-select', this.showHourSelect);
+      }
+    },
 
     onInput: function(e) {
       //do nothing on typing. Wait for blur
@@ -131,13 +137,13 @@ define([
     },
 
     isDomValueValid: function(value) {
-      var m = this.utc ? moment.utc(value) : moment(value);
-      return !value || m.isValid && m.isValid() && this.getCalendar().isDateInMinMax(value);
+      var m = DateTimeUtil.parseDateStringFromUser(value, this.utc);
+      return !value || m.isValid && m.isValid() && this.getCalendar().isDateInMinMax(m);
     },
 
     processDomValue: function(value) {
       if (value) {
-        var m = this.utc ? moment.utc(value) : moment(value);
+        var m = DateTimeUtil.parseDateStringFromUser(value, this.utc);
         var oldValue = this.getValue();
         if (oldValue && (this.keepTime || this.showHourSelect)) {
           var oldM = this.utc ? moment.utc(oldValue) : moment(oldValue);

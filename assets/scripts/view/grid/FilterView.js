@@ -69,7 +69,7 @@ define([
       this.subViews.push(this.moreMenu = new DropdownMenu({
         selector: '.more-menu',
         buttonStyle: true,
-        iconCls: 'icon-cog',
+        iconCls: 'cog',
         label: '',
         menuItems: this.moreMenuItems,
         opens: 'left',

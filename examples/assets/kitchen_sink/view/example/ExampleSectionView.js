@@ -24,7 +24,7 @@ define([
       selector: '.example-list',
       relationship: 'examples',
       selectionAttr: 'example',
-      itemOptions: {template: '{{title}} <i class="icon-chevron-right"></i>'}
+      itemOptions: {template: '{{title}} <span class="glyphicon glyphicon-chevron-right"></span>'}
     }, {
       viewCls: Plumage.view.CollectionView,
       name: 'examplesView',

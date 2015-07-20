@@ -7,9 +7,9 @@ define([ 'jquery', 'underscore', 'backbone',
   /**
    * ListView is a CollectionView that renders a selectable, navigable UL.
    */
-  return Plumage.view.ListView = CollectionView.extend({
-
-    tagName : 'ul',
+  return Plumage.view.ListView = CollectionView.extend(
+  /** @lends Plumage.view.ListView.prototype */
+  {
 
     selection : undefined,
 
@@ -19,6 +19,9 @@ define([ 'jquery', 'underscore', 'backbone',
 
     itemViewCls: ListItemView,
 
+    /**
+     * Can select items?
+     */
     selectable : true,
 
     /**
@@ -26,6 +29,12 @@ define([ 'jquery', 'underscore', 'backbone',
      */
     autoselect: true,
 
+
+    /**
+     * CollectionView with selectable items. Useful for eg master/detail.
+     * @constructs
+     * @extends Plumage.view.CollectionView
+     */
     initialize : function(options) {
       var me = this;
       CollectionView.prototype.initialize.apply(this, arguments);
@@ -51,7 +60,8 @@ define([ 'jquery', 'underscore', 'backbone',
       this.updateSelection();
     },
 
-    /** Overrides */
+    /* Overrides */
+
     renderItem: function() {
       var itemView = CollectionView.prototype.renderItem.apply(this, arguments);
       itemView.on('select', this.onItemViewSelect.bind(this));
@@ -63,7 +73,7 @@ define([ 'jquery', 'underscore', 'backbone',
       this.autoSelectFirst();
     },
 
-    /** Event Handlers */
+    /* Event Handlers */
 
     onSelectionChange: function() {
       if (this.selectable) {
@@ -76,7 +86,7 @@ define([ 'jquery', 'underscore', 'backbone',
       this.select(model.id);
     },
 
-    /** Helpers */
+    /* Helpers */
 
     autoSelectFirst: function() {
       if (this.selection.get(this.selectionAttr) === undefined && this.autoselect) {
@@ -84,6 +94,9 @@ define([ 'jquery', 'underscore', 'backbone',
       }
     },
 
+    /**
+     * Update the view based on the current selection state
+     */
     updateSelection: function() {
       if (this.selectable) {
         var id = this.selection.get(this.selectionAttr);

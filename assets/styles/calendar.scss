@@ -42,7 +42,7 @@
   .day {
     color: #000;
     cursor: pointer;
-    padding: 4px 5px;
+    padding: 4px 7px;
     -webkit-border-radius: 4px;
     -moz-border-radius: 4px;
     border-radius: 4px;
@@ -53,9 +53,12 @@
       border-radius: 0;
     }
 
-    &.available:hover {
-      background: #80c3ff;
-    }
+
+  }
+
+  .active .day:hover {
+    background: saturate(lighten($brand-primary, 30%), 15%);
+    color: #fff;
   }
 
   .disabled .day {
@@ -70,45 +73,34 @@
   }
 
   .start-date .day, .end-date .day{
-    background: #9EBDFA;
-  }
-
-
-  .selected .day, .selected .day:hover, .otheractive .day {
-    background-color: #006dcc;
-    background-image: -moz-linear-gradient(top, #0088cc, #0044cc);
-    background-image: -ms-linear-gradient(top, #0088cc, #0044cc);
-    background-image: -webkit-gradient(linear, 0 0, 0 100%, from(#0088cc), to(#0044cc));
-    background-image: -webkit-linear-gradient(top, #0088cc, #0044cc);
-    background-image: -o-linear-gradient(top, #0088cc, #0044cc);
-    background-image: linear-gradient(top, #0088cc, #0044cc);
-    background-repeat: repeat-x;
-    filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#0088cc', endColorstr='#0044cc', GradientType=0);
-    border-color: #0044cc #0044cc #002a80;
-    border-color: rgba(0, 0, 0, 0.1) rgba(0, 0, 0, 0.1) rgba(0, 0, 0, 0.25);
-    filter: progid:DXImageTransform.Microsoft.gradient(enabled = false);
     color: #fff;
-    text-shadow: 0 -1px 0 rgba(0, 0, 0, 0.25);
+    background: lighten($brand-primary, 15%);
   }
 
   .in-range .day:hover {
-    background-color: #80c3ff;
+    background-color: saturate(lighten($brand-primary, 30%), 15%);
     color: white;
   }
 
   .in-range {
-    background-color: #d9edff;
+    background-color: rgba($brand-primary, 0.15);
+  }
+
+  .selected .day, .selected .day:hover, .otheractive .day {
+    background-color: $brand-primary;
+    color: #fff;
+    text-shadow: 0 -1px 0 rgba(0, 0, 0, 0.25);
   }
 
   .otheractive .day {
-    background: #9EBDFA;
+    background: lighten($brand-primary, 15%);
     &:hover {
       background: #006dcc;
     }
   }
 
   .inrange .day:hover {
-    background-color: #80c3ff;
+    background-color: rgba($brand-primary, 0.5);
     color: white;
   }
 }

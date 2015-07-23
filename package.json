@@ -1,8 +1,8 @@
 {
-  "name": "plumagejs",
+  "name": "plumage",
   "version": "0.0.0",
   "description": "Show off your data with Plumage JS. Build data intensive web apps.",
-  "main": "index.js",
+  "main": "assets/scripts/plumage.js",
   "directories": {
   },
   "dependencies": {

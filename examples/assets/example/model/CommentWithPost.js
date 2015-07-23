@@ -1,5 +1,5 @@
-define(['jquery', 'underscore', 'backbone', 'model/Model', 'model/User'],
-function($, _, Backbone, Model, User) {
+define(['jquery', 'underscore', 'backbone', 'model/Model', 'model/User', 'example/model/Post'],
+function($, _, Backbone, Model, User, Post) {
 
   return Model.extend({
 
@@ -14,7 +14,7 @@ function($, _, Backbone, Model, User) {
 
       //test circular relationship
       'post': {
-        modelCls: 'model/Post'
+        modelCls: Post
       }
     },
 

@@ -36,10 +36,7 @@ function($, _, Backbone, Handlebars, Plumage, moment, Model, User) {
 
     getRelatedModelHTML: function(modelType, data) {
       if (modelType) {
-        var modelCls = require('model/' + modelType);
-        var model = new modelCls(data);
-        var displayName = model.getDisplayName();
-        return '<a href="'+model.url()+'" class="name" title="'+displayName+'">'+displayName+'</a>';
+        return '<a href="'+data.href+'" class="name" title="'+ data.label+'">'+data.label+'</a>';
       }
       return '';
     },

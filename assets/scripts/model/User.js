@@ -1,6 +1,5 @@
 define(['jquery', 'underscore', 'backbone', 'PlumageRoot',
-  'model/Model',
-  'collection/ActivityCollection'
+  'model/Model'
 ],
 function($, _, Backbone, Plumage, Model) {
 
@@ -11,16 +10,6 @@ function($, _, Backbone, Plumage, Model) {
     urlRoot: '/users',
 
     relationships: {
-      'comments': {
-        modelCls: 'collection/CommentCollection',
-        reverse: 'user',
-        forceCreate: false
-      },
-      'activities': {
-        modelCls: 'collection/ActivityCollection',
-        reverse: 'owner',
-        forceCreate: false
-      }
     },
 
     getImageThumb: function() {

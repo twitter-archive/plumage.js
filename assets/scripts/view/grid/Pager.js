@@ -33,7 +33,7 @@ define([
     },
 
     atLastPage: function() {
-      if (this.model) {
+      if (this.model && this.model.size) {
         return this.model.size() < this.model.get('pageSize');
       }
       return false;

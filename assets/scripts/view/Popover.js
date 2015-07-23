@@ -52,8 +52,6 @@ define([
      * @extends Plumage.view.ModelView
      */
     initialize: function(options) {
-
-
       ModelView.prototype.initialize.apply(this, arguments);
 
       if (this.title) {
@@ -105,6 +103,7 @@ define([
       content.on('afterRender', this.onAfterContentRender.bind(this));
       this.content = content;
 
+      this.subViews = this.subViews || [];
       this.subViews.push(this.content);
     },
 

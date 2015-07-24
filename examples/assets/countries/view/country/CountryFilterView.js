@@ -1,29 +1,23 @@
-define([
-  'jquery',
-  'backbone',
-  'plumage',
-], function($, Backbone, Plumage) {
+var Plumage = require('plumage');
 
+module.exports = Plumage.view.grid.FilterView.extend({
 
-  return Plumage.view.grid.FilterView.extend({
+  tagName: 'form',
 
-    tagName: 'form',
+  className: 'form-inline',
 
-    className: 'form-inline',
+  filterConfigs: [
+    {
+      placeholder: 'Name',
+      filterKey: 'name'
+    },
+    {
+      placeholder: 'Region',
+      filterKey: 'region'
+    }
+  ],
 
-    filterConfigs: [
-      {
-        placeholder: 'Name',
-        filterKey: 'name'
-      },
-      {
-        placeholder: 'Region',
-        filterKey: 'region'
-      }
-    ],
+  showSearch: true,
 
-    showSearch: true,
-
-    searchEmptyText: 'Search'
-  });
+  searchEmptyText: 'Search'
 });

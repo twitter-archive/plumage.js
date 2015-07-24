@@ -1,96 +1,85 @@
-/*global QUnit:true, module:true, test:true, asyncTest:true, expect:true*/
-/*global start:true, stop:true, ok:true, equal:true, notEqual:true, deepEqual:true*/
+/* globals $, _ */
+/* globals QUnit, test, asyncTest, expect, start, stop, ok, equal, notEqual, deepEqual */
 
-define([
-  'jquery',
-  'underscore',
-  'backbone',
-  'sinon',
-  'test/environment',
-  'test/EventLog',
-  'example/ExampleData',
-  'view/form/fields/Checkbox',
-  'example/model/Post'
-], function($, _, Backbone, sinon, Environment, EventLog, ExampleData, Checkbox, Post) {
+var Environment = require('test/environment');
+var Checkbox = require('view/form/fields/Checkbox');
+var Post = require('example/model/Post');
 
-
-  //use Environment to mock ajax
-  QUnit.module('Checkbox', _.extend(new Environment(), {
-    setup: function() {
-      Environment.prototype.setup.apply(this, arguments);
-    }
-  }));
-
-  function createView(options) {
-    options = options || {};
-    return new Checkbox(_.extend({
-      valueAttr: 'foo',
-      el: $('<div></div>'),
-    }, options));
+//use Environment to mock ajax
+QUnit.module('Checkbox', _.extend(new Environment(), {
+  setup: function() {
+    Environment.prototype.setup.apply(this, arguments);
   }
+}));
 
-  test('renders name', function() {
-    var field = createView();
-    field.render();
-    equal(field.getInputEl().attr('name'), field.valueAttr, 'renders name attribute');
-  });
+function createView(options) {
+  options = options || {};
+  return new Checkbox(_.extend({
+    valueAttr: 'foo',
+    el: $('<div></div>'),
+  }, options));
+}
 
-  test('clicking changes value', function(){
-    var field = createView();
-    field.render();
+test('renders name', function() {
+  var field = createView();
+  field.render();
+  equal(field.getInputEl().attr('name'), field.valueAttr, 'renders name attribute');
+});
 
-    field.getInputEl().attr('checked', 'true');
-    field.getInputEl().trigger('change');
-    equal(field.getValue(), true);
+test('clicking changes value', function(){
+  var field = createView();
+  field.render();
 
-    field.getInputEl().removeAttr('checked');
-    field.getInputEl().trigger('change');
-    equal(field.getValue(), false);
-  });
+  field.getInputEl().attr('checked', 'true');
+  field.getInputEl().trigger('change');
+  equal(field.getValue(), true);
 
-  test('renders correct state', function(){
-    var field = createView();
-    field.render();
-    ok(!field.getInputEl().is(':checked'));
+  field.getInputEl().removeAttr('checked');
+  field.getInputEl().trigger('change');
+  equal(field.getValue(), false);
+});
 
-    field.setValue(true);
-    field.render();
-    ok(field.getInputEl().is(':checked'));
-  });
+test('renders correct state', function(){
+  var field = createView();
+  field.render();
+  ok(!field.getInputEl().is(':checked'));
 
-  test('uses valueAttr value from model', function(){
-    var field = createView({valueAttr: 'foo'});
-    var model = new Post({foo: true});
-    field.setModel(model);
-    field.render();
+  field.setValue(true);
+  field.render();
+  ok(field.getInputEl().is(':checked'));
+});
 
-    ok(field.getInputEl().is(':checked'));
-    model.set('foo', false);
+test('uses valueAttr value from model', function(){
+  var field = createView({valueAttr: 'foo'});
+  var model = new Post({foo: true});
+  field.setModel(model);
+  field.render();
 
-    ok(!field.getInputEl().is(':checked'));
-  });
+  ok(field.getInputEl().is(':checked'));
+  model.set('foo', false);
 
-  test('checkedValue', function(){
-    var field = createView({valueAttr: 'foo', checkedValue: 1, uncheckedValue: 0});
+  ok(!field.getInputEl().is(':checked'));
+});
 
-    var model = new Post({foo: 1});
-    field.setModel(model);
-    field.render();
+test('checkedValue', function(){
+  var field = createView({valueAttr: 'foo', checkedValue: 1, uncheckedValue: 0});
 
-    ok(field.getInputEl().is(':checked'));
-    field.updateModel(model);
-    equal(model.get('foo'), 1, 'should set model to checked value');
+  var model = new Post({foo: 1});
+  field.setModel(model);
+  field.render();
 
-    field.getInputEl().removeAttr('checked').trigger('change');
-    field.updateModel(model);
-    equal(model.get('foo'), 0, 'should set model to unchecked value');
+  ok(field.getInputEl().is(':checked'));
+  field.updateModel(model);
+  equal(model.get('foo'), 1, 'should set model to checked value');
 
-    model.set('foo', 2);
-    ok(!field.getInputEl().is(':checked'), 'unknown value is unchecked');
-    model.set('foo', 1);
-    ok(field.getInputEl().is(':checked'));
+  field.getInputEl().removeAttr('checked').trigger('change');
+  field.updateModel(model);
+  equal(model.get('foo'), 0, 'should set model to unchecked value');
 
-  });
+  model.set('foo', 2);
+  ok(!field.getInputEl().is(':checked'), 'unknown value is unchecked');
+  model.set('foo', 1);
+  ok(field.getInputEl().is(':checked'));
 });
 
 

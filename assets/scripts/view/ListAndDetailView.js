@@ -1,59 +1,53 @@
-define([
-  'jquery',
-  'underscore',
-  'backbone',
-  'handlebars',
-  'PlumageRoot',
-  'view/ModelView',
-  'view/ListView'
-], function($, _, Backbone, Handlebars, Plumage, ModelView, ListView) {
+/* globals $, _ */
+var Plumage = require('PlumageRoot');
+var ModelView = require('view/ModelView');
+var ListView = require('view/ListView');
 
-  /**
-   * A selectable list and corresponding detail view.
-   */
-  return Plumage.view.ListAndDetailView = ModelView.extend({
+/**
+ * A selectable list and corresponding detail view.
+ */
+module.exports = Plumage.view.ListAndDetailView = ModelView.extend({
 
-    className: 'list-and-detail-view',
+  className: 'list-and-detail-view',
 
-    template: '<div class="list"></div><div class="detail"></div>',
+  template: '<div class="list"></div><div class="detail"></div>',
 
-    listOptions: {},
+  listOptions: {},
 
-    detailViewCls: undefined,
+  detailViewCls: undefined,
 
-    events: {
-      'click .select': 'onSelect'
-    },
+  events: {
+    'click .select': 'onSelect'
+  },
 
-    initialize:function(options) {
-      options = options || {};
-      this.subViews = [
-        this.listView = new ListView(_.extend({
-          selector: '.list',
-          className: 'list-view'
-        }, this.listOptions)),
-        this.detailView = this.createDetailView()
-      ].concat(options.subViews || []);
-      ModelView.prototype.initialize.apply(this, arguments);
+  initialize:function(options) {
+    options = options || {};
+    this.subViews = [
+      this.listView = new ListView(_.extend({
+        selector: '.list',
+        className: 'list-view'
+      }, this.listOptions)),
+      this.detailView = this.createDetailView()
+    ].concat(options.subViews || []);
+    ModelView.prototype.initialize.apply(this, arguments);
 
-      this.listView.on('selectionChange', this.onSelect.bind(this));
-    },
+    this.listView.on('selectionChange', this.onSelect.bind(this));
+  },
 
-    createDetailView: function() {
-      return new this.detailViewCls({selector: '.detail', replaceEl: true});
-    },
+  createDetailView: function() {
+    return new this.detailViewCls({selector: '.detail', replaceEl: true});
+  },
 
-    onRender: function(){
-      $(this.el).html(this.template());
-    },
+  onRender: function(){
+    $(this.el).html(this.template());
+  },
 
-    onSelect: function(selectedId) {
-      var selectedModel = this.listView.model.getById(selectedId);
-      this.detailView.setModel(selectedModel);
-    },
+  onSelect: function(selectedId) {
+    var selectedModel = this.listView.model.getById(selectedId);
+    this.detailView.setModel(selectedModel);
+  },
 
-    update: function() {
-      //do nothing
-    }
-  });
+  update: function() {
+    //do nothing
+  }
 });

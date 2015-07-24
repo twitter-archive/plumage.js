@@ -1,10 +1,7 @@
-define([
-  'PlumageRoot',
-  'collection/Collection',
-  'model/Comment'
-], function(Plumage, Collection, Comment) {
+var Plumage = require('PlumageRoot');
+var Collection = require('collection/Collection');
+var CommentModel = require('model/Comment');
 
-  return Plumage.collection.CommentCollection = Collection.extend({
-    model: Comment
-  });
+module.exports = Plumage.collection.CommentCollection = Collection.extend({
+  model: CommentModel
 });

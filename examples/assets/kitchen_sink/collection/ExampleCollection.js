@@ -1,14 +1,10 @@
-define([
-  'PlumageRoot',
-  'collection/Collection',
-  'kitchen_sink/model/Example'
-], function(Plumage, Collection, Example) {
+var Plumage = require('plumage');
+var Example = require('kitchen_sink/model/Example');
 
-  return Collection.extend({
-    model: Example,
+module.exports = Plumage.collection.Collection.extend({
+  model: Example,
 
-    url: function() {
-      return this.getRelated('parent').url();
-    }
-  });
+  url: function() {
+    return this.getRelated('parent').url();
+  }
 });

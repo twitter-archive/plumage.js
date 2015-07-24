@@ -1,41 +1,37 @@
-define([
-  'jquery',
-  'backbone',
-  'handlebars',
-  'PlumageRoot',
-  'view/form/fields/Field',
-  'view/form/fields/templates/SearchField.html'
-], function($, Backbone, Handlebars, Plumage, Field, template) {
+/* globals $, _ */
+var Plumage = require('PlumageRoot');
+var Field = require('view/form/fields/Field');
 
-  return Plumage.view.form.SearchField = Field.extend(
-  /** @lends Plumage.view.form.fields.SearchField.prototype */
-  {
-    template: template,
+var template = require('view/form/fields/templates/SearchField.html');
 
-    className: 'search-field',
+module.exports = Plumage.view.form.SearchField = Field.extend(
+/** @lends Plumage.view.form.fields.SearchField.prototype */
+{
+  template: template,
 
-    //need to add bootstrap search-query class
-    fieldTemplate: '<input type="text" class="search-query form-control" name="{{valueAttr}}" {{#placeholder}}placeholder="{{.}}"{{/placeholder}} value="{{value}}"/>',
+  className: 'search-field',
 
-    valueAttr: 'query',
+  //need to add bootstrap search-query class
+  fieldTemplate: '<input type="text" class="search-query form-control" name="{{valueAttr}}" {{#placeholder}}placeholder="{{.}}"{{/placeholder}} value="{{value}}"/>',
 
-    updateModelOnChange: true,
+  valueAttr: 'query',
 
-    events: {
-      'click button': 'onSubmitClick'
-    },
+  updateModelOnChange: true,
 
-    onKeyDown: function(e) {
-      if (e.keyCode === 13) { //on enter
-        e.preventDefault();
-        this.trigger('submit', this, this.getValue());
-      }
-    },
+  events: {
+    'click button': 'onSubmitClick'
+  },
 
-    onSubmitClick: function(e) {
+  onKeyDown: function(e) {
+    if (e.keyCode === 13) { //on enter
       e.preventDefault();
-      e.stopPropagation();
       this.trigger('submit', this, this.getValue());
     }
-  });
+  },
+
+  onSubmitClick: function(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    this.trigger('submit', this, this.getValue());
+  }
 });

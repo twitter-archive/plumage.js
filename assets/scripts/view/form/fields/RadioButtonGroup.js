@@ -1,28 +1,25 @@
-define([
-  'jquery',
-  'backbone',
-  'handlebars',
-  'PlumageRoot',
-  'view/form/fields/Radio',
-  'view/form/fields/templates/RadioButtonGroup.html'
-], function($, Backbone, Handlebars, Plumage, Radio, template) {
-  return Plumage.view.form.fields.RadioButtonGroup = Radio.extend({
+/* globals $, _ */
+var Plumage = require('PlumageRoot');
+var Radio = require('view/form/fields/Radio');
 
-    template: Handlebars.compile(template),
+var template = require('view/form/fields/templates/RadioButtonGroup.html');
 
-    events: {
-      'click button': 'onChange'
-    },
+module.exports = Plumage.view.form.fields.RadioButtonGroup = Radio.extend({
 
-    onChange: function(e) {
-      e.preventDefault();
-      e.stopPropagation();
+  template: template,
 
-      var newValue = $(e.target).data('value');
-      if (!this.changing) {
-        this.setValue(newValue, {silent: true});
-      }
-      this.trigger('change', this, this.getValue());
+  events: {
+    'click button': 'onChange'
+  },
+
+  onChange: function(e) {
+    e.preventDefault();
+    e.stopPropagation();
+
+    var newValue = $(e.target).data('value');
+    if (!this.changing) {
+      this.setValue(newValue, {silent: true});
     }
-  });
+    this.trigger('change', this, this.getValue());
+  }
 });

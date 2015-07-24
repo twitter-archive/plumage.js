@@ -1,114 +1,109 @@
-define([
-  'jquery',
-  'underscore',
-  'backbone',
-  'handlebars',
-  'PlumageRoot',
-  'view/form/Form',
-  'view/ModelView',
-  'view/form/fields/FilterField',
-  'view/form/fields/SearchField',
-  'view/menu/DropdownMenu',
-  'util/ModelUtil',
-  'view/grid/templates/FilterView.html'
-], function($, _, Backbone, Handlebars, Plumage, Form, ModelView, FilterField, SearchField,
-    DropdownMenu, ModelUtil, template) {
+/* globals $, _ */
 
-  /**
-   * Contains special fields defined declaratively that collectively affect a collection's filter meta attribute.
-   *
-   * Currently each field must be customized to update the filter in updateModel. Maybe this aspect could me
-   * moved down into FilterView.
-   */
-  return Plumage.view.grid.FilterView = Form.extend({
+var Plumage = require('PlumageRoot');
+var ModelView = require('view/ModelView');
+var Form = require('view/form/Form');
+var FilterField = require('view/form/fields/FilterField');
+var SearchField = require('view/form/fields/SearchField');
+var DropdownMenu = require('view/menu/DropdownMenu');
+var ModelUtil = require('util/ModelUtil');
 
-    className: 'form-inline filter-view',
+var template = require('view/grid/templates/FilterView.html');
 
-    template: Handlebars.compile(template),
+/**
+ * Contains special fields defined declaratively that collectively affect a collection's filter meta attribute.
+ *
+ * Currently each field must be customized to update the filter in updateModel. Maybe this aspect could me
+ * moved down into FilterView.
+ */
+module.exports = Plumage.view.grid.FilterView = Form.extend({
 
-    showSearch: true,
+  className: 'form-inline filter-view',
 
-    searchEmptyText: 'Search',
+  template: template,
 
-    filterConfigs: [],
+  showSearch: true,
 
-    defaultFieldCls: FilterField,
+  searchEmptyText: 'Search',
 
-    moreMenuItems: [{value: 'download', label: 'Download', icon: 'arrow-down'}],
+  filterConfigs: [],
 
-    initialize: function(options) {
-      var me = this;
+  defaultFieldCls: FilterField,
 
-      Form.prototype.initialize.apply(this, arguments);
-      options = options || {};
+  moreMenuItems: [{value: 'download', label: 'Download', icon: 'arrow-down'}],
 
-      this.filterFields = [];
-      this.subViews = _.clone(this.subViews) || [];
+  initialize: function(options) {
+    var me = this;
 
-      _.each(this.filterConfigs, function(config){
-        var filterConfig = _.extend({}, {
-          selector: '.filters',
-          className: 'filter-field',
-          relationship: this.relationship
-        }, config);
-        var fieldCls = config.fieldCls || this.defaultFieldCls;
-        var filter = new fieldCls(filterConfig);
-        this.subViews.push(filter);
-        this.filterFields.push(filter);
-      }, this);
+    Form.prototype.initialize.apply(this, arguments);
+    options = options || {};
 
-      if (this.showSearch) {
-        this.searchField = new SearchField({
-          selector: '.search',
-          noSelectionText: this.searchEmptyText,
-          modelAttr: 'query'
-        });
-        this.subViews.push(this.searchField);
+    this.filterFields = [];
+    this.subViews = _.clone(this.subViews) || [];
+
+    _.each(this.filterConfigs, function(config){
+      var filterConfig = _.extend({}, {
+        selector: '.filters',
+        className: 'filter-field',
+        relationship: this.relationship
+      }, config);
+      var fieldCls = config.fieldCls || this.defaultFieldCls;
+      var filter = new fieldCls(filterConfig);
+      this.subViews.push(filter);
+      this.filterFields.push(filter);
+    }, this);
+
+    if (this.showSearch) {
+      this.searchField = new SearchField({
+        selector: '.search',
+        noSelectionText: this.searchEmptyText,
+        modelAttr: 'query'
+      });
+      this.subViews.push(this.searchField);
+    }
+
+    this.subViews.push(this.moreMenu = new DropdownMenu({
+      selector: '.more-menu',
+      buttonStyle: true,
+      iconCls: 'cog',
+      label: '',
+      menuItems: this.moreMenuItems,
+      opens: 'left',
+      replaceEl: true
+    }));
+
+    this.subViews.concat(options.subViews || []);
+
+    _.each(this.filterFields, function(filterField){
+      if (filterField.listModelCls) {
+        var listModelParams = filterField.listModelParams || {};
+        var model = this.createFilterListModel(filterField.listModelCls, listModelParams);
+        filterField.setListModel(model);
       }
+    }, this);
+  },
 
-      this.subViews.push(this.moreMenu = new DropdownMenu({
-        selector: '.more-menu',
-        buttonStyle: true,
-        iconCls: 'cog',
-        label: '',
-        menuItems: this.moreMenuItems,
-        opens: 'left',
-        replaceEl: true
-      }));
+  getTemplateData: function() {
+    var data = Form.prototype.getTemplateData.apply(this, arguments);
+    data.hasFilters = this.filterConfigs.length > 0;
+    return data;
+  },
 
-      this.subViews.concat(options.subViews || []);
+  createFilterListModel: function(listModelCls, listModelParams) {
+    return new listModelCls(null, listModelParams);
+  },
 
-      _.each(this.filterFields, function(filterField){
-        if (filterField.listModelCls) {
-          var listModelParams = filterField.listModelParams || {};
-          var model = this.createFilterListModel(filterField.listModelCls, listModelParams);
-          filterField.setListModel(model);
-        }
-      }, this);
-    },
+  onRender: function() {
+    $(this.el).html(this.template({
+      searchQuery: ''
+    }));
+  },
 
-    getTemplateData: function() {
-      var data = Form.prototype.getTemplateData.apply(this, arguments);
-      data.hasFilters = this.filterConfigs.length > 0;
-      return data;
-    },
+  update: function(isLoad) {
+    //don't rerender nothing
+  },
 
-    createFilterListModel: function(listModelCls, listModelParams) {
-      return new listModelCls(null, listModelParams);
-    },
-
-    onRender: function() {
-      $(this.el).html(this.template({
-        searchQuery: ''
-      }));
-    },
-
-    update: function(isLoad) {
-      //don't rerender nothing
-    },
-
-    setModel: function() {
-      Plumage.view.ModelView.prototype.setModel.apply(this, arguments);
-    },
-  });
+  setModel: function() {
+    Plumage.view.ModelView.prototype.setModel.apply(this, arguments);
+  },
 });

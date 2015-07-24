@@ -1,12 +1,7 @@
-define([
-  'jquery',
-  'backbone',
-  'PlumageRoot',
-  'collection/Collection',
-  'model/User'
-], function($, Backbone, Plumage, Collection, User) {
+var Plumage = require('PlumageRoot');
+var Collection = require('collection/Collection');
+var User = require('model/User');
 
-  return Plumage.collection.UserCollection = Collection.extend({
-    model: User
-  });
+module.exports = Plumage.collection.UserCollection = Collection.extend({
+  model: User
 });

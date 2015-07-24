@@ -1,12 +1,10 @@
-define(['jquery', 'underscore', 'backbone', 'model/Model'],
-function($, _, Backbone, Model) {
+var Plumage = require('plumage');
 
-  return Model.extend({
+module.exports = Plumage.model.Model.extend({
 
-    modelName: 'Vacation',
+  modelName: 'Vacation',
 
-    urlRoot: '/vacations',
+  urlRoot: '/vacations',
 
-    queryAttrs: ['name']
-  });
+  queryAttrs: ['name']
 });

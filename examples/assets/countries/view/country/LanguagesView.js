@@ -1,20 +1,15 @@
-define([
-  'jquery',
-  'backbone',
-  'plumage'
-], function($, Backbone, Plumage) {
+var Plumage = require('plumage');
 
-  return Plumage.view.CollectionView.extend({
+module.exports = Plumage.view.CollectionView.extend({
 
-    template: '<h4>Languages</h4><ul class="items"></ul>',
+  template: '<h4>Languages</h4><ul class="items"></ul>',
 
-    itemViewCls: Plumage.view.ModelView,
-    itemOptions: {
-      template: 'Name: {{name}}'
-    },
+  itemViewCls: Plumage.view.ModelView,
+  itemOptions: {
+    template: 'Name: {{name}}'
+  },
 
-    initialize: function() {
-      Plumage.view.ModelView.prototype.initialize.apply(this, arguments);
-    }
-  });
+  initialize: function() {
+    Plumage.view.ModelView.prototype.initialize.apply(this, arguments);
+  }
 });

@@ -1,66 +1,63 @@
-define([
-  'jquery',
-  'backbone',
-  'handlebars',
-  'PlumageRoot',
-  'view/ModelView',
-  'view/menu/templates/DropdownMenu.html',
-  'bootstrap'
-], function($, Backbone, Handlebars, Plumage, ModelView, template) {
+/* globals $, _ */
 
-  return Plumage.view.menu.DropdownMenu = ModelView.extend({
-    template: template,
+var Plumage = require('PlumageRoot');
+var ModelView = require('view/ModelView');
 
-    className: 'dropdown',
+var template = require('view/menu/templates/DropdownMenu.html');
+require('bootstrap');
 
-    buttonStyle: false,
+module.exports = Plumage.view.menu.DropdownMenu = ModelView.extend({
+  template: template,
 
-    menuItems: [],
+  className: 'dropdown',
 
-    iconCls: undefined,
+  buttonStyle: false,
 
-    showCaret: true,
+  menuItems: [],
 
-    opens: 'right',
+  iconCls: undefined,
 
-    events: {
-      'click li a': 'onItemClick'
-    },
+  showCaret: true,
 
-    getTemplateData: function() {
-      return {
-        label: this.label,
-        iconCls: this.iconCls,
-        menuItems: this.getMenuItems(),
-        showCaret: this.showCaret,
-        buttonStyle: this.buttonStyle,
-        dropdownCls: this.opens === 'left' ? 'pull-right' : ''
-      };
-    },
+  opens: 'right',
 
-    setLabel: function(label) {
-      this.label = label;
-      this.render();
-    },
+  events: {
+    'click li a': 'onItemClick'
+  },
 
-    getMenuItems: function() {
-      return this.menuItems;
-    },
+  getTemplateData: function() {
+    return {
+      label: this.label,
+      iconCls: this.iconCls,
+      menuItems: this.getMenuItems(),
+      showCaret: this.showCaret,
+      buttonStyle: this.buttonStyle,
+      dropdownCls: this.opens === 'left' ? 'pull-right' : ''
+    };
+  },
 
-    /** Methods **/
+  setLabel: function(label) {
+    this.label = label;
+    this.render();
+  },
 
-    open: function() {
-      this.$el.addClass('open');
-    },
+  getMenuItems: function() {
+    return this.menuItems;
+  },
 
-    close: function() {
-      this.$el.removeClass('open');
-    },
+  /** Methods **/
 
-    /** Event Handlers **/
+  open: function() {
+    this.$el.addClass('open');
+  },
 
-    onItemClick: function(e) {
-      this.trigger('itemClick', this, $(e.target).data('value'));
-    }
-  });
+  close: function() {
+    this.$el.removeClass('open');
+  },
+
+  /** Event Handlers **/
+
+  onItemClick: function(e) {
+    this.trigger('itemClick', this, $(e.target).data('value'));
+  }
 });

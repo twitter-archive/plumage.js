@@ -1,26 +1,25 @@
-define(['jquery', 'underscore', 'backbone', 'model/Model', 'collection/DataCollection',
-        'example/collection/CommentCollection', 'example/model/User'],
-function($, _, Backbone, Model, DataCollection, CommentCollection, User) {
+var Model = require('model/Model');
+var CommentCollection = require('example/collection/CommentCollection');
+var DataCollection = require('collection/DataCollection');
+var User = require('example/model/User');
 
-  return Model.extend({
+module.exports = Model.extend({
+  modelName: 'Post',
 
-    modelName: 'Post',
+  urlRoot: '/posts',
 
-    urlRoot: '/posts',
+  queryAttrs: ['body'],
 
-    queryAttrs: ['body'],
-
-    relationships: {
-      'comments': {
-        modelCls: CommentCollection,
-        reverse: 'post'
-      },
-      'author': {
-        modelCls: User
-      },
-      'categories': {
-        modelCls: DataCollection
-      }
+  relationships: {
+    'comments': {
+      modelCls: CommentCollection,
+      reverse: 'post'
+    },
+    'author': {
+      modelCls: User
+    },
+    'categories': {
+      modelCls: DataCollection
     }
-  });
+  }
 });

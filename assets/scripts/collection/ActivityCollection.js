@@ -1,10 +1,7 @@
-define([
-  'PlumageRoot',
-  'collection/Collection',
-  'model/Activity'
-], function(Plumage, Collection, Activity) {
+var Plumage = require('PlumageRoot');
+var Collection = require('collection/Collection');
+var Activity = require('model/Activity');
 
-  return Plumage.collection.ActivityCollection = Collection.extend({
-    model: Activity
-  });
+module.exports = Plumage.collection.ActivityCollection = Collection.extend({
+  model: Activity
 });

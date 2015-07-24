@@ -1,18 +1,15 @@
-define([
-  'jquery',
-  'underscore',
-  'plumage',
-  'kitchen_sink/view/example/BaseExample',
-  'kitchen_sink/view/example/model/templates/Models.html'
-], function($, _, Plumage, BaseExample, template) {
+/* global $, _ */
+var Plumage = require('plumage');
+var BaseExample = require('kitchen_sink/view/example/BaseExample');
 
-  return BaseExample.extend({
+var template = require('kitchen_sink/view/example/model/templates/Models.html');
 
-    template: template,
+module.exports = BaseExample.extend({
 
-    initialize:function(options) {
-      options = options || {};
-      BaseExample.prototype.initialize.apply(this, arguments);
-    }
-  });
+  template: template,
+
+  initialize:function(options) {
+    options = options || {};
+    BaseExample.prototype.initialize.apply(this, arguments);
+  }
 });

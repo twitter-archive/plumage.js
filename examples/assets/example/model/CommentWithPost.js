@@ -1,27 +1,27 @@
-define(['jquery', 'underscore', 'backbone', 'model/Model', 'model/User', 'example/model/Post'],
-function($, _, Backbone, Model, User, Post) {
+var Model = require('model/Model');
+var User = require('example/model/User');
+var Post = require('example/model/Post');
 
-  return Model.extend({
+module.exports = Model.extend({
 
-    urlRoot: '/comments',
+  urlRoot: '/comments',
 
-    modelName: 'Comment',
+  modelName: 'Comment',
 
-    relationships: {
-      'user': {
-        modelCls: User
-      },
-
-      //test circular relationship
-      'post': {
-        modelCls: Post
-      }
+  relationships: {
+    'user': {
+      modelCls: User
     },
 
-    validate: function(attrs, options) {
-      if (!attrs.body || attrs.body.length <= 3) {
-        return 'Comment is too short';
-      }
+    //test circular relationship
+    'post': {
+      modelCls: Post
     }
-  });
+  },
+
+  validate: function(attrs, options) {
+    if (!attrs.body || attrs.body.length <= 3) {
+      return 'Comment is too short';
+    }
+  }
 });

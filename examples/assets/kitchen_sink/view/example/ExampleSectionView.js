@@ -1,122 +1,117 @@
-define([
-  'jquery',
-  'underscore',
-  'backbone',
-  'handlebars',
-  'plumage',
-  'kitchen_sink/view/example/ExampleWithSourceView',
-  'kitchen_sink/view/example/templates/ExampleSectionView.html',
-  'jquery.scrollTo'
-], function($, _, Backbone, Handlebars, Plumage, ExampleWithSourceView, template) {
+/* global $, _ */
+var Plumage = require('plumage');
+var ExampleWithSourceView = require('kitchen_sink/view/example/ExampleWithSourceView');
 
-  return Plumage.view.ModelView.extend({
-    className: 'example-section-view',
+var template = require('kitchen_sink/view/example/templates/ExampleSectionView.html');
+require('jquery.scrollTo');
 
-    template: template,
+module.exports = Plumage.view.ModelView.extend({
+  className: 'example-section-view',
 
-    events: {
-      'scroll': 'onScroll'
-    },
+  template: template,
 
-    subViews: [{
-      viewCls: Plumage.view.ListView,
-      name: 'navListView',
-      selector: '.example-list',
-      relationship: 'examples',
-      selectionAttr: 'example',
-      itemOptions: {template: '{{title}} <span class="glyphicon glyphicon-chevron-right"></span>'}
-    }, {
-      viewCls: Plumage.view.CollectionView,
-      name: 'examplesView',
-      selector: '.examples',
-      relationship: 'examples',
-      itemViewCls: ExampleWithSourceView
-    }],
+  events: {
+    'scroll': 'onScroll'
+  },
 
-    initialize:function(options) {
-      Plumage.view.ModelView.prototype.initialize.apply(this, arguments);
+  subViews: [{
+    viewCls: Plumage.view.ListView,
+    name: 'navListView',
+    selector: '.example-list',
+    relationship: 'examples',
+    selectionAttr: 'example',
+    itemOptions: {template: '{{title}} <span class="glyphicon glyphicon-chevron-right"></span>'}
+  }, {
+    viewCls: Plumage.view.CollectionView,
+    name: 'examplesView',
+    selector: '.examples',
+    relationship: 'examples',
+    itemViewCls: ExampleWithSourceView
+  }],
 
-      this.getSubView('examplesView').on('itemRender', this.onItemRender.bind(this));
-    },
+  initialize:function(options) {
+    Plumage.view.ModelView.prototype.initialize.apply(this, arguments);
 
-    /**
-     * overrides
-     */
+    this.getSubView('examplesView').on('itemRender', this.onItemRender.bind(this));
+  },
 
-    onRender: function() {
-      Plumage.view.ModelView.prototype.onRender.apply(this, arguments);
-    },
+  /**
+   * overrides
+   */
 
-    setModel: function(rootModel) {
-      Plumage.view.ModelView.prototype.setModel.apply(this, arguments);
-      this.currentExample = this.model.get('example');
-      this.getSubView('navListView').setSelectionModel(this.model);
-      this.updateSelected();
-      this.$el.scrollTop(0);
-    },
+  onRender: function() {
+    Plumage.view.ModelView.prototype.onRender.apply(this, arguments);
+  },
 
-    update: function() {
-      // do nothing
-    },
+  setModel: function(rootModel) {
+    Plumage.view.ModelView.prototype.setModel.apply(this, arguments);
+    this.currentExample = this.model.get('example');
+    this.getSubView('navListView').setSelectionModel(this.model);
+    this.updateSelected();
+    this.$el.scrollTop(0);
+  },
 
-    /**
-     * Helpers
-     */
+  update: function() {
+    // do nothing
+  },
 
-    updateScroll: function() {
-      var exampleId = this.model.get('example');
-      if (exampleId) {
-        var itemView = this.getSubView('examplesView').getItemView(exampleId);
-        if (itemView) {
-          this.scrolling = true;
-          this.$el.scrollTo(itemView.el);
-          this.scrolling = false;
-        }
+  /**
+   * Helpers
+   */
+
+  updateScroll: function() {
+    var exampleId = this.model.get('example');
+    if (exampleId) {
+      var itemView = this.getSubView('examplesView').getItemView(exampleId);
+      if (itemView) {
+        this.scrolling = true;
+        this.$el.scrollTo(itemView.el);
+        this.scrolling = false;
       }
-    },
+    }
+  },
 
-    updateSelected: function() {
-      if (this.scrolling) {
-        return;
+  updateSelected: function() {
+    if (this.scrolling) {
+      return;
+    }
+    var scrollTop = this.$el.scrollTop(),
+      top = this.$el.offset().top,
+      height = this.$el.height(),
+      scrollHeight = this.$el[0].scrollHeight,
+      maxScroll = scrollHeight - height;
+
+    var examplesView = this.getSubView('examplesView');
+    for ( var i = 0; i < examplesView.itemViews.length; i++) {
+      var itemView = examplesView.itemViews[i];
+      if (itemView.$el.offset().top + itemView.$el.height() - top > height/2) {
+        this.currentExample = itemView.model.get('name');
+        this.model.set('example', this.currentExample);
+        itemView.model.updateUrl();
+        break;
       }
-      var scrollTop = this.$el.scrollTop(),
-        top = this.$el.offset().top,
-        height = this.$el.height(),
-        scrollHeight = this.$el[0].scrollHeight,
-        maxScroll = scrollHeight - height;
+    }
+  },
 
-      var examplesView = this.getSubView('examplesView');
-      for ( var i = 0; i < examplesView.itemViews.length; i++) {
-        var itemView = examplesView.itemViews[i];
-        if (itemView.$el.offset().top + itemView.$el.height() - top > height/2) {
-          this.currentExample = itemView.model.get('name');
-          this.model.set('example', this.currentExample);
-          itemView.model.updateUrl();
-          break;
-        }
+  /**
+   * Event Handlers
+   */
+
+  onScroll: function(event) {
+    this.updateSelected();
+  },
+
+  onModelChange: function(event) {
+    if (event.changed.example !== undefined) {
+      var exampleName = this.model.get('example');
+      if (this.currentExample !== exampleName) {
+        this.currentExample = exampleName;
+        this.updateScroll();
       }
-    },
+    }
+  },
 
-    /**
-     * Event Handlers
-     */
-
-    onScroll: function(event) {
-      this.updateSelected();
-    },
-
-    onModelChange: function(event) {
-      if (event.changed.example !== undefined) {
-        var exampleName = this.model.get('example');
-        if (this.currentExample !== exampleName) {
-          this.currentExample = exampleName;
-          this.updateScroll();
-        }
-      }
-    },
-
-    onItemRender: _.debounce(function() {
-      this.updateScroll();
-    }, 300)
-  });
+  onItemRender: _.debounce(function() {
+    this.updateScroll();
+  }, 300)
 });

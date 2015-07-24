@@ -1,11 +1,5 @@
-define([
-  'jquery',
-  'backbone',
-  'handlebars',
-  'view/ModelView'
-], function($, Backbone, Handlebars, ModelView) {
+var ModelView = require('view/ModelView');
 
-  return ModelView.extend({
-    onRender: function(){}
-  });
+module.exports = ModelView.extend({
+  onRender: function(){}
 });

@@ -1,78 +1,73 @@
-define([
-  'jquery',
-  'underscore',
-  'backbone',
-  'handlebars',
-  'PlumageRoot',
-  'view/form/fields/MultiSelect',
-  'view/form/fields/templates/DropdownMultiSelect.html'
-], function($, _, Backbone, Handlebars, Plumage, MultiSelect, template) {
-  /**
-   * Like a normal field, except value is an array of selected values.
-   */
-  return Plumage.view.form.fields.DropdownMultiSelect = MultiSelect.extend({
+/* globals $, _ */
+var moment = require('moment');
+var Plumage = require('PlumageRoot');
+var ModelView = require('view/ModelView');
+var MultiSelect = require('view/form/fields/MultiSelect');
+var template = require('view/form/fields/templates/DropdownMultiSelect.html');
 
-    template: template,
+/**
+ * Like a normal field, except value is an array of selected values.
+ */
+module.exports = Plumage.view.form.fields.DropdownMultiSelect = MultiSelect.extend({
 
-    showSelectOnly: true,
+  template: template,
 
-    events:{
-      'click li a': 'onItemClick',
-      'click li input': 'onItemClick',
-      'click li.select-all a': 'onSelectAllClick',
-      'click li.select-all input': 'onSelectAllClick',
-      'click .dropdown-toggle': 'onToggleClick'
-    },
+  showSelectOnly: true,
 
-    initialize: function() {
-      this.value = [];
-      MultiSelect.prototype.initialize.apply(this, arguments);
-    },
+  events:{
+    'click li a': 'onItemClick',
+    'click li input': 'onItemClick',
+    'click li.select-all a': 'onSelectAllClick',
+    'click li.select-all input': 'onSelectAllClick',
+    'click .dropdown-toggle': 'onToggleClick'
+  },
 
-    /** overrides **/
+  initialize: function() {
+    this.value = [];
+    MultiSelect.prototype.initialize.apply(this, arguments);
+  },
 
-    getTemplateData: function() {
-      var data = MultiSelect.prototype.getTemplateData.apply(this, arguments);
-      data.showSelectOnly = this.showSelectOnly;
-      return data;
-    },
+  /** overrides **/
 
-    onRender: function() {
-      MultiSelect.prototype.onRender.apply(this, arguments);
-    },
+  getTemplateData: function() {
+    var data = MultiSelect.prototype.getTemplateData.apply(this, arguments);
+    data.showSelectOnly = this.showSelectOnly;
+    return data;
+  },
 
-    update: function(isLoad) {
-      var open = this.$('.dropdown').hasClass('open');
-      this.render();
-      if (open) {
-        this.$('.dropdown').addClass('open');
-      }
-    },
+  onRender: function() {
+    MultiSelect.prototype.onRender.apply(this, arguments);
+  },
 
-    /** Event Handlers **/
+  update: function(isLoad) {
+    var open = this.$('.dropdown').hasClass('open');
+    this.render();
+    if (open) {
+      this.$('.dropdown').addClass('open');
+    }
+  },
 
-    onItemClick: function(e) {
+  /** Event Handlers **/
 
-      var li = $(e.target).closest('li'),
-        value = li && li.data('value');
+  onItemClick: function(e) {
 
-      if (value !== undefined) {
-        e.preventDefault();
-        e.stopPropagation();
-        if ($(e.target).hasClass('only-link')) {
-          this.setValue(value);
-        } else {
-          this.toggleValue(value);
-        }
-      }
-    },
+    var li = $(e.target).closest('li'),
+      value = li && li.data('value');
 
-    onSelectAllClick: function (e) {
+    if (value !== undefined) {
       e.preventDefault();
       e.stopPropagation();
-      this.toggleSelectAll();
+      if ($(e.target).hasClass('only-link')) {
+        this.setValue(value);
+      } else {
+        this.toggleValue(value);
+      }
     }
-  });
+  },
 
-
+  onSelectAllClick: function (e) {
+    e.preventDefault();
+    e.stopPropagation();
+    this.toggleSelectAll();
+  }
 });

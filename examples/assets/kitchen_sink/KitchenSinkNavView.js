@@ -1,41 +1,36 @@
-define([
-  'jquery',
-  'backbone',
-  'handlebars',
-  'plumage',
-  'bootstrap'
-], function($, Backbone, Handlebars, Plumage) {
+/* globals $, _ */
 
-  return Plumage.view.NavView.extend({
+var Plumage = require('plumage');
 
-    title: 'PlumageJS',
-    titleUrl: '/plumage.js',
-    subtitle: 'Kitchen Sink Example',
+module.exports = Plumage.view.NavView.extend({
 
-    userMenuItems: undefined,
+  title: 'PlumageJS',
+  titleUrl: '/plumage.js',
+  subtitle: 'Kitchen Sink Example',
 
-    showSearch: true,
+  userMenuItems: undefined,
 
-    aboutUrl: '#',
+  showSearch: true,
 
-    helpUrl: '#',
+  aboutUrl: '#',
 
-    navItems: [
-      {id: 'grid', label: 'Models', url: 'model', className: 'model-menu'},
-      {id: 'grid', label: 'Views', url: 'view', className: 'view-menu'},
-      {id: 'grid', label: 'Grids', url: 'grid', className: 'grid-menu'},
-      {id: 'form', label: 'Forms', url: 'form', className: 'form-menu'},
-    ],
+  helpUrl: '#',
 
-    onNavClick: function(e) {
-      var a = $(e.target), li = $(a.parent());
-      e.preventDefault();
+  navItems: [
+    {id: 'grid', label: 'Models', url: 'model', className: 'model-menu'},
+    {id: 'grid', label: 'Views', url: 'view', className: 'view-menu'},
+    {id: 'grid', label: 'Grids', url: 'grid', className: 'grid-menu'},
+    {id: 'form', label: 'Forms', url: 'form', className: 'form-menu'},
+  ],
 
-      window.router.navigate(a.attr('href'), {trigger:true});
-    },
+  onNavClick: function(e) {
+    var a = $(e.target), li = $(a.parent());
+    e.preventDefault();
 
-    onLinkClick: function(e) {
-      //do nothing to allow out link
-    }
-  });
+    window.router.navigate(a.attr('href'), {trigger:true});
+  },
+
+  onLinkClick: function(e) {
+    //do nothing to allow out link
+  }
 });

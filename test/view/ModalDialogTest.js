@@ -1,50 +1,41 @@
-/*global QUnit:true, module:true, test:true, asyncTest:true, expect:true*/
-/*global start:true, stop:true, ok:true, equal:true, notEqual:true, deepEqual:true*/
+/* globals $, _ */
+/* globals QUnit, test, asyncTest, expect, start, stop, ok, equal, notEqual, deepEqual */
 
-define([
-  'jquery',
-  'underscore',
-  'backbone',
-  'sinon',
-  'test/environment',
-  'test/EventLog',
-  'example/ExampleData',
-  'view/View',
-  'view/ModalDialog'
-], function($, _, Backbone, sinon, Environment, EventLog, ExampleData, View, ModalDialog) {
+var Environment = require('test/environment');
 
+var View = require('view/View');
+var ModalDialog = require('view/ModalDialog');
 
-  //use Environment to mock ajax
-  QUnit.module('ModalDialog', _.extend(new Environment(), {
-    setup: function() {
-      Environment.prototype.setup.apply(this, arguments);
-    }
-  }));
-
-  function createView(options) {
-    options = options || {};
-    return new ModalDialog(_.extend({
-      className: 'test-dialog',
-      contentView: new View()
-    }, options));
+//use Environment to mock ajax
+QUnit.module('ModalDialog', _.extend(new Environment(), {
+  setup: function() {
+    Environment.prototype.setup.apply(this, arguments);
   }
+}));
 
-  test('render adds to dom', function(){
-    var view = createView();
-    view.render();
-    ok(view.$el.closest('html').length > 0, 'should have been added to DOM');
+function createView(options) {
+  options = options || {};
+  return new ModalDialog(_.extend({
+    className: 'test-dialog',
+    contentView: new View()
+  }, options));
+}
 
-    view.render();
-    equal($('.test-dialog').length, 1, 'should be added to DOM once');
+test('render adds to dom', function(){
+  var view = createView();
+  view.render();
+  ok(view.$el.closest('html').length > 0, 'should have been added to DOM');
 
-    view.remove();
-    equal($('.test-dialog').length, 0, 'should remove');
-  });
+  view.render();
+  equal($('.test-dialog').length, 1, 'should be added to DOM once');
 
-  test('show and hide', function(){
-    var view = createView();
-    view.show();
-    ok(view.$el.closest('html').length > 0, 'should have been added to DOM');
-    view.remove();
-  });
+  view.remove();
+  equal($('.test-dialog').length, 0, 'should remove');
+});
+
+test('show and hide', function(){
+  var view = createView();
+  view.show();
+  ok(view.$el.closest('html').length > 0, 'should have been added to DOM');
+  view.remove();
 });

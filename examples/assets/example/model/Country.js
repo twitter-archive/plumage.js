@@ -1,28 +1,22 @@
-define([
-  'jquery',
-  'underscore',
-  'backbone',
-  'plumage',
-  'example/model/City'
-], function($, _, Backbone, Plumage, City) {
+var Plumage = require('plumage');
+var City = require('example/model/City');
 
-  return Plumage.model.Model.extend({
-    idAttribute: 'name',
+module.exports = Plumage.model.Model.extend({
+  idAttribute: 'name',
 
-    urlIdAttribute: 'name',
+  urlIdAttribute: 'name',
 
-    urlRoot: '/',
+  urlRoot: '/',
 
-    queryAttrs: ['name', 'region'],
+  queryAttrs: ['name', 'region'],
 
-    relationships: {
-      'capital': {
-        modelCls: City,
-        reverse: 'parent'
-      },
-      'language': {
-        modelCls: Plumage.collection.DataCollection
-      }
+  relationships: {
+    'capital': {
+      modelCls: City,
+      reverse: 'parent'
+    },
+    'language': {
+      modelCls: Plumage.collection.DataCollection
     }
-  });
+  }
 });

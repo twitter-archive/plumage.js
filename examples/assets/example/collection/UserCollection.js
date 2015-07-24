@@ -1,15 +1,13 @@
-define([
-  'collection/Collection',
-  'example/model/User'
-], function(Collection, User) {
+var Collection = require('collection/Collection');
 
-  return Collection.extend({
-    modelName: 'UserCollection',
+var User = require('example/model/User');
 
-    urlRoot: User.prototype.urlRoot,
-    model: User,
+module.exports = Collection.extend({
+  modelName: 'UserCollection',
 
-    sortField: 'name',
-    sortDir: '1',
-  });
+  urlRoot: User.prototype.urlRoot,
+  model: User,
+
+  sortField: 'name',
+  sortDir: '1'
 });

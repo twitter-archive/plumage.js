@@ -3,11 +3,11 @@
   "version": "0.0.0",
   "description": "Show off your data with Plumage JS. Build data intensive web apps.",
   "main": "assets/scripts/plumage.js",
-  "directories": {
-  },
+  "directories": {},
   "dependencies": {
     "backbone": "1.1.2",
     "bootstrap-sass": "^3.3.5",
+    "cookies-js": "^1.2.1",
     "dropzone": "^4.0.1",
     "handlebars": "^3.0.3",
     "jquery": "^1.11.3",

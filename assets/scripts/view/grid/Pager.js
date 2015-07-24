@@ -1,65 +1,62 @@
-define([
-  'jquery',
-  'underscore',
-  'backbone',
-  'PlumageRoot',
-  'view/ModelView',
-  'view/grid/templates/Pager.html'
-], function($, _, Backbone, Plumage, ModelView, template) {
+/* globals $, _ */
 
-  return Plumage.view.grid.Pager = ModelView.extend({
+var Plumage = require('PlumageRoot');
+var ModelView = require('view/ModelView');
 
-    className: 'pager',
+var template = require('view/grid/templates/Pager.html');
 
-    template: template,
+module.exports = Plumage.view.grid.Pager = ModelView.extend({
 
-    events: {
-      'click .pager .previous a': 'onPreviousClick',
-      'click .pager .next a': 'onNextClick',
-    },
+  className: 'pager',
 
-    getTemplateData: function() {
-      return {
-        atFirstPage: this.atFirstPage(),
-        atLastPage: this.atLastPage()
-      };
-    },
+  template: template,
 
-    atFirstPage: function() {
-      if (this.model) {
-        return this.model.get('page') === 0;
-      }
-      return false;
-    },
+  events: {
+    'click .pager .previous a': 'onPreviousClick',
+    'click .pager .next a': 'onNextClick',
+  },
 
-    atLastPage: function() {
-      if (this.model && this.model.size) {
-        return this.model.size() < this.model.get('pageSize');
-      }
-      return false;
-    },
+  getTemplateData: function() {
+    return {
+      atFirstPage: this.atFirstPage(),
+      atLastPage: this.atLastPage()
+    };
+  },
 
-    onPreviousClick: function(e) {
-      e.preventDefault();
-      e.stopPropagation();
-      if (!this.atFirstPage()) {
-        var page = this.model.get('page');
-        this.model.set('page', Math.max(page-1, 0));
-        this.model.load();
-      }
-    },
-
-    onNextClick: function(e) {
-      e.preventDefault();
-      e.stopPropagation();
-      var page = this.model.get('page'),
-        pageSize = this.model.get('pageSize'),
-        atLastPage = this.model.size() < pageSize;
-
-      if (!this.atLastPage()) {
-        this.model.set('page', page+1);
-        this.model.load();
-      }
+  atFirstPage: function() {
+    if (this.model) {
+      return this.model.get('page') === 0;
     }
-  });
+    return false;
+  },
+
+  atLastPage: function() {
+    if (this.model && this.model.size) {
+      return this.model.size() < this.model.get('pageSize');
+    }
+    return false;
+  },
+
+  onPreviousClick: function(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!this.atFirstPage()) {
+      var page = this.model.get('page');
+      this.model.set('page', Math.max(page-1, 0));
+      this.model.load();
+    }
+  },
+
+  onNextClick: function(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    var page = this.model.get('page'),
+      pageSize = this.model.get('pageSize'),
+      atLastPage = this.model.size() < pageSize;
+
+    if (!this.atLastPage()) {
+      this.model.set('page', page+1);
+      this.model.load();
+    }
+  }
 });

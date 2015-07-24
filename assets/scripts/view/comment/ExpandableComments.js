@@ -1,51 +1,49 @@
-define([
-  'jquery',
-  'backbone',
-  'handlebars',
-  'PlumageRoot',
-  'view/ModelView',
-  'view/comment/CommentView',
-  'view/comment/templates/ExpandableComments.html'
-], function($, Backbone, Handlebars, Plumage, ModelView, CommentView, template) {
+/* globals $, _ */
 
-  return Plumage.view.comment.ExpandableComments = ModelView.extend({
+var moment = require('moment');
+var Plumage = require('PlumageRoot');
+var ModelView = require('view/ModelView');
+var CommentView = require('view/comment/CommentView');
 
-    template: Handlebars.compile(template),
+var template = require('view/comment/templates/ExpandableComments.html');
 
-    itemViewCls: CommentView,
+module.exports = Plumage.view.comment.ExpandableComments = ModelView.extend({
 
-    events: {
-      'click .comments-action': 'onActionClick'
-    },
+  template: template,
 
-    getTemplateData: function() {
-      return {
-        comments: ModelView.prototype.getTemplateData.apply(this, arguments),
-        actionLabel: this.getActionLabel()
-      };
-    },
+  itemViewCls: CommentView,
 
-    getActionLabel: function() {
-      var size = this.model.size();
-      if (size === 0) {
-        return 'comment';
-      } else if (size === 1) {
-        return '1 comment';
-      } else {
-        return this.model.size() + ' comments';
-      }
-    },
+  events: {
+    'click .comments-action': 'onActionClick'
+  },
 
-    onActionClick: function() {
-      var el = this.$('.comment-wrapper');
-      if (el.hasClass('hidden')) {
-        el.removeClass('hidden');
-        el.find('.comment-text').focus();
-        window.setTimeout(function() { el.addClass('open'); }, 50);
-      } else {
-        el.removeClass('open');
-        window.setTimeout(function() { el.addClass('hidden'); }, 200);
-      }
+  getTemplateData: function() {
+    return {
+      comments: ModelView.prototype.getTemplateData.apply(this, arguments),
+      actionLabel: this.getActionLabel()
+    };
+  },
+
+  getActionLabel: function() {
+    var size = this.model.size();
+    if (size === 0) {
+      return 'comment';
+    } else if (size === 1) {
+      return '1 comment';
+    } else {
+      return this.model.size() + ' comments';
     }
-  });
+  },
+
+  onActionClick: function() {
+    var el = this.$('.comment-wrapper');
+    if (el.hasClass('hidden')) {
+      el.removeClass('hidden');
+      el.find('.comment-text').focus();
+      window.setTimeout(function() { el.addClass('open'); }, 50);
+    } else {
+      el.removeClass('open');
+      window.setTimeout(function() { el.addClass('hidden'); }, 200);
+    }
+  }
 });

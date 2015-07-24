@@ -1,27 +1,22 @@
-define([
-  'jquery',
-  'backbone',
-  'plumage',
-  'countries/view/country/templates/CityDetail.html'
-], function($, Backbone, Plumage, template) {
+var Plumage = require('plumage');
+var template = require('countries/view/country/templates/CityDetail.html');
 
-  return Plumage.view.ModelView.extend({
+module.exports = Plumage.view.ModelView.extend({
 
-    className: 'city-detail',
+  className: 'city-detail',
 
-    template: template,
+  template: template,
 
-    renderOnChange: true,
+  renderOnChange: true,
 
-    renderOnLoad: true,
+  renderOnLoad: true,
 
-    initialize: function() {
-      Plumage.view.ModelView.prototype.initialize.apply(this, arguments);
-      this.subViews = [
-        new Plumage.view.DisplayField({label: 'Population', valueAttr: 'population', selector: '.fields', relationship: this.relationship}),
-        new Plumage.view.DisplayField({label: 'Latitude', valueAttr: 'latitude', selector: '.fields', relationship: this.relationship}),
-        new Plumage.view.DisplayField({label: 'Longitude', valueAttr: 'longitude', selector: '.fields', relationship: this.relationship})
-      ];
-    }
-  });
+  initialize: function() {
+    Plumage.view.ModelView.prototype.initialize.apply(this, arguments);
+    this.subViews = [
+      new Plumage.view.DisplayField({label: 'Population', valueAttr: 'population', selector: '.fields', relationship: this.relationship}),
+      new Plumage.view.DisplayField({label: 'Latitude', valueAttr: 'latitude', selector: '.fields', relationship: this.relationship}),
+      new Plumage.view.DisplayField({label: 'Longitude', valueAttr: 'longitude', selector: '.fields', relationship: this.relationship})
+    ];
+  }
 });

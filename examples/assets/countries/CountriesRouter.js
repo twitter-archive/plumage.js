@@ -1,11 +1,9 @@
-define(['jquery', 'underscore', 'backbone', 'plumage'],
-function($, _, Backbone, Plumage) {
+var Plumage = require('plumage');
 
-  return Plumage.Router.extend({
+module.exports = Plumage.Router.extend({
 
-    controllerRoutes: [
-      ['', {controller: 'countryController', method: 'showIndex'}],
-      [':id', {controller: 'countryController', method: 'showDetail'}]
-    ]
-  });
+  controllerRoutes: [
+    ['', {controller: 'countryController', method: 'showIndex'}],
+    [':id', {controller: 'countryController', method: 'showDetail'}]
+  ]
 });

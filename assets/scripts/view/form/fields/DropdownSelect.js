@@ -1,72 +1,66 @@
-define([
-  'jquery',
-  'underscore',
-  'backbone',
-  'handlebars',
-  'PlumageRoot',
-  'view/form/fields/Select',
-  'view/form/fields/templates/DropdownSelect.html',
-  'bootstrap'
-], function($, _, Backbone, Handlebars, Plumage, Select, template) {
+/* globals $, _ */
+var moment = require('moment');
+var Plumage = require('PlumageRoot');
+var Select = require('view/form/fields/Select');
+var template = require('view/form/fields/templates/DropdownSelect.html');
 
-  return Plumage.view.form.fields.DropdownSelect = Select.extend({
+module.exports = Plumage.view.form.fields.DropdownSelect = Select.extend({
 
-    template: template,
+  template: template,
 
-    modelAttr: 'filter',
+  modelAttr: 'filter',
 
-    noSelectionText: 'Click to select',
+  noSelectionText: 'Click to select',
 
-    noSelectionValue: '',
+  noSelectionValue: '',
 
-    buttonCls: 'btn-default',
+  buttonCls: 'btn-default',
 
-    iconCls: undefined,
+  iconCls: undefined,
 
-    opens: 'right',
+  opens: 'right',
 
-    preventFocus: false,
+  preventFocus: false,
 
 
-    events:{
-      'click li a': 'onItemClick',
-      'click .dropdown-toggle': 'onToggleClick'
-    },
+  events:{
+    'click li a': 'onItemClick',
+    'click .dropdown-toggle': 'onToggleClick'
+  },
 
-    initialize: function() {
-      Select.prototype.initialize.apply(this, arguments);
-    },
+  initialize: function() {
+    Select.prototype.initialize.apply(this, arguments);
+  },
 
-    onRender: function() {
-      Select.prototype.onRender.apply(this, arguments);
-    },
+  onRender: function() {
+    Select.prototype.onRender.apply(this, arguments);
+  },
 
-    getTemplateData: function() {
-      var data = Select.prototype.getTemplateData.apply(this, arguments);
-      data = _.extend(data, {
-        buttonCls: this.buttonCls,
-        iconCls: this.iconCls,
-        opens: this.opens
-      });
-      return data;
-    },
+  getTemplateData: function() {
+    var data = Select.prototype.getTemplateData.apply(this, arguments);
+    data = _.extend(data, {
+      buttonCls: this.buttonCls,
+      iconCls: this.iconCls,
+      opens: this.opens
+    });
+    return data;
+  },
 
-    onToggleClick: function(e) {
-      if (this.preventFocus) {
-        e.preventDefault();
-        e.stopPropagation();
-        this.$('.dropdown').toggleClass('open');
-      }
-    },
-
-    onItemClick: function(e) {
+  onToggleClick: function(e) {
+    if (this.preventFocus) {
       e.preventDefault();
       e.stopPropagation();
-      var li = $(e.target).closest('li'),
-        value = li && li.data('value');
-
-      this.$el.removeClass('open');
-      this.setValue(value);
+      this.$('.dropdown').toggleClass('open');
     }
-  });
+  },
+
+  onItemClick: function(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    var li = $(e.target).closest('li'),
+      value = li && li.data('value');
+
+    this.$el.removeClass('open');
+    this.setValue(value);
+  }
 });

@@ -1,25 +1,20 @@
-define([
-  'jquery',
-  'backbone',
-  'handlebars',
-  'PlumageRoot',
-  'view/form/fields/CategorySelect',
-  'view/form/fields/templates/ButtonGroupSelect.html'
-], function($, Backbone, Handlebars, Plumage, CategorySelect, template) {
+var Plumage = require('PlumageRoot');
+var CategorySelect = require('view/form/fields/CategorySelect');
 
-  return Plumage.view.form.fields.ButtonGroupSelect = CategorySelect.extend({
+var template = require('view/form/templates/FileDropZone.html');
 
-    className: 'button-group-select',
+module.exports = Plumage.view.form.fields.ButtonGroupSelect = CategorySelect.extend({
 
-    template: Handlebars.compile(template),
+  className: 'button-group-select',
 
-    events:{
-      'click li': 'onItemClick'
-    },
+  template: template,
 
-    initialize: function() {
-      CategorySelect.prototype.initialize.apply(this, arguments);
-      this.$el.data('toggle', 'buttons-radio');
-    }
-  });
+  events:{
+    'click li': 'onItemClick'
+  },
+
+  initialize: function() {
+    CategorySelect.prototype.initialize.apply(this, arguments);
+    this.$el.data('toggle', 'buttons-radio');
+  }
 });

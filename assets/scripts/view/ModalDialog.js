@@ -1,87 +1,83 @@
-define([
-  'jquery',
-  'underscore',
-  'backbone',
-  'handlebars',
-  'PlumageRoot',
-  'view/ModelView',
-  'view/templates/ModalDialog.html',
-  'bootstrap'
-], function($, _, Backbone, Handlebars, Plumage, ModelView, template) {
+/* globals $, _ */
+var Handlebars = require('handlebars');
+var Plumage = require('PlumageRoot');
+var ModelView = require('view/ModelView');
+require('bootstrap');
 
-  return Plumage.view.ModalDialog = ModelView.extend({
+var template = require('view/templates/ModalDialog.html');
 
-    template: template,
+module.exports = Plumage.view.ModalDialog = ModelView.extend({
 
-    contentView: undefined,
+  template: template,
 
-    headerTemplate: '',
+  contentView: undefined,
 
-    showCancel: false,
+  headerTemplate: '',
 
-    showSubmit: false,
+  showCancel: false,
 
-    modalOptions: {
-      show:false
-    },
+  showSubmit: false,
 
-    events: {
-      'click .submit': 'onSubmitClick'
-    },
+  modalOptions: {
+    show:false
+  },
 
-    initialize: function(options) {
-      options = options || {};
-      options.modalOptions = _.extend(this.modalOptions, options.modalOptions || {});
-      if (this.contentView) {
-        this.subViews = [this.contentView].concat(options.subViews || []);
-        this.contentView.selector = '.modal-content';
-        this.contentView.name = 'contentView';
-      }
+  events: {
+    'click .submit': 'onSubmitClick'
+  },
 
-      ModelView.prototype.initialize.apply(this, arguments);
-
-      if (this.contentView) {
-        this.contentView = this.getSubView('contentView');
-      }
-    },
-
-    onRender: function() {
-      Handlebars.registerPartial('header', this.headerTemplate);
-      ModelView.prototype.onRender.apply(this, arguments);
-      if (this.$el.closest('html').length === 0) {
-        $('body').append(this.$el);
-        this.$('.modal').modal(this.modalOptions);
-      }
-    },
-
-    getTemplateData: function() {
-      var data = ModelView.prototype.getTemplateData.apply(this, arguments);
-      return _.extend(data,{
-        header: this.header,
-        showCancel: this.showCancel,
-        showSubmit: this.showSubmit,
-        canSubmit: this.canSubmit()
-      });
-    },
-
-    show: function() {
-      this.render();
-      this.$('.modal').modal('show');
-      ModelView.prototype.onShow.apply(this, arguments);
-    },
-
-    hide: function() {
-      this.$('.modal').modal('hide');
-      ModelView.prototype.onHide.apply(this, arguments);
-    },
-
-    canSubmit: function(model) {
-      return true;
-    },
-
-    onSubmitClick: function() {
-      this.trigger('submit', this);
+  initialize: function(options) {
+    options = options || {};
+    options.modalOptions = _.extend(this.modalOptions, options.modalOptions || {});
+    if (this.contentView) {
+      this.subViews = [this.contentView].concat(options.subViews || []);
+      this.contentView.selector = '.modal-content';
+      this.contentView.name = 'contentView';
     }
-  });
+
+    ModelView.prototype.initialize.apply(this, arguments);
+
+    if (this.contentView) {
+      this.contentView = this.getSubView('contentView');
+    }
+  },
+
+  onRender: function() {
+    Handlebars.registerPartial('header', this.headerTemplate);
+    ModelView.prototype.onRender.apply(this, arguments);
+    if (this.$el.closest('html').length === 0) {
+      $('body').append(this.$el);
+      this.$('.modal').modal(this.modalOptions);
+    }
+  },
+
+  getTemplateData: function() {
+    var data = ModelView.prototype.getTemplateData.apply(this, arguments);
+    return _.extend(data,{
+      header: this.header,
+      showCancel: this.showCancel,
+      showSubmit: this.showSubmit,
+      canSubmit: this.canSubmit()
+    });
+  },
+
+  show: function() {
+    this.render();
+    this.$('.modal').modal('show');
+    ModelView.prototype.onShow.apply(this, arguments);
+  },
+
+  hide: function() {
+    this.$('.modal').modal('hide');
+    ModelView.prototype.onHide.apply(this, arguments);
+  },
+
+  canSubmit: function(model) {
+    return true;
+  },
+
+  onSubmitClick: function() {
+    this.trigger('submit', this);
+  }
 });
 

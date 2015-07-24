@@ -1,12 +1,11 @@
-define(['jquery', 'underscore', 'backbone', 'model/Model', 'model/Data'],
-function($, _, Backbone, Model, Data) {
+var Model = require('model/Model');
+var Data = require('model/Data');
 
-  return Model.extend({
-    urlRoot: '/users',
-    relationships: {
-      company: {
-        modelCls: Data
-      }
+module.exports = Model.extend({
+  urlRoot: '/users',
+  relationships: {
+    company: {
+      modelCls: Data
     }
-  });
+  }
 });

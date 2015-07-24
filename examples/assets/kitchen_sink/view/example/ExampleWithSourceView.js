@@ -1,40 +1,35 @@
-define([
-  'jquery',
-  'underscore',
-  'backbone',
-  'handlebars',
-  'plumage',
-  'kitchen_sink/view/example/ExampleView',
-  'kitchen_sink/view/example/SourceView',
-  'kitchen_sink/view/example/templates/ExampleWithSourceView.html'
-], function($, _, Backbone, Handlebars, Plumage, ExampleView, SourceView, template) {
+/* global $, _ */
+var Plumage = require('plumage');
+var ExampleView = require('kitchen_sink/view/example/ExampleView');
+var SourceView = require('kitchen_sink/view/example/SourceView');
 
-  return Plumage.view.ModelView.extend({
-    className: 'example-with-source',
+var template = require('kitchen_sink/view/example/templates/ExampleWithSourceView.html');
 
-    template: template,
+module.exports = Plumage.view.ModelView.extend({
+  className: 'example-with-source',
 
-    initialize: function() {
-      this.subViews = [
-        new Plumage.view.TabView({
-          selector: '.example-tabs',
-          className: 'tab-view tab-theme',
-          subViews: [
-            new ExampleView({tabId: 'page', tabLabel: 'Page'}),
-            new SourceView({tabId: 'source', tabLabel: 'Source', sourceType: 'js', suffix: 'js'}),
-            new SourceView({tabId: 'html', tabLabel: 'HTML', sourceType: 'html', suffix: 'html'})
-          ]
-        })
-      ];
+  template: template,
 
-      Plumage.view.ModelView.prototype.initialize.apply(this, arguments);
-    },
+  initialize: function() {
+    this.subViews = [
+      new Plumage.view.TabView({
+        selector: '.example-tabs',
+        className: 'tab-view tab-theme',
+        subViews: [
+          new ExampleView({tabId: 'page', tabLabel: 'Page'}),
+          new SourceView({tabId: 'source', tabLabel: 'Source', sourceType: 'js', suffix: 'js'}),
+          new SourceView({tabId: 'html', tabLabel: 'HTML', sourceType: 'html', suffix: 'html'})
+        ]
+      })
+    ];
 
-    onRender: function() {
-      if (this.model) {
-        var name = this.model.get('name');
-        Plumage.view.ModelView.prototype.onRender.apply(this, arguments);
-      }
+    Plumage.view.ModelView.prototype.initialize.apply(this, arguments);
+  },
+
+  onRender: function() {
+    if (this.model) {
+      var name = this.model.get('name');
+      Plumage.view.ModelView.prototype.onRender.apply(this, arguments);
     }
-  });
+  }
 });

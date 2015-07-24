@@ -1,149 +1,142 @@
-/*global QUnit:true, module:true, test:true, asyncTest:true, expect:true*/
-/*global start:true, stop:true, ok:true, equal:true, notEqual:true, deepEqual:true*/
+/* globals $, _ */
+/* globals QUnit, test, asyncTest, expect, start, stop, ok, equal, notEqual, deepEqual */
 
-define([
-  'jquery',
-  'underscore',
-  'backbone',
-  'sinon',
-  'test/environment',
-  'test/EventLog',
-  'example/ExampleData',
-  'example/model/Post',
-  'view/form/fields/Field'
-], function($, _, Backbone, sinon, Environment, EventLog, ExampleData, Post, Field) {
+var moment = require('moment');
+var Environment = require('test/environment');
+var ExampleData = require('example/ExampleData');
 
+var Field = require('view/form/fields/Field');
 
-  //use Environment to mock ajax
-  QUnit.module('Field', _.extend(new Environment(), {
-    setup: function() {
-      Environment.prototype.setup.apply(this, arguments);
-    }
-  }));
+var Post = require('example/model/Post');
 
-  function createView(options) {
-    options = options || {};
-    return new Field(_.extend({
-      el: $('<div></div>')
-    }, options));
+//use Environment to mock ajax
+QUnit.module('Field', _.extend(new Environment(), {
+  setup: function() {
+    Environment.prototype.setup.apply(this, arguments);
   }
+}));
 
-  function createViewWithModel(options) {
-    var view = createView(options),
-      model = new Post({id: 1, body: 'foo'});
+function createView(options) {
+  options = options || {};
+  return new Field(_.extend({
+    el: $('<div></div>')
+  }, options));
+}
 
-    view.setModel(model);
-    view.render();
+function createViewWithModel(options) {
+  var view = createView(options),
+    model = new Post({id: 1, body: 'foo'});
 
-    return view;
-  }
+  view.setModel(model);
+  view.render();
 
-  test('unbound field', function(){
-    var field = createView();
+  return view;
+}
 
-    field.render();
-    equal(field.getValue(), '', 'field with no model should have empty string value');
+test('unbound field', function(){
+  var field = createView();
 
-    ok(!field.hasValue(), 'unbound field should not hasValue');
-  });
+  field.render();
+  equal(field.getValue(), '', 'field with no model should have empty string value');
 
-  test('field with model', function() {
-    var field = createViewWithModel({label: 'field', valueAttr: 'body'}),
-      model = field.model;
+  ok(!field.hasValue(), 'unbound field should not hasValue');
+});
 
-    equal(field.getValue(), 'foo');
+test('field with model', function() {
+  var field = createViewWithModel({label: 'field', valueAttr: 'body'}),
+    model = field.model;
 
-    field.model.set('body', 'bar');
-    equal(field.getValue(), 'bar');
+  equal(field.getValue(), 'foo');
 
-    this.ajaxResponse = {results: ExampleData.POST_DATA};
-    field.model.load();
+  field.model.set('body', 'bar');
+  equal(field.getValue(), 'bar');
 
-    equal(field.getValue(), model.get('body'));
-  });
+  this.ajaxResponse = {results: ExampleData.POST_DATA};
+  field.model.load();
 
-  test('update model', function() {
-    var field = createViewWithModel({label: 'field', valueAttr: 'body'}),
-      model = field.model;
+  equal(field.getValue(), model.get('body'));
+});
 
-    field.setValue('new value');
-    equal(model.get('body'), 'foo', 'model value should not change on field change');
+test('update model', function() {
+  var field = createViewWithModel({label: 'field', valueAttr: 'body'}),
+    model = field.model;
 
-    field.updateModel(model);
-    equal(model.get('body'), 'new value', 'model value should change on update model');
+  field.setValue('new value');
+  equal(model.get('body'), 'foo', 'model value should not change on field change');
 
-    field = createView({valueAttr: 'body', updateModelOnChange: true});
-    field.setModel(model);
-    field.setValue('new value2');
-    equal(model.get('body'), 'new value2', 'model value should update on change when using updateModelOnChange');
-  });
+  field.updateModel(model);
+  equal(model.get('body'), 'new value', 'model value should change on update model');
 
-  test('disabled', function() {
-    var field = createViewWithModel({label: 'field', valueAttr: 'body'}),
-      model = field.model;
+  field = createView({valueAttr: 'body', updateModelOnChange: true});
+  field.setModel(model);
+  field.setValue('new value2');
+  equal(model.get('body'), 'new value2', 'model value should update on change when using updateModelOnChange');
+});
 
-    field.setValue('new value');
-    field.disabled = true;
-    field.updateModel(model);
-    ok(model.get('body') === null, 'disabled field should set null model value');
-  });
+test('disabled', function() {
+  var field = createViewWithModel({label: 'field', valueAttr: 'body'}),
+    model = field.model;
 
-  test('validation error', function() {
-    var field = createViewWithModel({label: 'field', valueAttr: 'body'}),
-      model = field.model;
+  field.setValue('new value');
+  field.disabled = true;
+  field.updateModel(model);
+  ok(model.get('body') === null, 'disabled field should set null model value');
+});
 
-    model.trigger('invalid', model, {body: 'message'});
-    equal(field.validationState, 'error', 'should set validation state to error');
-    var data = field.getTemplateData();
+test('validation error', function() {
+  var field = createViewWithModel({label: 'field', valueAttr: 'body'}),
+    model = field.model;
 
-    equal(data.validationState, 'error', 'should render validation state');
-    equal(data.message, 'message', 'should render message');
-  });
+  model.trigger('invalid', model, {body: 'message'});
+  equal(field.validationState, 'error', 'should set validation state to error');
+  var data = field.getTemplateData();
 
-  test('ignore error when not for this field', function() {
-    var field = createViewWithModel({label: 'field', valueAttr: 'body'}),
-      model = field.model;
+  equal(data.validationState, 'error', 'should render validation state');
+  equal(data.message, 'message', 'should render message');
+});
 
-    model.trigger('invalid', model, {subject: 'message'});
-    equal(field.validationState, undefined, 'should ignore error for other field');
-  });
+test('ignore error when not for this field', function() {
+  var field = createViewWithModel({label: 'field', valueAttr: 'body'}),
+    model = field.model;
 
-  test('reset validation state', function() {
-    var field = createViewWithModel({label: 'field', valueAttr: 'body'}),
-      model = field.model;
+  model.trigger('invalid', model, {subject: 'message'});
+  equal(field.validationState, undefined, 'should ignore error for other field');
+});
 
-    model.trigger('invalid', model, {body: 'message'});
-    model.trigger('load', model);
+test('reset validation state', function() {
+  var field = createViewWithModel({label: 'field', valueAttr: 'body'}),
+    model = field.model;
 
-    equal(field.validationState, undefined, 'should reset validation state on load');
-  });
+  model.trigger('invalid', model, {body: 'message'});
+  model.trigger('load', model);
 
-  test('validate', function() {
-    var field = createView({label: 'field', valueAttr: 'body', validationRules: 'required'});
-    field.validate();
-    equal(field.validationState, 'error', 'should fail validation');
-    equal(field.message, field.validationMessages.required);
+  equal(field.validationState, undefined, 'should reset validation state on load');
+});
 
-    field = createView({label: 'field', valueAttr: 'body', validationRules: {required: true, minLength: 2}});
-    field.validate();
-    equal(field.validationState, 'error', 'should fail validation');
-    equal(field.message, field.validationMessages.required);
+test('validate', function() {
+  var field = createView({label: 'field', valueAttr: 'body', validationRules: 'required'});
+  field.validate();
+  equal(field.validationState, 'error', 'should fail validation');
+  equal(field.message, field.validationMessages.required);
 
-    field.setValue('a');
-    field.validate();
-    equal(field.message, field.validationMessages.minLength.replace('{{param0}}', 2));
+  field = createView({label: 'field', valueAttr: 'body', validationRules: {required: true, minLength: 2}});
+  field.validate();
+  equal(field.validationState, 'error', 'should fail validation');
+  equal(field.message, field.validationMessages.required);
 
-    field = createView({label: 'field', valueAttr: 'body', validationRules: 'number'});
-    equal(field.validate(), true, 'should validate blank as 0');
-    field.setValue('1.0');
-    equal(field.validate(), true, 'should be valid for number');
-    field.setValue('a1', false, 'should be invalid for letters');
-  });
+  field.setValue('a');
+  field.validate();
+  equal(field.message, field.validationMessages.minLength.replace('{{param0}}', 2));
 
-  test('options.validationMessages is merged', function() {
-    var field = createView({validationMessages: {maxValue: 'foo'}});
-    equal(field.validationMessages.maxValue, 'foo');
-    equal(field.validationMessages.required, Field.prototype.validationMessages.required);
-  });
+  field = createView({label: 'field', valueAttr: 'body', validationRules: 'number'});
+  equal(field.validate(), true, 'should validate blank as 0');
+  field.setValue('1.0');
+  equal(field.validate(), true, 'should be valid for number');
+  field.setValue('a1', false, 'should be invalid for letters');
+});
 
+test('options.validationMessages is merged', function() {
+  var field = createView({validationMessages: {maxValue: 'foo'}});
+  equal(field.validationMessages.maxValue, 'foo');
+  equal(field.validationMessages.required, Field.prototype.validationMessages.required);
 });

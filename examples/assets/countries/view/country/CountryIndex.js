@@ -1,17 +1,12 @@
-define([
-  'jquery',
-  'backbone',
-  'plumage',
-  'countries/view/country/CountryGrid',
-  'countries/view/country/CountryFilterView',
-  'countries/view/country/templates/CountryIndex.html'
-], function($, Backbone, Plumage, CountryGrid, CountryFilterView, template) {
+var Plumage = require('plumage');
+var CountryGrid = require('countries/view/country/CountryGrid');
+var CountryFilterView = require('countries/view/country/CountryFilterView');
 
-  return Plumage.view.controller.IndexView.extend({
+var template = require('countries/view/country/templates/CountryIndex.html');
 
-    template: template,
+module.exports = Plumage.view.controller.IndexView.extend({
+  template: template,
 
-    gridViewCls: CountryGrid,
-    filterViewCls: CountryFilterView
-  });
+  gridViewCls: CountryGrid,
+  filterViewCls: CountryFilterView
 });

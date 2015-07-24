@@ -1,49 +1,46 @@
-define([ 'jquery', 'underscore', 'backbone',
-  'PlumageRoot', 'view/View'
-], function($, _, Backbone, Plumage,
-  View
-) {
+/* globals $, _ */
 
-  var ViewBuilder = function() {
-    this.initialize.apply(this, arguments);
-  };
+var Backbone = require('backbone');
+var Plumage = require('PlumageRoot');
+var View = require('view/View');
 
-  _.extend(ViewBuilder.prototype,
-  /** @lends Plumage.ViewBuilder.prototype */
-  {
-    defaultViewCls: undefined,
-    defaultViewOptions: undefined,
+var ViewBuilder = function() {
+  this.initialize.apply(this, arguments);
+};
 
-    initialize: function(options) {
-      options = options || {};
-      _.extend(this, options);
-    },
+_.extend(ViewBuilder.prototype,
+/** @lends Plumage.ViewBuilder.prototype */
+{
+  defaultViewCls: undefined,
+  defaultViewOptions: undefined,
 
-    buildView: function(config, defaultViewCls, defaultViewOptions) {
-      if (config instanceof View) {
-        return config;
-      }
+  initialize: function(options) {
+    options = options || {};
+    _.extend(this, options);
+  },
 
-      defaultViewCls = defaultViewCls || View;
-      defaultViewOptions = defaultViewOptions || {};
+  buildView: function(config, defaultViewCls, defaultViewOptions) {
+    if (config instanceof View) {
+      return config;
+    }
 
-      config = _.extend({}, defaultViewOptions, config);
+    defaultViewCls = defaultViewCls || View;
+    defaultViewOptions = defaultViewOptions || {};
 
-      var viewCls = config.viewCls || defaultViewCls;
-      if (viewCls === undefined) {
-        throw 'No view class';
-      }
-      delete config.viewCls;
+    config = _.extend({}, defaultViewOptions, config);
 
-      var view = new viewCls(config);
+    var viewCls = config.viewCls || defaultViewCls;
+    if (viewCls === undefined) {
+      throw 'No view class';
+    }
+    delete config.viewCls;
 
-      return view;
-    },
+    var view = new viewCls(config);
 
-
-  });
-
-
-  return Plumage.ViewBuilder = ViewBuilder;
+    return view;
+  }
 });
+
+
+module.exports = Plumage.ViewBuilder = ViewBuilder;
 

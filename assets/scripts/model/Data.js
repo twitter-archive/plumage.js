@@ -1,7 +1,7 @@
-define(['jquery', 'underscore', 'backbone', 'PlumageRoot', 'model/Model'],
-function($, _, Backbone, Plumage, Model) {
+/* globals $, _ */
+var Plumage = require('PlumageRoot');
+var Model = require('model/Model');
 
-  return Plumage.model.Data = Model.extend({
-    idAttribute: 'name'
-  });
+module.exports =  Plumage.model.Data = Model.extend({
+  idAttribute: 'name'
 });

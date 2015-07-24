@@ -1,45 +1,38 @@
-define([
-  'jquery',
-  'underscore',
-  'backbone',
-  'handlebars',
-  'plumage',
-  'example/ExampleData',
-  'example/model/Post',
-  'kitchen_sink/view/example/form/templates/MultiSelectFields.html'
-], function($, _, Backbone, Handlebars, Plumage, ExampleData, Post, template) {
+var Plumage = require('plumage');
+var ExampleData = require('example/ExampleData');
+var Post = require('example/model/Post');
+var template = require('kitchen_sink/view/example/form/templates/MultiSelectFields.html');
 
-  return Plumage.view.ModelView.extend({
+module.exports = Plumage.view.ModelView.extend({
 
-    template: template,
+  template: template,
 
-    modelCls: Post,
+  modelCls: Post,
 
-    subViews: [{
-      selector: '.multiselect',
-      viewCls: Plumage.view.form.fields.MultiSelect
-    }, {
-      selector: '.dropdown-multiselect',
-      viewCls: Plumage.view.form.fields.DropdownMultiSelect
-    }, {
-      selector: '.dropdown-multiselect2',
-      viewCls: Plumage.view.form.fields.DropdownMultiSelect,
-      showSelectAll: true
-    }],
+  subViews: [{
+    selector: '.multiselect',
+    viewCls: Plumage.view.form.fields.MultiSelect
+  }, {
+    selector: '.dropdown-multiselect',
+    viewCls: Plumage.view.form.fields.DropdownMultiSelect
+  }, {
+    selector: '.dropdown-multiselect2',
+    viewCls: Plumage.view.form.fields.DropdownMultiSelect,
+    showSelectAll: true
+  }],
 
-    defaultSubViewOptions: {
-      updateModelOnChange: true,
-      valueAttr: 'category',
-      listValueAttr: 'name',
-      listLabelAttr: 'label',
-      listRelationship: 'categories',
-      noSelectionText: 'Select something'
-    },
+  defaultSubViewOptions: {
+    updateModelOnChange: true,
+    valueAttr: 'category',
+    listValueAttr: 'name',
+    listLabelAttr: 'label',
+    listRelationship: 'categories',
+    noSelectionText: 'Select something'
+  },
 
-    initialize:function(options) {
-      Plumage.view.ModelView.prototype.initialize.apply(this, arguments);
-      var model = new Post(ExampleData.POST_WITH_CATEGORIES);
-      this.setModel(model);
-    }
-  });
+  initialize:function(options) {
+    Plumage.view.ModelView.prototype.initialize.apply(this, arguments);
+    var model = new Post(ExampleData.POST_WITH_CATEGORIES);
+    this.setModel(model);
+  }
 });

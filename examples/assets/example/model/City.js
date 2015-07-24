@@ -1,12 +1,6 @@
-define([
-  'jquery',
-  'underscore',
-  'backbone',
-  'plumage',
-], function($, _, Backbone, Plumage) {
+var Plumage = require('plumage');
 
-  return Plumage.model.Model.extend({
-    urlRoot: '/cities',
-    urlIdAttribute: 'name'
-  });
+module.exports = Plumage.model.Model.extend({
+  urlRoot: '/cities',
+  urlIdAttribute: 'name'
 });

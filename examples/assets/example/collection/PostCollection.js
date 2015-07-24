@@ -1,15 +1,12 @@
-define([
-  'collection/Collection',
-  'example/model/Post'
-], function(Collection, Post) {
+var Collection = require('collection/Collection');
+var Post = require('example/model/Post');
 
-  return Collection.extend({
-    modelName: 'PostCollection',
+module.exports = Collection.extend({
+  modelName: 'PostCollection',
 
-    urlRoot: Post.prototype.urlRoot,
-    model: Post,
+  urlRoot: Post.prototype.urlRoot,
+  model: Post,
 
-    sortField: 'body',
-    sortDir: '-1',
-  });
+  sortField: 'body',
+  sortDir: '-1'
 });

@@ -1,55 +1,52 @@
-define([
-  'jquery',
-  'backbone',
-  'handlebars',
-  'PlumageRoot',
-  'view/form/fields/Select',
-  'view/form/fields/templates/CategorySelect.html'
-], function($, Backbone, Handlebars, Plumage, Select, template) {
+/* globals $, _ */
+var Plumage = require('PlumageRoot');
+var Field = require('view/form/fields/Field');
+var Select = require('view/form/fields/Select');
 
-  return Plumage.view.form.fields.CategorySelect = Select.extend({
+var template = require('view/form/fields/templates/CategorySelect.html');
 
-    className: 'category-select field',
+module.exports = Plumage.view.form.fields.CategorySelect = Select.extend({
 
-    template: Handlebars.compile(template),
+  className: 'category-select field',
 
-    listValueAttr: 'name',
-    listLabelAttr: 'label',
-    modelAttr: 'filter',
+  template: template,
 
-    noSelectionText: 'All',
+  listValueAttr: 'name',
+  listLabelAttr: 'label',
+  modelAttr: 'filter',
 
-    noSelectionValue: '',
+  noSelectionText: 'All',
 
-    events:{
-      'click a': 'onItemClick'
-    },
+  noSelectionValue: '',
 
-    initialize: function() {
-      Select.prototype.initialize.apply(this, arguments);
-    },
+  events:{
+    'click a': 'onItemClick'
+  },
 
-    setModel: function() {
-      Select.prototype.setModel.apply(this, arguments);
-    },
+  initialize: function() {
+    Select.prototype.initialize.apply(this, arguments);
+  },
 
-    /**
-     * Overrides
-     */
-    onListModelLoad: function(model, options) {
-      this.render();
-    },
+  setModel: function() {
+    Select.prototype.setModel.apply(this, arguments);
+  },
 
-    onItemClick: function(e) {
-      e.preventDefault();
-      var li = $(e.target).closest('li'),
-        value = li && li.data('value');
+  /**
+   * Overrides
+   */
+  onListModelLoad: function(model, options) {
+    this.render();
+  },
 
-      this.setValue(value);
-    },
+  onItemClick: function(e) {
+    e.preventDefault();
+    var li = $(e.target).closest('li'),
+      value = li && li.data('value');
 
-    getItemData: function(item) {
-      return Select.prototype.getItemData.apply(this, arguments);
-    }
-  });
+    this.setValue(value);
+  },
+
+  getItemData: function(item) {
+    return Select.prototype.getItemData.apply(this, arguments);
+  }
 });

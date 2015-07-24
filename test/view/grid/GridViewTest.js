@@ -1,139 +1,132 @@
-/*global QUnit:true, module:true, test:true, asyncTest:true, expect:true*/
-/*global start:true, stop:true, ok:true, equal:true, notEqual:true, deepEqual:true*/
+/* globals $, _ */
+/* globals QUnit, test, asyncTest, expect, start, stop, ok, equal, notEqual, deepEqual */
 
-define([
-  'jquery',
-  'underscore',
-  'backbone',
-  'sinon',
-  'test/environment',
-  'test/EventLog',
-  'example/ExampleData',
-  'view/grid/GridView',
-  'example/collection/PostCollection'
-], function($, _, Backbone, sinon, Environment, EventLog, ExampleData, GridView, PostCollection) {
+var sinon = require('sinon');
+var Environment = require('test/environment');
+var EventLog = require('test/EventLog');
+var ExampleData = require('example/ExampleData');
 
+var GridView = require('view/grid/GridView');
+var PostCollection = require('example/collection/PostCollection');
 
-  //use Environment to mock ajax
-  QUnit.module('GridView', _.extend(new Environment(), {
-    setup: function() {
-      Environment.prototype.setup.apply(this, arguments);
-    }
-  }));
-
-  function createModel() {
-    return new PostCollection(ExampleData.POSTS);
+//use Environment to mock ajax
+QUnit.module('GridView', _.extend(new Environment(), {
+  setup: function() {
+    Environment.prototype.setup.apply(this, arguments);
   }
+}));
 
-  function createView(options) {
-    options = options || {};
-    return new GridView(_.extend({
-      el: $('<div></div>'),
-      columns: [
-        {id: 'index',  width: 30, cssClass: 'index'},
-        {id: 'body', name: 'username', field: 'username', sortable: true},
-        {id: 'date', name: 'date', field: 'date', sortable: true}
-      ]
-    }, options));
-  }
+function createModel() {
+  return new PostCollection(ExampleData.POSTS);
+}
 
-  test('grid life cycle (not infinite scroll)', function(){
-    var gridView = createView({infiniteScroll: false});
-    var grid = gridView.grid;
-    sinon.spy(grid, 'init');
+function createView(options) {
+  options = options || {};
+  return new GridView(_.extend({
+    el: $('<div></div>'),
+    columns: [
+      {id: 'index',  width: 30, cssClass: 'index'},
+      {id: 'body', name: 'username', field: 'username', sortable: true},
+      {id: 'date', name: 'date', field: 'date', sortable: true}
+    ]
+  }, options));
+}
 
-    gridView.setModel(createModel());
+test('grid life cycle (not infinite scroll)', function(){
+  var gridView = createView({infiniteScroll: false});
+  var grid = gridView.grid;
+  sinon.spy(grid, 'init');
 
-    //render
-    gridView.render();
+  gridView.setModel(createModel());
 
-    ok(gridView.gridEl.hasClass('grid'), 'should have rendered grid el');
-    ok(grid.init.notCalled, 'slickgrid can not handle having init called outside the dom');
+  //render
+  gridView.render();
 
-    //show
-    gridView.onShow();
-    ok(grid.init.calledOnce, 'should call init on show');
+  ok(gridView.gridEl.hasClass('grid'), 'should have rendered grid el');
+  ok(grid.init.notCalled, 'slickgrid can not handle having init called outside the dom');
 
-    gridView.onShow();
-    ok(grid.init.calledOnce, 'only call init on first show');
+  //show
+  gridView.onShow();
+  ok(grid.init.calledOnce, 'should call init on show');
 
-    //model load
-    sinon.spy(grid, 'invalidate');
-    gridView.model.trigger('load', {data: {sortField: 'body', sortDir: '1'}});
-    ok(grid.invalidate.calledOnce, 'non-infinite scroll should invalidate on load');
-  });
+  gridView.onShow();
+  ok(grid.init.calledOnce, 'only call init on first show');
 
-  test('grid life cycle (infinite scroll)', function(){
-    var gridView = createView({infiniteScroll: true});
-    var grid = gridView.grid;
+  //model load
+  sinon.spy(grid, 'invalidate');
+  gridView.model.trigger('load', {data: {sortField: 'body', sortDir: '1'}});
+  ok(grid.invalidate.calledOnce, 'non-infinite scroll should invalidate on load');
+});
 
-    var model = new PostCollection([], {meta: {pageSize: 1}});
-    gridView.setModel(model);
+test('grid life cycle (infinite scroll)', function(){
+  var gridView = createView({infiniteScroll: true});
+  var grid = gridView.grid;
 
-    //render
-    gridView.render();
+  var model = new PostCollection([], {meta: {pageSize: 1}});
+  gridView.setModel(model);
 
-    //show
-    gridView.onShow();
+  //render
+  gridView.render();
 
-    //model load
-    sinon.spy(grid, 'invalidate');
-    sinon.spy(grid, 'invalidateRow');
+  //show
+  gridView.onShow();
 
-    this.ajaxResponse = {results: [ExampleData.POSTS[0]], meta: {total: 4}};
-    grid.getData().ensureData(0, 0);
-    ok(grid.invalidate.notCalled, 'infinite scroll should not invalidate the entire grid');
-    ok(grid.invalidateRow.calledOnce, 'should invalidate loaded rows');
+  //model load
+  sinon.spy(grid, 'invalidate');
+  sinon.spy(grid, 'invalidateRow');
 
-    this.ajaxResponse = {results: [ExampleData.POSTS[1]], meta: {total: 4}};
-    grid.getData().ensureData(1, 1);
-    ok(grid.invalidateRow.calledTwice, 'should invalidate loaded rows');
-  });
+  this.ajaxResponse = {results: [ExampleData.POSTS[0]], meta: {total: 4}};
+  grid.getData().ensureData(0, 0);
+  ok(grid.invalidate.notCalled, 'infinite scroll should not invalidate the entire grid');
+  ok(grid.invalidateRow.calledOnce, 'should invalidate loaded rows');
 
-  test('shows no data message (not infinite scroll)', function(){
-    var gridView = createView({infiniteScroll: false});
-    var grid = gridView.grid;
-    var model =  new PostCollection([]);
-    gridView.setModel(model);
-    gridView.render();
+  this.ajaxResponse = {results: [ExampleData.POSTS[1]], meta: {total: 4}};
+  grid.getData().ensureData(1, 1);
+  ok(grid.invalidateRow.calledTwice, 'should invalidate loaded rows');
+});
 
-    model.onLoad();
+test('shows no data message (not infinite scroll)', function(){
+  var gridView = createView({infiniteScroll: false});
+  var grid = gridView.grid;
+  var model =  new PostCollection([]);
+  gridView.setModel(model);
+  gridView.render();
 
-    equal(gridView.noDataEl.css('display'), 'block', 'should show noData when there are no rows');
-  });
+  model.onLoad();
 
-  test('Sort should get request with sort params', function() {
-    var gridView = createView({infiniteScroll: false});
-    var grid = gridView.grid;
-    var model =  createModel();
-    gridView.setModel(model);
+  equal(gridView.noDataEl.css('display'), 'block', 'should show noData when there are no rows');
+});
 
-    this.ajaxResponse = {results: ExampleData.POSTS, meta: {total: 4}};
-    model.load();
+test('Sort should get request with sort params', function() {
+  var gridView = createView({infiniteScroll: false});
+  var grid = gridView.grid;
+  var model =  createModel();
+  gridView.setModel(model);
 
-    var eventLog = new EventLog(model);
-    sinon.stub(model, 'updateUrl');
+  this.ajaxResponse = {results: ExampleData.POSTS, meta: {total: 4}};
+  model.load();
 
-    gridView.onSort({}, {sortAsc: true, sortCol: {field: 'body'}});
-    equal(eventLog.counts.change, 1, 'should trigger change on sort');
-    equal(model.get('sortField'), 'body', 'should set sortField');
-  });
+  var eventLog = new EventLog(model);
+  sinon.stub(model, 'updateUrl');
 
-  test('Grid should get set sort based on response meta', function() {
-    var gridView = createView({infiniteScroll: false});
-    var grid = gridView.grid;
-    var model =  createModel();
-    gridView.setModel(model);
+  gridView.onSort({}, {sortAsc: true, sortCol: {field: 'body'}});
+  equal(eventLog.counts.change, 1, 'should trigger change on sort');
+  equal(model.get('sortField'), 'body', 'should set sortField');
+});
 
-    this.ajaxResponse = {results: ExampleData.POSTS, meta: {total: 4, sortField: 'date', sortDir: -1}};
-    model.load();
-    equal(grid.getSortColumns()[0].columnId, 'date', 'sort column should have been set');
-    equal(grid.getSortColumns()[0].sortAsc, false, 'sort dir should have been set');
+test('Grid should get set sort based on response meta', function() {
+  var gridView = createView({infiniteScroll: false});
+  var grid = gridView.grid;
+  var model =  createModel();
+  gridView.setModel(model);
 
-    this.ajaxResponse = {results: ExampleData.POSTS, meta: {total: 4, sortField: 'username', sortDir: 1}};
-    model.load();
-    equal(grid.getSortColumns()[0].columnId, 'username', 'sort column should have been set');
-    equal(grid.getSortColumns()[0].sortAsc, true, 'sort dir should have been set');
-  });
+  this.ajaxResponse = {results: ExampleData.POSTS, meta: {total: 4, sortField: 'date', sortDir: -1}};
+  model.load();
+  equal(grid.getSortColumns()[0].columnId, 'date', 'sort column should have been set');
+  equal(grid.getSortColumns()[0].sortAsc, false, 'sort dir should have been set');
 
+  this.ajaxResponse = {results: ExampleData.POSTS, meta: {total: 4, sortField: 'username', sortDir: 1}};
+  model.load();
+  equal(grid.getSortColumns()[0].columnId, 'username', 'sort column should have been set');
+  equal(grid.getSortColumns()[0].sortAsc, true, 'sort dir should have been set');
 });

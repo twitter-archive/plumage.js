@@ -1,48 +1,45 @@
-define([
-  'jquery',
-  'backbone',
-  'handlebars',
-  'moment',
-  'PlumageRoot',
-  'model/Comment',
-  'view/ModelView',
-  'view/comment/templates/CommentView.html',
-  'linkify'
-], function($, Backbone, Handlebars, moment, Plumage, Comment, ModelView, template) {
+/* globals $, _ */
 
-  return Plumage.view.comment.CommentView = ModelView.extend({
-    className: 'comment',
+var moment = require('moment');
+var Plumage = require('PlumageRoot');
+var ModelView = require('view/ModelView');
+var CommentModel = require('model/Comment');
 
-    modelCls: Comment,
+var template = require('view/comment/templates/CommentView.html');
+require('linkify');
 
-    template: Handlebars.compile(template),
+module.exports = Plumage.view.comment.CommentView = ModelView.extend({
+  className: 'comment',
 
-    events: {
-      'click .delete': 'onDeleteClick'
-    },
+  modelCls: CommentModel,
 
-    getTemplateData: function() {
-      if (this.model) {
-        var result = this.model.toViewJSON();
-        result.body = result.body.replace(/\n/g, '<br/>');
-        result.created_at = moment(result.created_at).fromNow();
-        result.can_delete = result.user.account === window.currentUser;
-        return result;
-      }
-      return {};
-    },
+  template: template,
 
-    onRender: function() {
-      ModelView.prototype.onRender.apply(this, arguments);
-      var body = this.$('.comment-body');
-      body.linkify();
-      $('a', body).addClass('outlink').attr('target', '_');
-    },
+  events: {
+    'click .delete': 'onDeleteClick'
+  },
 
-    onDeleteClick: function(e) {
-      e.preventDefault();
-      var collection = this.model.collection;
-      this.model.destroy();
+  getTemplateData: function() {
+    if (this.model) {
+      var result = this.model.toViewJSON();
+      result.body = result.body.replace(/\n/g, '<br/>');
+      result.created_at = moment(result.created_at).fromNow();
+      result.can_delete = result.user.account === window.currentUser;
+      return result;
     }
-  });
+    return {};
+  },
+
+  onRender: function() {
+    ModelView.prototype.onRender.apply(this, arguments);
+    var body = this.$('.comment-body');
+    body.linkify();
+    $('a', body).addClass('outlink').attr('target', '_');
+  },
+
+  onDeleteClick: function(e) {
+    e.preventDefault();
+    var collection = this.model.collection;
+    this.model.destroy();
+  }
 });

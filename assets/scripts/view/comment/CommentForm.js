@@ -1,28 +1,24 @@
-define([
-  'jquery',
-  'backbone',
-  'handlebars',
-  'PlumageRoot',
-  'view/form/Form',
-  'view/form/fields/TextArea',
-  'model/Comment'
-], function($, Backbone, Handlebars, Plumage, Form, TextArea, Comment) {
+/* globals $, _ */
 
-  return Plumage.view.comment.CommentForm = Form.extend({
+var Plumage = require('PlumageRoot');
+var Form = require('view/form/Form');
+var TextArea = require('view/form/fields/TextArea');
+var CommentModel = require('model/Comment');
 
-    modelCls: Comment,
+module.exports = Plumage.view.comment.CommentForm = Form.extend({
 
-    actionLabel: 'Comment',
+  modelCls: CommentModel,
 
-    initialize: function(options) {
-      Form.prototype.initialize.apply(this, arguments);
-      options = options || {};
-      this.subViews = [
-        new TextArea({
-          selector: '.fields',
-          valueAttr: 'body'
-        })
-      ];
-    }
-  });
+  actionLabel: 'Comment',
+
+  initialize: function(options) {
+    Form.prototype.initialize.apply(this, arguments);
+    options = options || {};
+    this.subViews = [
+      new TextArea({
+        selector: '.fields',
+        valueAttr: 'body'
+      })
+    ];
+  }
 });

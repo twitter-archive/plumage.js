@@ -58,7 +58,6 @@ gulp.task('lint', function() {
   return gulp.src(['Gulpfile.js',
     'assets/scripts/**/*.js',
     'test/example/**/*.js',
-    'test/test/**/*.js',
     'examples/assets/**/*.js'])
     .pipe($.jshint())
     .pipe($.jshint.reporter('default'))

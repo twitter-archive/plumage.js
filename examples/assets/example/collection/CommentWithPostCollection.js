@@ -1,14 +1,11 @@
-define([
-  'collection/Collection',
-  'example/model/CommentWithPost'
-], function(Collection, CommentWithPost) {
+var Collection = require('collection/Collection');
+var CommentWithPost = require('example/model/CommentWithPost');
 
-  return Collection.extend({
-    modelName: 'CommentCollection',
-    urlRoot: CommentWithPost.prototype.urlRoot,
-    model: CommentWithPost,
+module.exports = Collection.extend({
+  modelName: 'CommentCollection',
+  urlRoot: CommentWithPost.prototype.urlRoot,
+  model: CommentWithPost,
 
-    sortField: 'body',
-    sortDir: '-1',
-  });
+  sortField: 'body',
+  sortDir: '-1'
 });

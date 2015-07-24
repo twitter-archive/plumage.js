@@ -1,124 +1,118 @@
-/*global QUnit:true, module:true, test:true, asyncTest:true, expect:true*/
-/*global start:true, stop:true, ok:true, equal:true, notEqual:true, deepEqual:true*/
+/* globals $, _ */
+/* globals QUnit, test, asyncTest, expect, start, stop, ok, equal, notEqual, deepEqual */
 
-define([
-  'jquery',
-  'underscore',
-  'backbone',
-  'moment',
-  'sinon',
-  'test/environment',
-  'test/EventLog',
-  'example/ExampleData',
-  'example/model/Post',
-  'view/form/fields/DateField',
-  'App'
-], function($, _, Backbone, moment, sinon, Environment, EventLog, ExampleData, Post, DateField, App) {
+var moment = require('moment');
+var Environment = require('test/environment');
+var ExampleData = require('example/ExampleData');
 
-  //use Environment to mock ajax
-  QUnit.module('DateField', _.extend(new Environment(), {
-    setup: function() {
-      Environment.prototype.setup.apply(this, arguments);
-    }
-  }));
+var DateField = require('view/form/fields/DateField');
 
-  var theApp = new App();
+var Post = require('example/model/Post');
+var App = require('App');
 
-  var defaultOptions = {
-    valueAttr: 'post_date'
-  };
-
-  function createView(options) {
-    options = _.extend({}, defaultOptions, options || {});
-    return new DateField(options);
+//use Environment to mock ajax
+QUnit.module('DateField', _.extend(new Environment(), {
+  setup: function() {
+    Environment.prototype.setup.apply(this, arguments);
   }
+}));
 
-  test('empty render', function(){
-    var field = createView();
+var theApp = new App();
 
-    field.render();
-    equal(field.getValue(), '', 'field with no model should have empty string value');
-  });
+var defaultOptions = {
+  valueAttr: 'post_date'
+};
 
-  function getDate(i) {
-    return moment([2014, 2, i+1]).valueOf();
-  }
+function createView(options) {
+  options = _.extend({}, defaultOptions, options || {});
+  return new DateField(options);
+}
 
-  test('field with model', function() {
-    var model = new Post({id: 1, body: 'initial', post_date: getDate(0)});
-    var field = createView();
+test('empty render', function(){
+  var field = createView();
 
-    field.setModel(model);
-    field.update();
+  field.render();
+  equal(field.getValue(), '', 'field with no model should have empty string value');
+});
 
-    equal(field.getValue(), getDate(0));
-    equal(field.getCalendar().getValue(), getDate(0));
+function getDate(i) {
+  return moment([2014, 2, i+1]).valueOf();
+}
 
-    model.set('post_date', getDate(1));
-    equal(field.getValue(), getDate(1));
+test('field with model', function() {
+  var model = new Post({id: 1, body: 'initial', post_date: getDate(0)});
+  var field = createView();
 
-    this.ajaxResponse = {results: {
-      href: '/posts/1',
-      id: 1,
-      body: 'my body',
-      post_date: getDate(2)
-    }};
-    model.load();
+  field.setModel(model);
+  field.update();
 
-    equal(field.getValue(), model.get('post_date'));
-  });
+  equal(field.getValue(), getDate(0));
+  equal(field.getCalendar().getValue(), getDate(0));
 
-  test('edit text field', function() {
-    var model = new Post({body: 'initial', post_date: getDate(0)});
-    var field = createView();
+  model.set('post_date', getDate(1));
+  equal(field.getValue(), getDate(1));
 
-    field.setModel(model);
-    field.update();
+  this.ajaxResponse = {results: {
+    href: '/posts/1',
+    id: 1,
+    body: 'my body',
+    post_date: getDate(2)
+  }};
+  model.load();
 
-    //valid
-    var validText = 'Mar 1, 2014';
-    var enterEvent = {keyCode: 13, preventDefault: function(){}};
-    field.$('input:first').val(validText);
-    field.onKeyDown(enterEvent);
-    equal(field.$('input:first').val(), validText);
+  equal(field.getValue(), model.get('post_date'));
+});
 
-    equal(moment(field.getValue()).format(field.format), 'Mar 1, 2014', 'should update value on enter');
+test('edit text field', function() {
+  var model = new Post({body: 'initial', post_date: getDate(0)});
+  var field = createView();
 
-    //invalid
-    field.$('input:first').val('fjfjoerjjsd');
-    field.onKeyDown(enterEvent);
-    equal(field.$('input:first').val(), validText);
+  field.setModel(model);
+  field.update();
 
-    equal(moment(field.getValue()).format(field.format), 'Mar 1, 2014', 'should not update on invalid');
-  });
+  //valid
+  var validText = 'Mar 1, 2014';
+  var enterEvent = {keyCode: 13, preventDefault: function(){}};
+  field.$('input:first').val(validText);
+  field.onKeyDown(enterEvent);
+  equal(field.$('input:first').val(), validText);
 
-  test('keepTime', function() {
-    var field = createView();
-    field.setValue(moment([2014, 1, 1, 12]).valueOf());
-    field.getPicker().setValue(moment([2014, 1, 1]).valueOf());
-    equal(field.getValue(), moment([2014, 1, 1]).valueOf(), 'use full value chosen by picker including hour');
+  equal(moment(field.getValue()).format(field.format), 'Mar 1, 2014', 'should update value on enter');
 
-    field.keepTime = true;
-    field.setValue(moment([2014, 1, 1, 12]).valueOf());
-    field.getPicker().setValue(moment([2014, 1, 1]).valueOf());
-    equal(field.getValue(), moment([2014, 1, 1, 12]).valueOf(), 'ignore hour from picker value');
-  });
+  //invalid
+  field.$('input:first').val('fjfjoerjjsd');
+  field.onKeyDown(enterEvent);
+  equal(field.$('input:first').val(), validText);
 
-  test('hour select with relationship', function() {
-    var field = createView({showHourSelect: true, valueAttr: 'my_date', relationship: 'author'});
+  equal(moment(field.getValue()).format(field.format), 'Mar 1, 2014', 'should not update on invalid');
+});
 
-    var m = moment([2014, 1, 1, 12]);
-    var model = new Post(ExampleData.POST_DATA_WITH_RELATED);
-    model.getRelated('author').set('my_date', m.valueOf());
-    field.setModel(model);
+test('keepTime', function() {
+  var field = createView();
+  field.setValue(moment([2014, 1, 1, 12]).valueOf());
+  field.getPicker().setValue(moment([2014, 1, 1]).valueOf());
+  equal(field.getValue(), moment([2014, 1, 1]).valueOf(), 'use full value chosen by picker including hour');
 
-    equal(field.getSubView('hourSelect').getValue(), m.hour(), 'hour select should get value from relationship');
-  });
+  field.keepTime = true;
+  field.setValue(moment([2014, 1, 1, 12]).valueOf());
+  field.getPicker().setValue(moment([2014, 1, 1]).valueOf());
+  equal(field.getValue(), moment([2014, 1, 1, 12]).valueOf(), 'ignore hour from picker value');
+});
 
-  test('showHourSelect implies keepTime', function() {
-    var field = createView({showHourSelect: true});
-    field.setValue(moment([2014, 1, 1, 12]).valueOf());
-    field.getPicker().setValue(moment([2014, 1, 1]).valueOf());
-    equal(field.getValue(), moment([2014, 1, 1, 12]).valueOf(), 'keep hour on date change when hour select is shown');
-  });
+test('hour select with relationship', function() {
+  var field = createView({showHourSelect: true, valueAttr: 'my_date', relationship: 'author'});
+
+  var m = moment([2014, 1, 1, 12]);
+  var model = new Post(ExampleData.POST_DATA_WITH_RELATED);
+  model.getRelated('author').set('my_date', m.valueOf());
+  field.setModel(model);
+
+  equal(field.getSubView('hourSelect').getValue(), m.hour(), 'hour select should get value from relationship');
+});
+
+test('showHourSelect implies keepTime', function() {
+  var field = createView({showHourSelect: true});
+  field.setValue(moment([2014, 1, 1, 12]).valueOf());
+  field.getPicker().setValue(moment([2014, 1, 1]).valueOf());
+  equal(field.getValue(), moment([2014, 1, 1, 12]).valueOf(), 'keep hour on date change when hour select is shown');
 });

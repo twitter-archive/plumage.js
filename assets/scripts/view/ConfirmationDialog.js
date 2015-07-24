@@ -1,67 +1,62 @@
-define([
-  'jquery',
-  'underscore',
-  'backbone',
-  'handlebars',
-  'PlumageRoot',
-  'view/ModalDialog',
-  'view/MessageView',
-  'view/templates/ConfirmationDialog.html'
-], function($, _, Backbone, Handlebars, Plumage, ModalDialog, MessageView, template) {
+/* globals $, _ */
+var Plumage = require('PlumageRoot');
+var ModalDialog = require('view/ModalDialog');
+var MessageView = require('view/MessageView');
 
-  return Plumage.view.ConfirmationDialog = ModalDialog.extend({
+var template = require('view/templates/ConfirmationDialog.html');
 
-    template: template,
+module.exports = Plumage.view.ConfirmationDialog = ModalDialog.extend({
 
-    headerTemplate: 'Confirmation Dialog',
+  template: template,
 
-    message: undefined,
+  headerTemplate: 'Confirmation Dialog',
 
-    messageCls: undefined,
+  message: undefined,
 
-    bodyTemplate: 'Are you sure you want to do this?',
+  messageCls: undefined,
 
-    buttonText: 'Confirm',
+  bodyTemplate: 'Are you sure you want to do this?',
 
-    buttonCls: 'btn-success',
+  buttonText: 'Confirm',
 
-    events: {
-      'click .confirm': 'onConfirmClick'
-    },
+  buttonCls: 'btn-success',
 
-    subViews: [{
-      viewCls: MessageView,
-      name: 'message',
-      selector: '.message',
-      updateOnMessage: false,
-      replaceEl: true,
-    }],
+  events: {
+    'click .confirm': 'onConfirmClick'
+  },
 
-    initialize: function(options) {
-      options = options || {};
-      ModalDialog.prototype.initialize.apply(this, arguments);
-      this.bodyTemplate = this.initTemplate(this.bodyTemplate);
-    },
+  subViews: [{
+    viewCls: MessageView,
+    name: 'message',
+    selector: '.message',
+    updateOnMessage: false,
+    replaceEl: true,
+  }],
 
-    getTemplateData: function() {
-      var data = ModalDialog.prototype.getTemplateData.apply(this, arguments);
-      return _.extend(data, {
-        bodyTemplate: this.bodyTemplate(data),
-        buttonText: this.buttonText,
-        buttonCls: this.buttonCls,
-        message:  this.message,
-        messageCls: this.messageCls
-      });
-    },
+  initialize: function(options) {
+    options = options || {};
+    ModalDialog.prototype.initialize.apply(this, arguments);
+    this.bodyTemplate = this.initTemplate(this.bodyTemplate);
+  },
 
-    setMessage: function(message, messageCls) {
-      this.getSubView('message').setMessage(message, messageCls);
-    },
+  getTemplateData: function() {
+    var data = ModalDialog.prototype.getTemplateData.apply(this, arguments);
+    return _.extend(data, {
+      bodyTemplate: this.bodyTemplate(data),
+      buttonText: this.buttonText,
+      buttonCls: this.buttonCls,
+      message:  this.message,
+      messageCls: this.messageCls
+    });
+  },
 
-    onConfirmClick: function(e) {
-      $(e.target).attr('disabled', '');
-      this.trigger('confirm');
-    }
-  });
+  setMessage: function(message, messageCls) {
+    this.getSubView('message').setMessage(message, messageCls);
+  },
+
+  onConfirmClick: function(e) {
+    $(e.target).attr('disabled', '');
+    this.trigger('confirm');
+  }
 });
 

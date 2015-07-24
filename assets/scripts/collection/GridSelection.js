@@ -1,115 +1,108 @@
-define([
-  'jquery',
-  'underscore',
-  'backbone',
-  'PlumageRoot',
-  'collection/Selection',
-  'slickgrid-all'
-],
+/* globals $, _ */
+var Backbone = require('backbone');
+var Plumage = require('PlumageRoot');
+var Selection = require('collection/Selection');
+var Slick = require('slickgrid-all');
 
-function($, _, Backbone, Plumage, Selection, Slick) {
+/**
+ * Adapts a Plumage Selection to the slickgrid RowSelection interface.
+ *
+ * Doesn't support cmd, shift selection.
+ *
+ * @constructs Plumage.collection.GridSelection
+ */
+var GridSelection = function(selection) {
+  this.selection = selection;
+  this.initialize.apply(this, arguments);
+};
 
+_.extend(GridSelection.prototype, Backbone.Events,
+/** @lends Plumage.collection.GridSelection.prototype */
+{
+  /** wrapped Selection */
+  selection: undefined,
 
-  /**
-   * Adapts a Plumage Selection to the slickgrid RowSelection interface.
-   *
-   * Doesn't support cmd, shift selection.
-   *
-   * @constructs Plumage.collection.GridSelection
-   */
-  var GridSelection = function(selection) {
-    this.selection = selection;
-    this.initialize.apply(this, arguments);
-  };
+  /** SlickGrid grid instance*/
+  grid: undefined,
 
-  _.extend(GridSelection.prototype, Backbone.Events,
-  /** @lends Plumage.collection.GridSelection.prototype */
-  {
-    /** wrapped Selection */
-    selection: undefined,
+  // Optionss
+  selectActiveRow: false,
 
-    /** SlickGrid grid instance*/
-    grid: undefined,
+  initialize: function(options) {
+    options = options || {};
+    _.extend(this, options);
 
-    // Optionss
-    selectActiveRow: false,
+    this.selection.on('change', this.onSelectionChange, this);
+    this.selection.on('add', this.onSelectionChange, this);
+    this.selection.on('remove', this.onSelectionChange, this);
+    this.selection.on('reset', this.onSelectionChange, this);
+  },
 
-    initialize: function(options) {
-      options = options || {};
-      _.extend(this, options);
+  /** SlickGrid init */
+  init: function(grid) {
+    this.grid = grid;
+    this.handler = new Slick.EventHandler();
+    this.handler.subscribe(this.grid.onActiveCellChanged, this.onActiveCellChanged.bind(this));
+    this.onSelectedRangesChanged = new Slick.Event();
+  },
 
-      this.selection.on('change', this.onSelectionChange, this);
-      this.selection.on('add', this.onSelectionChange, this);
-      this.selection.on('remove', this.onSelectionChange, this);
-      this.selection.on('reset', this.onSelectionChange, this);
-    },
+  /** SlickGrid destroy */
+  destroy: function() {
+    this.handler.unsubscribeAll();
+    this.selection.off('change', this.onSelectionChange, this);
+    this.selection.off('reset', this.onSelectionChange, this);
+  },
 
-    /** SlickGrid init */
-    init: function(grid) {
-      this.grid = grid;
-      this.handler = new Slick.EventHandler();
-      this.handler.subscribe(this.grid.onActiveCellChanged, this.onActiveCellChanged.bind(this));
-      this.onSelectedRangesChanged = new Slick.Event();
-    },
+  // SlickGrid getters and setters
 
-    /** SlickGrid destroy */
-    destroy: function() {
-      this.handler.unsubscribeAll();
-      this.selection.off('change', this.onSelectionChange, this);
-      this.selection.off('reset', this.onSelectionChange, this);
-    },
+  getSelectedRows: function () {
+    return this.selection.getSelectedIndices();
+  },
 
-    // SlickGrid getters and setters
+  setSelectedRows: function (rows) {
+    this.selection.setSelectedIndices(rows);
+  },
 
-    getSelectedRows: function () {
-      return this.selection.getSelectedIndices();
-    },
+  setSelectedRanges: function (ranges) {
+    this.setSelectedRows(this.rangesToRows(ranges));
+  },
 
-    setSelectedRows: function (rows) {
-      this.selection.setSelectedIndices(rows);
-    },
+  getSelectedRanges: function () {
+    return this.rowsToRanges(this.getSelectedRows());
+  },
 
-    setSelectedRanges: function (ranges) {
-      this.setSelectedRows(this.rangesToRows(ranges));
-    },
+  // Event handlers
 
-    getSelectedRanges: function () {
-      return this.rowsToRanges(this.getSelectedRows());
-    },
-
-    // Event handlers
-
-    onActiveCellChanged: function(e, data) {
-      if (this.selectActiveRow && data.row !== null) {
-        this.setSelectedRows([data.row]);
-      }
-    },
-
-    onSelectionChange: function() {
-      this.onSelectedRangesChanged.notify(this.getSelectedRanges());
-    },
-
-    // SlickGrid helpers
-
-    rowsToRanges: function(rows) {
-      var ranges = [];
-      var lastCell = this.grid.getColumns().length - 1;
-      for (var i = 0; i < rows.length; i++) {
-        ranges.push(new Slick.Range(rows[i], 0, rows[i], lastCell));
-      }
-      return ranges;
-    },
-
-    rangesToRows: function(ranges) {
-      var rows = [];
-      for (var i = 0; i < ranges.length; i++) {
-        for (var j = ranges[i].fromRow; j <= ranges[i].toRow; j++) {
-          rows.push(j);
-        }
-      }
-      return rows;
+  onActiveCellChanged: function(e, data) {
+    if (this.selectActiveRow && data.row !== null) {
+      this.setSelectedRows([data.row]);
     }
-  });
+  },
 
-  return Plumage.collection.GridSelection = GridSelection;
+  onSelectionChange: function() {
+    this.onSelectedRangesChanged.notify(this.getSelectedRanges());
+  },
+
+  // SlickGrid helpers
+
+  rowsToRanges: function(rows) {
+    var ranges = [];
+    var lastCell = this.grid.getColumns().length - 1;
+    for (var i = 0; i < rows.length; i++) {
+      ranges.push(new Slick.Range(rows[i], 0, rows[i], lastCell));
+    }
+    return ranges;
+  },
+
+  rangesToRows: function(ranges) {
+    var rows = [];
+    for (var i = 0; i < ranges.length; i++) {
+      for (var j = ranges[i].fromRow; j <= ranges[i].toRow; j++) {
+        rows.push(j);
+      }
+    }
+    return rows;
+  }
 });
+
+module.exports = Plumage.collection.GridSelection = GridSelection;

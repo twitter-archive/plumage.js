@@ -1,104 +1,95 @@
-/*global QUnit:true, module:true, test:true, asyncTest:true, expect:true*/
-/*global start:true, stop:true, ok:true, equal:true, notEqual:true, deepEqual:true*/
+/* globals $, _ */
+/* globals QUnit, test, asyncTest, expect, start, stop, ok, equal, notEqual, deepEqual */
 
-define([
-  'jquery',
-  'underscore',
-  'backbone',
-  'moment',
-  'sinon',
-  'test/environment',
-  'test/EventLog',
-  'example/ExampleData',
-  'example/model/Post',
-  'view/form/fields/DateRangeField',
-  'App'
-], function($, _, Backbone, moment, sinon, Environment, EventLog, ExampleData, Post, DateRangeField, App) {
+var moment = require('moment');
+var Environment = require('test/environment');
+var DateRangeField = require('view/form/fields/DateRangeField');
 
-  //use Environment to mock ajax
-  QUnit.module('DateField', _.extend(new Environment(), {
-    setup: function() {
-      Environment.prototype.setup.apply(this, arguments);
-    }
-  }));
+var Post = require('example/model/Post');
+var App = require('App');
 
-  var theApp = new App();
-
-  var defaultOptions = {
-    fromAttr: 'fromDate',
-    toAttr: 'toDate'
-  };
-
-  function createView(options) {
-    options = _.extend({}, defaultOptions, options || {});
-    return new DateRangeField(options);
+//use Environment to mock ajax
+QUnit.module('DateField', _.extend(new Environment(), {
+  setup: function() {
+    Environment.prototype.setup.apply(this, arguments);
   }
+}));
 
-  test('empty render', function(){
-    var field = createView();
+var theApp = new App();
 
-    field.render();
-    equal(field.getValue(), '', 'field with no model should have empty string value');
-  });
+var defaultOptions = {
+  fromAttr: 'fromDate',
+  toAttr: 'toDate'
+};
 
-  function getDate(i) {
-    return moment([2014, 2, i+1]).valueOf();
-  }
+function createView(options) {
+  options = _.extend({}, defaultOptions, options || {});
+  return new DateRangeField(options);
+}
 
-  test('field with model', function() {
-    var model = new Post({body: 'initial'});
-    var field = createView();
+test('empty render', function(){
+  var field = createView();
 
-    field.setModel(model);
-    field.update();
+  field.render();
+  equal(field.getValue(), '', 'field with no model should have empty string value');
+});
 
-    deepEqual(field.getValue(), [undefined, undefined], '');
+function getDate(i) {
+  return moment([2014, 2, i+1]).valueOf();
+}
 
-    model.set({fromDate: getDate(0), toDate: getDate(1)});
+test('field with model', function() {
+  var model = new Post({body: 'initial'});
+  var field = createView();
 
-    deepEqual(field.getValue(), [getDate(0), getDate(1)]);
+  field.setModel(model);
+  field.update();
 
-    var picker = field.getPicker();
-    equal(picker.getSubView('fromCal').getValue(), getDate(0));
-    equal(picker.getSubView('toCal').getValue(), getDate(1));
+  deepEqual(field.getValue(), [undefined, undefined], '');
 
-    model.set('toDate', getDate(2));
-    deepEqual(field.getValue(), [getDate(0), getDate(2)]);
+  model.set({fromDate: getDate(0), toDate: getDate(1)});
 
-    this.ajaxResponse = {results: {
-      id: 1,
-      body: 'my body',
-      fromDate: getDate(2),
-      toDate: getDate(3),
-    }};
-    model.load();
+  deepEqual(field.getValue(), [getDate(0), getDate(1)]);
 
-    deepEqual(field.getValue(), [model.get('fromDate'), model.get('toDate')]);
-  });
+  var picker = field.getPicker();
+  equal(picker.getSubView('fromCal').getValue(), getDate(0));
+  equal(picker.getSubView('toCal').getValue(), getDate(1));
 
-  test('edit text field', function() {
-    var model = new Post({body: 'initial', fromDate: getDate(0), toDate: getDate(1)});
-    var field = createView();
+  model.set('toDate', getDate(2));
+  deepEqual(field.getValue(), [getDate(0), getDate(2)]);
 
-    field.setModel(model);
-    field.update();
+  this.ajaxResponse = {results: {
+    id: 1,
+    body: 'my body',
+    fromDate: getDate(2),
+    toDate: getDate(3),
+  }};
+  model.load();
 
-    //valid
-    var validText = 'Mar 3, 2014 - Mar 4, 2014';
-    var enterEvent = {keyCode: 13, preventDefault: function(){}};
-    field.$('input:first').val(validText);
-    field.onKeyDown(enterEvent);
-    equal(field.$('input:first').val(), validText);
+  deepEqual(field.getValue(), [model.get('fromDate'), model.get('toDate')]);
+});
 
-    equal(moment(field.getValue()[0]).format(field.format), 'Mar 3, 2014', 'should update value on enter');
-    equal(moment(field.getValue()[1]).format(field.format), 'Mar 4, 2014', 'should update value on enter');
+test('edit text field', function() {
+  var model = new Post({body: 'initial', fromDate: getDate(0), toDate: getDate(1)});
+  var field = createView();
 
-    //invalid
-    field.$('input:first').val('fjfjoerjjsd');
-    field.onKeyDown(enterEvent);
-    equal(field.$('input:first').val(), validText);
+  field.setModel(model);
+  field.update();
 
-    equal(moment(field.getValue()[0]).format(field.format), 'Mar 3, 2014', 'should not update on invalid');
-  });
+  //valid
+  var validText = 'Mar 3, 2014 - Mar 4, 2014';
+  var enterEvent = {keyCode: 13, preventDefault: function(){}};
+  field.$('input:first').val(validText);
+  field.onKeyDown(enterEvent);
+  equal(field.$('input:first').val(), validText);
 
+  equal(moment(field.getValue()[0]).format(field.format), 'Mar 3, 2014', 'should update value on enter');
+  equal(moment(field.getValue()[1]).format(field.format), 'Mar 4, 2014', 'should update value on enter');
+
+  //invalid
+  field.$('input:first').val('fjfjoerjjsd');
+  field.onKeyDown(enterEvent);
+  equal(field.$('input:first').val(), validText);
+
+  equal(moment(field.getValue()[0]).format(field.format), 'Mar 3, 2014', 'should not update on invalid');
 });

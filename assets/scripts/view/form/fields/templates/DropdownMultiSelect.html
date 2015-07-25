@@ -8,7 +8,8 @@
 {{/listValues}}
 </select>
 
-<a class="btn btn-default dropdown-toggle {{buttonCls}}" data-toggle="dropdown" href="#">
+<button id="{{dropdownId}}" type="button" class="btn btn-default dropdown-toggle {{buttonCls}}"
+        data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
   {{#iconCls}}
     <i class="{{.}} icon-white"></i>
   {{/iconCls}}
@@ -18,8 +19,8 @@
     {{noSelectionText}}
   {{/if}}
   <span class="caret"></span>
-</a>
-<ul class="dropdown-menu {{#if showSelectOnly}}show-select-only{{/if}}">
+</button>
+<ul class="dropdown-menu {{#if showSelectOnly}}show-select-only{{/if}}" aria-labelledby="{{dropdownId}}">
   {{#if showSelectAll}}
   <li class="select-all {{#allSelected}}active{{/allSelected}}">
       <a class="item"><input type="checkbox" {{#allSelected}} checked{{/allSelected}}/>Select All</a>

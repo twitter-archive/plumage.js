@@ -38,7 +38,7 @@ module.exports = Plumage.view.form.fields.DateField = FieldWithPicker.extend(
     viewCls: HourSelect,
     name: 'hourSelect',
     selector: '.field',
-    opens: 'right',
+    opens: 'left',
     tagName: 'span'
   }],
 
@@ -139,7 +139,12 @@ module.exports = Plumage.view.form.fields.DateField = FieldWithPicker.extend(
 
   processDomValue: function(value) {
     if (value) {
-      var m = DateTimeUtil.parseDateStringFromUser(value, this.utc);
+      var m;
+      if (value instanceof String) {
+        m = DateTimeUtil.parseDateStringFromUser(value, this.utc);
+      } else {
+        m = this.utc ? moment.utc(value) : moment(value);
+      }
       var oldValue = this.getValue();
       if (oldValue && (this.keepTime || this.showHourSelect)) {
         var oldM = this.utc ? moment.utc(oldValue) : moment(oldValue);

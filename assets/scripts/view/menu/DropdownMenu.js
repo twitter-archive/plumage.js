@@ -15,7 +15,7 @@ module.exports = Plumage.view.menu.DropdownMenu = ModelView.extend({
 
   menuItems: [],
 
-  iconCls: undefined,
+  dropdownId: null,
 
   showCaret: true,
 
@@ -25,6 +25,16 @@ module.exports = Plumage.view.menu.DropdownMenu = ModelView.extend({
     'click li a': 'onItemClick'
   },
 
+  initialize: function(){
+    this.dropdownId = _.uniqueId('dropdown');
+    ModelView.prototype.initialize.apply(this, arguments);
+  },
+
+  onRender: function() {
+    ModelView.prototype.onRender.apply(this, arguments);
+    this.$('[data-toggle=dropdown]').dropdown();
+  },
+
   getTemplateData: function() {
     return {
       label: this.label,
@@ -32,7 +42,8 @@ module.exports = Plumage.view.menu.DropdownMenu = ModelView.extend({
       menuItems: this.getMenuItems(),
       showCaret: this.showCaret,
       buttonStyle: this.buttonStyle,
-      dropdownCls: this.opens === 'left' ? 'pull-right' : ''
+      dropdownCls: this.opens === 'left' ? 'pull-right' : '',
+      dropdownId: this.dropdownId
     };
   },
 

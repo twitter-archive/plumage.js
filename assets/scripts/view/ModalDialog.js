@@ -31,7 +31,7 @@ module.exports = Plumage.view.ModalDialog = ModelView.extend({
     options.modalOptions = _.extend(this.modalOptions, options.modalOptions || {});
     if (this.contentView) {
       this.subViews = [this.contentView].concat(options.subViews || []);
-      this.contentView.selector = '.modal-content';
+      this.contentView.selector = '.modal-content-view';
       this.contentView.name = 'contentView';
     }
 

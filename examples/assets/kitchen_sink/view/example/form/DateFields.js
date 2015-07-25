@@ -35,17 +35,11 @@ module.exports = Plumage.view.ModelView.extend({
       valueAttr: 'fromDate'
     },
     {
-      viewCls: Plumage.view.form.fields.HourSelect,
-      selector: '.hour-field2',
-      valueAttr: 'fromDate',
-      replaceEl: true
-    },
-    {
       viewCls: Plumage.view.form.fields.DateField,
       selector: '.date-field3',
       valueAttr: 'fromDate',
       maxDateAttr: 'toDate',
-      keepTime: true,
+      showHourSelect: true,
       replaceEl: true
     },
     {

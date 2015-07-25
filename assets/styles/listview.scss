@@ -31,7 +31,6 @@
 }
 
 .list-and-detail-dialog .modal {
-  @include box-sizing(border-box);
   width: 80%;
   height: 80%;
   margin-left: -40%;
@@ -46,7 +45,6 @@
   }
 
   .modal-body {
-    @include box-sizing(border-box);
     height: 100%;
     padding: 0;
     max-height: none;

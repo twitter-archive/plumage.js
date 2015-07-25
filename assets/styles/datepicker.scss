@@ -167,14 +167,6 @@
 }
 
 .date-range-field .show-hour-select {
-  .date-field > label {
-    width: 36px;
-    text-align: left;
-  }
-
-  .date-field .from-date input, .date-field .to-date input {
-    width: 110px;
-  }
 
   .hour-select {
     display: inline;
@@ -244,11 +236,20 @@
   }
 
   &.show-hour-select {
+    .field {
+      float: left;
+      padding-right: 80px;
+    }
+    .dropdown{
+      float: left;
+    }
+    .hour-select {
+      float: right;
+      margin-right: -80px;
+    }
+
     .hour-select {
       display: inline;
-    }
-    input[type=text] {
-      width: 103px;
     }
 
     .hour-select a {

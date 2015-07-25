@@ -30,10 +30,12 @@ module.exports = Plumage.view.form.fields.DropdownSelect = Select.extend({
 
   initialize: function() {
     Select.prototype.initialize.apply(this, arguments);
+    this.dropdownId = _.uniqueId('dropdown');
   },
 
   onRender: function() {
     Select.prototype.onRender.apply(this, arguments);
+    this.$('[data-toggle=dropdown]').dropdown();
   },
 
   getTemplateData: function() {
@@ -41,7 +43,8 @@ module.exports = Plumage.view.form.fields.DropdownSelect = Select.extend({
     data = _.extend(data, {
       buttonCls: this.buttonCls,
       iconCls: this.iconCls,
-      opens: this.opens
+      opens: this.opens,
+      dropdownId: this.dropdownId
     });
     return data;
   },

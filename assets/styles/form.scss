@@ -152,8 +152,10 @@
     .glyphicon {
       display: none;
       float: right;
-      margin-left: -18px;
+      width: 40px;
+      text-align: right;
       margin-right: 5px;
+      margin-top: -0.2em;
     }
 
     &:hover {
@@ -217,10 +219,7 @@
 .form-horizontal-left {
   .control-label {
     text-align: left;
-    width: 100px;
-  }
-  .controls {
-    margin-left: 100px;
+    width: 120px;
   }
 }
 
@@ -247,6 +246,16 @@
   border-bottom: 6px solid #fff;
   border-left: 6px solid transparent;
   content: '';
+}
+
+.dropdown-menu.pull-right:before, .dropdown-menu.opensleft:before {
+  left: inherit;
+  right: 15px;
+}
+
+.dropdown-menu.pull-right:after, .dropdown-menu.opensleft:after{
+  left: inherit;
+  right: 15px;
 }
 
 

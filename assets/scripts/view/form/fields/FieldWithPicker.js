@@ -3,13 +3,11 @@ var Plumage = require('PlumageRoot');
 var Field = require('view/form/fields/Field');
 var Picker = require('view/form/fields/picker/Picker');
 
-var template = require('view/form/fields/templates/FieldWithPicker.html');
-
 module.exports = Plumage.view.form.fields.FieldWithPicker = Field.extend(
 /** @lends Plumage.view.form.fields.FieldWithPicker.prototype */
 {
 
-  template: template,
+  template: require('view/form/fields/templates/FieldWithPicker.html'),
 
   /** Options to instantiate the Picker with. You can even pass in subViews, so you don't have to subclass Picker. */
   pickerCls: Picker,
@@ -19,7 +17,7 @@ module.exports = Plumage.view.form.fields.FieldWithPicker = Field.extend(
 
   events: {
     'click input:first': 'onInputClick',
-    'click button:first': 'onButtonClick',
+    'click button:first': 'onButtonClick'
   },
 
   /**

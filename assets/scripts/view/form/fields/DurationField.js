@@ -2,12 +2,13 @@
 var Plumage = require('PlumageRoot');
 var Field = require('view/form/fields/Field');
 
-var template = require('view/form/fields/templates/DurationField.html');
+require('bootstrap');
+
 module.exports = Plumage.view.form.fields.DurationField = Field.extend({
 
   className: 'duration-field field form-group',
 
-  fieldTemplate: template,
+  fieldTemplate: require('view/form/fields/templates/DurationField.html'),
 
   units: [
     {label: 'minutes', value: 60000},
@@ -31,6 +32,11 @@ module.exports = Plumage.view.form.fields.DurationField = Field.extend({
     if (!this.selectedUnit) {
       this.selectedUnit = this.units[0].value;
     }
+  },
+
+  onRender: function() {
+    Field.prototype.onRender.apply(this, arguments);
+    this.$('[data-toggle=dropdown]').dropdown();
   },
 
   getTemplateData: function() {

@@ -42,7 +42,7 @@ module.exports = Plumage.view.controller.IndexView = ModelView.extend({
   getGridView: function() {
     if (!this.gridView && this.gridViewCls) {
       this.gridView = new this.gridViewCls(
-        _.extend({selector: '.grid-view', filterView: this.getFilterView()}, this.gridOptions || {}));
+        _.extend({selector: '.grid-view', filterView: this.getFilterView(), replaceEl: true}, this.gridOptions || {}));
     }
     return this.gridView;
   },

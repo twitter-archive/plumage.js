@@ -5,8 +5,11 @@
   clear: both;
   border: 1px solid #eee;
   border-top: none;
-  height: 100%;
-  @include box-sizing(border-box);
+
+  .grid .slick-header-column {
+    box-sizing: content-box;
+    height: 16px;
+  }
 }
 
 .grid {
@@ -122,7 +125,6 @@
 
 .filter-view {
   width: 100%;
-  @include box-sizing(border-box);
 }
 
 form.filter-view {

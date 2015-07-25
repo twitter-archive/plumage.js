@@ -1,18 +1,22 @@
-<div class="modal hide fade" tabindex="-1" role="dialog" aria-hidden="true">
-  <div class="modal-header">
-    <div class="message"></div>
-    <button type="button" class="close" data-dismiss="modal" aria-hidden="true">x</button>
-    <h3 id="myModalLabel">{{> header}}</h3>
-
-  </div>
-  <div class="modal-body">
-
+<div class="modal fade">
+  <div class="modal-dialog">
     <div class="modal-content">
-	    {{{bodyTemplate}}}
+      <div class="modal-header">
+        <div class="message"></div>
+        <button type="button" class="close" data-dismiss="modal" aria-hidden="true">x</button>
+        <h4 class="modal-title">{{> header}}</h4>
+
+      </div>
+      <div class="modal-body">
+
+        <div class="modal-content-view">
+          {{{bodyTemplate}}}
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn" data-dismiss="modal" aria-hidden="true">Cancel</button>
+        <button class="btn confirm {{buttonCls}}">{{buttonText}}</button>
+      </div>
     </div>
-  </div>
-  <div class="modal-footer">
-  <button class="btn" data-dismiss="modal" aria-hidden="true">Cancel</button>
-    <button class="btn confirm {{buttonCls}}">{{buttonText}}</button>
   </div>
 </div>

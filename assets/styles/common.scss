@@ -20,7 +20,6 @@ form {
 
 #page {
   height: 100%;
-  @include box-sizing(border-box);
 }
 
 #page.with-nav {
@@ -36,7 +35,6 @@ header {
 
 .content {
   height: 100%;
-  @include box-sizing(border-box);
   overflow-y: auto;
   overflow-x: hidden;
 }
@@ -171,7 +169,7 @@ h2.title .light {
   position: absolute;
   left: 50%;
 
-  margin-left: -50px;
+  margin-left: -50%;
   margin-bottom: 20px;
 
   margin-top: -20px;

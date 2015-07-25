@@ -25,6 +25,7 @@ module.exports = Plumage.view.form.fields.DropdownMultiSelect = MultiSelect.exte
   initialize: function() {
     this.value = [];
     MultiSelect.prototype.initialize.apply(this, arguments);
+    this.dropdownId = _.uniqueId('dropdown');
   },
 
   /** overrides **/
@@ -32,11 +33,13 @@ module.exports = Plumage.view.form.fields.DropdownMultiSelect = MultiSelect.exte
   getTemplateData: function() {
     var data = MultiSelect.prototype.getTemplateData.apply(this, arguments);
     data.showSelectOnly = this.showSelectOnly;
+    data.dropdownId = this.dropdownId;
     return data;
   },
 
   onRender: function() {
     MultiSelect.prototype.onRender.apply(this, arguments);
+    this.$('[data-toggle=dropdown]').dropdown();
   },
 
   update: function(isLoad) {

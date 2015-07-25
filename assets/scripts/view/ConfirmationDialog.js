@@ -3,11 +3,9 @@ var Plumage = require('PlumageRoot');
 var ModalDialog = require('view/ModalDialog');
 var MessageView = require('view/MessageView');
 
-var template = require('view/templates/ConfirmationDialog.html');
-
 module.exports = Plumage.view.ConfirmationDialog = ModalDialog.extend({
 
-  template: template,
+  template: require('view/templates/ConfirmationDialog.html'),
 
   headerTemplate: 'Confirmation Dialog',
 

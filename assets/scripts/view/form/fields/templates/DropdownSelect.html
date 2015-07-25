@@ -7,9 +7,9 @@
 
 <span class="dropdown-select dropdown">
 <input type="hidden" {{#if fieldName}}name="{{fieldName}}"{{/if}} value="{{value}}"/>
-<a class="btn dropdown-toggle {{buttonCls}}" data-toggle="dropdown" href="#">
+<button id="{{dropdownId}}" class="btn btn-default {{buttonCls}}" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
   {{#iconCls}}
-    <i class="{{.}} icon-white"></i>
+    <span class="glyphicon glyphicon-{{.}}"></span>
   {{/iconCls}}
   {{#if hasSelection}}
     {{valueLabel}}
@@ -17,8 +17,8 @@
     {{noSelectionText}}
   {{/if}}
   <span class="caret"></span>
-</a>
-<ul class="dropdown-menu opens{{opens}}">
+</button>
+<ul class="dropdown-menu opens{{opens}}" aria-labelledby="{{dropdownId}}">
 {{#listValues}}
   <li data-value="{{value}}" class="{{value}}{{#selected}} active{{/selected}} {{#disabled}}disabled{{/disabled}} {{classes}}">
     <a href="#">{{label}}</a>

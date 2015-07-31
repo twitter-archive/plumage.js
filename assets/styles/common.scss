@@ -169,7 +169,7 @@ h2.title .light {
   position: absolute;
   left: 50%;
 
-  margin-left: -50%;
+
   margin-bottom: 20px;
 
   margin-top: -20px;
@@ -192,6 +192,7 @@ h2.title .light {
 
   .message-body {
     display: inline-block;
+    margin-left: -50%;
 
     font-size: 14px;
     font-weight: bold;

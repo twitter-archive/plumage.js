@@ -2,11 +2,10 @@
 var moment = require('moment');
 var Plumage = require('PlumageRoot');
 var Select = require('view/form/fields/Select');
-var template = require('view/form/fields/templates/DropdownSelect.html');
 
 module.exports = Plumage.view.form.fields.DropdownSelect = Select.extend({
 
-  template: template,
+  template: require('view/form/fields/templates/DropdownSelect.html'),
 
   modelAttr: 'filter',
 

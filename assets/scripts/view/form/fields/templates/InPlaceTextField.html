@@ -5,7 +5,7 @@
 {{/if}}
     <div class="field-value {{#unless hasValue}}no-value{{/unless}}">
       <span class="glyphicon glyphicon-pencil"></span>
-      <span>{{#if hasValue}}{{value}}{{else}}{{placeholder}}{{/if}}</span>
+      <span class="value">{{#if hasValue}}{{value}}{{else}}{{placeholder}}{{/if}}</span>
 	  </div>
     {{> field}}
     <span class="help-inline">{{#if message}}{{message}}{{/if}}</span>

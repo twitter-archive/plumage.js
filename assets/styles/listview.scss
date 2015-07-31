@@ -1,7 +1,7 @@
 .list-view {
   margin: 0;
   .items {
-    margin: 0;
+    padding: 0;
   }
   li {
     padding: 5px 0.5em 6px;
@@ -30,18 +30,21 @@
   }
 }
 
-.list-and-detail-dialog .modal {
+.list-and-detail-dialog .modal-dialog {
   width: 80%;
   height: 80%;
-  margin-left: -40%;
-  padding: 40px 0 60px 0;
-
-  .sample-data-view {
-    height: 100%;
-  }
 
   .modal-header {
-    margin-top: -40px;
+    margin-top: -60px;
+  }
+
+  .modal-content {
+    height: 100%;
+    padding: 60px 0 60px;
+  }
+
+  .modal-content-view {
+    height:100%;
   }
 
   .modal-body {
@@ -63,11 +66,8 @@
   .list {
     float: left;
     width: 160px;
-    @include box-shadow(0 2px 8px rgba(0,0,0,0.25));
-
-    ul {
-      margin: 0;
-    }
+    height: 100%;
+    overflow-y: scroll;
 
     li {
       padding-left: 15px;

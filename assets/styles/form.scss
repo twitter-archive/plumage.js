@@ -144,7 +144,7 @@
 
   .field-value {
     height: 34px;
-    padding: 7px 13px;
+    padding: 7px 0;
     line-height: 20px;
 
     cursor: pointer;
@@ -165,12 +165,13 @@
         display: block;
       }
     }
-
   }
 
   input[type=text] {
     display: none;
     margin-bottom: 0;
+    margin-left: -13px;
+    height: 34px;
   }
 
   &.editing {

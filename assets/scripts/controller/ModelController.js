@@ -74,7 +74,7 @@ module.exports = Plumage.controller.ModelController = BaseController.extend(
   showIndex: function(params) {
     params = params || {};
     if (params && params.filters && typeof(params.filters) === 'string') {
-      params.filters = JSON.parse(params.filters);
+      params.filters = this.processFiltersParam(params.filters);
     }
     var model = this.createIndexModel({}, params);
     return this.showIndexModel(model);
@@ -269,6 +269,10 @@ module.exports = Plumage.controller.ModelController = BaseController.extend(
     if (this.activeModel) {
       this.activeModel.on('change', this.onActiveModelChange, this);
     }
+  },
+
+  processFiltersParam: function(filters) {
+    return JSON.parse(atob(filters));
   },
 
   // Event Handlers

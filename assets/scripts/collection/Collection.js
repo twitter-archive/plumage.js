@@ -9,6 +9,8 @@ module.exports = Plumage.collection.Collection = Model.extend(
 /** @lends Plumage.collection.Collection.prototype */
 {
 
+  model: Model,
+
   urlRoot: undefined,
 
   viewAttrs: ['query', 'sortDir', 'sortField', 'page', 'pageSize'],
@@ -604,8 +606,8 @@ module.exports = Plumage.collection.Collection = Model.extend(
   getQueryParams: function () {
     var params = Model.prototype.getQueryParams.apply(this, arguments);
 
-    if (this.hasFilters) {
-      params.filters = JSON.stringify(this.getRelated('filters').toJSON());
+    if (this.hasFilters && this.getRelated('filters').size()) {
+      params.filters = btoa(JSON.stringify(this.getRelated('filters').toJSON()));
     }
     return params;
   },

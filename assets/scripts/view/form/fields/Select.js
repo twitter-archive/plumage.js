@@ -15,6 +15,11 @@ module.exports = Plumage.view.form.fields.Select = Field.extend(
   listValues: undefined,
 
   /**
+   * List of disabled values. If this is defined, values in this list will be disabled in the UI.
+   */
+  disabledValues: undefined,
+
+  /**
    * Model to get select choices from. Which attributes are used label and value are determined by
    * listLabelAttr and listValueAttr.
    * Use either this, or listValues, or listRelationship
@@ -102,7 +107,12 @@ module.exports = Plumage.view.form.fields.Select = Field.extend(
         return this.getItemData(model);
       }, this);
     } else {
-      return this.listValues;
+      return _.map(this.listValues, function(item) {
+        return _.extend({
+          selected: this.isValueSelected(item.value),
+          disabled: this.isValueDisabled(item.value)
+        }, item);
+      }.bind(this));
     }
   },
 
@@ -153,6 +163,12 @@ module.exports = Plumage.view.form.fields.Select = Field.extend(
     return value === this.getValue();
   },
 
+  isValueDisabled: function(value) {
+    if (this.disabledValues !== undefined) {
+      return this.disabledValues.indexOf(value) !== -1;
+    }
+    return false;
+  },
 
   getListItemValue: function(item) {
     return item.get(this.listValueAttr);

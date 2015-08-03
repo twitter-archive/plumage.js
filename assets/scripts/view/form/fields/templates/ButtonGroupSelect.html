@@ -1,6 +1,6 @@
 <input type="hidden" {{#fieldName}}name="{{fieldName}}"{{/fieldName}} value="{{value}}"/>
 <ul class="btn-group">
 {{#listValues}}
-  <li data-value="{{value}}" class="btn btn-default {{value}}{{#selected}} active{{/selected}}">{{label}}</li>
+  <li data-value="{{value}}" class="btn btn-default {{value}}{{#if selected}} active{{/if}}{{#if disabled}} disabled{{/if}}">{{label}}</li>
 {{/listValues}}
 </ul>

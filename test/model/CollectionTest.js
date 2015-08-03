@@ -312,7 +312,7 @@ test('Filters', function() {
   collection.updateInMemory();
   equal(collection.size(), 1, 'should apply multiple filters');
 
-  equal(JSON.parse(collection.getQueryParams().filters)[0].value, 'my body', 'should include filters in query params');
+  equal(JSON.parse(atob(collection.getQueryParams().filters))[0].value, 'my body', 'should include filters in query params');
 });
 
 test('new model url', function() {

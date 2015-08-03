@@ -3,13 +3,11 @@ var Plumage = require('PlumageRoot');
 var Field = require('view/form/fields/Field');
 var Select = require('view/form/fields/Select');
 
-var template = require('view/form/fields/templates/CategorySelect.html');
-
 module.exports = Plumage.view.form.fields.CategorySelect = Select.extend({
 
   className: 'category-select field',
 
-  template: template,
+  template: require('view/form/fields/templates/CategorySelect.html'),
 
   listValueAttr: 'name',
   listLabelAttr: 'label',
@@ -35,6 +33,10 @@ module.exports = Plumage.view.form.fields.CategorySelect = Select.extend({
    * Overrides
    */
   onListModelLoad: function(model, options) {
+    this.render();
+  },
+
+  update: function() {
     this.render();
   },
 

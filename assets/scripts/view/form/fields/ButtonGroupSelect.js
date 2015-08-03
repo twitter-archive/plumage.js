@@ -1,13 +1,11 @@
 var Plumage = require('PlumageRoot');
 var CategorySelect = require('view/form/fields/CategorySelect');
 
-var template = require('view/form/templates/FileDropZone.html');
-
 module.exports = Plumage.view.form.fields.ButtonGroupSelect = CategorySelect.extend({
 
   className: 'button-group-select',
 
-  template: template,
+  template: require('view/form/fields/templates/ButtonGroupSelect.html'),
 
   events:{
     'click li': 'onItemClick'

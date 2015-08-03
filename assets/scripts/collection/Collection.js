@@ -76,7 +76,7 @@ module.exports = Plumage.collection.Collection = Model.extend(
           model: Filter,
           urlRoot: '/',
           relationships: {},
-          hasFilters: false,
+          hasFilters: false
         }),
         forceCreate: true,
         propagateEvents: true
@@ -458,7 +458,7 @@ module.exports = Plumage.collection.Collection = Model.extend(
         throw 'Can not be both buffered and processInMemory';
       }
       this.onLoad(_.clone(options));
-      return;
+      return $.Deferred().resolve(this).promise();
     }
     return Model.prototype.load.apply(this, arguments);
   },

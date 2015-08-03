@@ -44,6 +44,7 @@ define([
   './view/form/fields/DurationField',
   './view/form/fields/Field',
   './view/form/fields/FieldWithPicker',
+  './view/form/fields/FilterButtonGroup',
   './view/form/fields/FilterCheckbox',
   './view/form/fields/FilterTypeAhead',
   './view/form/fields/HourSelect',

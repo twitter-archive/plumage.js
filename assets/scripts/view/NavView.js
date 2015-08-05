@@ -24,11 +24,21 @@ module.exports = Plumage.view.NavView = ContainerView.extend(
 
   showSearch: true,
 
+  /**
+   * Main nav links rendered below the title.
+   *
+   * List of objects with label, url and className attributes.
+   */
   navItems: [{
     className: 'home-menu',
     label: 'Home',
     url: '/home'
   }],
+
+  /**
+   * List of objects with label, url and className attributes. Rendered as links next to the title.
+   */
+  extraLinks: undefined,
 
   userMenuItems: [
     {
@@ -38,14 +48,6 @@ module.exports = Plumage.view.NavView = ContainerView.extend(
   ],
 
   logoutUrl: '/logout',
-
-  aboutUrl: undefined,
-
-  aboutLabel: 'About',
-
-  helpUrl: undefined,
-
-  helpLabel: 'Help',
 
   events: {
     'click .navbar-nav a': 'onNavClick',
@@ -113,10 +115,7 @@ module.exports = Plumage.view.NavView = ContainerView.extend(
       navItems: navItems,
       showAbout: this.aboutTemplate !== undefined,
       showSearch: this.showSearch,
-      aboutUrl: this.aboutUrl,
-      aboutLabel: this.aboutLabel,
-      helpUrl: this.helpUrl,
-      helpLabel: this.helpLabel
+      extraLinks: this.extraLinks
     };
   },
 

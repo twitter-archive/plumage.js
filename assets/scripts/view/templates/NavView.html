@@ -19,12 +19,9 @@
       </a>
 
       <div class="extra-links">
-        {{#if aboutUrl}}
-        <a class="outlink" href="{{aboutUrl}}" target="_">{{aboutLabel}}</a>
-        {{/if}}
-        {{#if helpUrl}}
-        <a class="outlink" href="{{helpUrl}}" target="_">{{helpLabel}}</a>
-        {{/if}}
+        {{#extraLinks}}
+          <a class="outlink {{className}}" href="{{url}}" target="_">{{label}}</a>
+        {{/extraLinks}}
       </div>
     </div>
 

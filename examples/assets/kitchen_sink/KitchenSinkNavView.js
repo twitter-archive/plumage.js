@@ -12,9 +12,9 @@ module.exports = Plumage.view.NavView.extend({
 
   showSearch: true,
 
-  aboutUrl: '#',
-
-  helpUrl: '#',
+  extraLinks: [
+    {label: 'Exta Links', url: '#'}
+  ],
 
   navItems: [
     {id: 'grid', label: 'Models', url: 'model', className: 'model-menu'},

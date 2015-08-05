@@ -45,7 +45,9 @@ module.exports = Plumage.view.form.fields.CategorySelect = Select.extend({
     var li = $(e.target).closest('li'),
       value = li && li.data('value');
 
-    this.setValue(value);
+    if (!this.isValueDisabled(value)) {
+      this.setValue(value);
+    }
   },
 
   getItemData: function(item) {

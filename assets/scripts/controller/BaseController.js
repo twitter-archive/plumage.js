@@ -1,4 +1,5 @@
-/* globals $, _ */
+var $ = require('jquery');
+var _ = require('underscore');
 var Backbone = require('backbone');
 var Plumage = require('PlumageRoot');
 var requestManager = require('RequestManager');

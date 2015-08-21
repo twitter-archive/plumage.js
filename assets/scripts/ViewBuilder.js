@@ -1,5 +1,4 @@
-/* globals $, _ */
-
+var _ = require('underscore');
 var Backbone = require('backbone');
 var Plumage = require('PlumageRoot');
 var View = require('view/View');

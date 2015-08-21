@@ -5,6 +5,10 @@ module.exports = {
   model: {},
   /** @namespace Plumage.collection */
   collection: {},
+  /** @namespace Plumage.components */
+  components: {
+    util: {}
+  },
   /** @namespace Plumage.controller */
   controller: {},
   /** @namespace Plumage.util */

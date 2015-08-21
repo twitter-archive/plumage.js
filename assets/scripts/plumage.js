@@ -1,3 +1,5 @@
+
+
 define([
   './PlumageRoot',
   './App',
@@ -77,8 +79,21 @@ define([
   './view/ModelView',
   './view/NavView',
   './view/Popover',
+  './view/ReactView',
   './view/TabView'
 ],
 function(Plumage) {
+  Plumage.components.Form = require('./components/Form');
+  Plumage.components.util.FormUtil = require('./components/util/FormUtil');
+  Plumage.components.FormGroup = require('./components/FormGroup');
+  Plumage.components.TextField = require('./components/TextField');
+  Plumage.components.InplaceTextField = require('./components/InplaceTextField');
+  Plumage.components.DateField = require('./components/DateField');
+  Plumage.components.DateRangeField = require('./components/DateRangeField');
+  Plumage.components.Select = require('./components/Select');
+  Plumage.components.CategorySelect = require('./components/CategorySelect');
+  Plumage.components.ButtonGroupSelect = require('./components/ButtonGroupSelect');
+  Plumage.components.DropdownSelect = require('./components/DropdownSelect');
+
   return Plumage;
 });

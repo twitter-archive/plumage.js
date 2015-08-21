@@ -211,4 +211,5 @@ module.exports = Plumage.view.form.fields.picker.DateRangePicker = Picker.extend
     e.stopPropagation();
     this.trigger('close');
   },
-});
+}
+);

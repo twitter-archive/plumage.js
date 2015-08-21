@@ -16,7 +16,8 @@ module.exports = {
 
   module: {
     loaders: [
-      { test: /\.html$/, loader: "raw-loader" }
+      { test: /\.html$/, loader: "raw-loader" },
+      { test: /\.jsx$/, loader: 'babel-loader' }
     ],
     noParse: [
       /sinon/

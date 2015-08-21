@@ -1,4 +1,5 @@
-/* globals $, _ */
+var $ = require('jquery');
+var _ = require('underscore');
 var Backbone = require('backbone');
 var Plumage = require('PlumageRoot');
 var requestManager = require('RequestManager');
@@ -400,7 +401,7 @@ module.exports = Plumage.model.Model = Backbone.Model.extend(
       related = this.collection.getRelated(keyPart);
     } else {
       if (!this.hasRelationship(keyPart)) {
-        throw 'unknown relationship';
+        throw 'unknown relationship - ' + keyPart;
       }
     }
 
@@ -706,7 +707,7 @@ module.exports = Plumage.model.Model = Backbone.Model.extend(
         return $.Deferred().resolve(this, resp).promise();
       }.bind(this));
     }
-    return false;
+    return xhr;
   },
 
   /**

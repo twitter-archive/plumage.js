@@ -1,4 +1,5 @@
-/* globals $, _ */
+var $ = require('jquery');
+var _ = require('underscore');
 var Handlebars = require('handlebars');
 var Plumage = require('PlumageRoot');
 var ContainerView = require('view/ContainerView');

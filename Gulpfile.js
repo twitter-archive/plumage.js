@@ -59,9 +59,9 @@ gulp.task('lint', function() {
     'assets/scripts/**/*.js',
     'test/example/**/*.js',
     'examples/assets/**/*.js'])
-    .pipe($.jshint())
-    .pipe($.jshint.reporter('default'))
-    .pipe($.jshint.reporter('fail'));
+    .pipe($.eslint())
+    .pipe($.eslint.format())
+    .pipe($.eslint.failOnError())
 });
 
 // 3rd party libraries

@@ -103,6 +103,7 @@ module.exports = Plumage.view.form.fields.Field = ModelView.extend(
    * @extends Plumage.view.ModelView
    */
   initialize: function(options) {
+    options = options || {};
     this.validationMessages = _.extend({},this.validationMessages, options.validationMessages);
     delete options.validationMessages;
 

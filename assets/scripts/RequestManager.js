@@ -1,5 +1,4 @@
-/* globals $, _ */
-
+var _ = require('underscore');
 var Plumage = require('PlumageRoot');
 
 var instance;

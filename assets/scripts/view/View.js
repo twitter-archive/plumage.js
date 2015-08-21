@@ -1,5 +1,5 @@
-/* globals $, _ */
-
+var $ = require('jquery');
+var _ = require('underscore');
 var Backbone = require('backbone');
 var Handlebars = require('handlebars');
 var Spinner = require('spin.js');
@@ -210,8 +210,12 @@ module.exports = Plumage.view.View = Backbone.View.extend(
   },
 
   /** Show the loading animation. Uses spin.js */
-  showLoadingAnimation: function() {
-    var width = $(this.el).width(), height = $(this.el).height();
+  showLoadingAnimation: function(el) {
+    if (el === undefined) {
+      el = this.el;
+    }
+    var $el = $(this.el);
+    var width = $el.width(), height = $el.height();
     if (!this.isRendered || width === 0 && height === 0) {
       this.on('afterRender', this.showLoadingAnimation.bind(this));
       return;
@@ -237,7 +241,7 @@ module.exports = Plumage.view.View = Backbone.View.extend(
 
     opts = _.extend(opts, this.loadingAnimationOptions);
 
-    var offset = $(this.el).offset();
+    var offset = $el.offset();
     if(!this.loader){
       this.loader = $('<div class="loader"> <div class="spinner-box"></div> </div>');
       $('body').append(this.loader);

@@ -1,4 +1,4 @@
-/* globals $, _ */
+var _ = require('underscore');
 var Handlebars = require('handlebars');
 var Cookies = require('cookies-js');
 

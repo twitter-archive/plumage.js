@@ -1,4 +1,5 @@
-/* globals $, _ */
+var $ = require('jquery');
+var _ = require('underscore');
 var Backbone = require('backbone');
 var Plumage = require('PlumageRoot');
 var Model = require('model/Model');
@@ -350,7 +351,7 @@ module.exports = Plumage.collection.Collection = Model.extend(
 
   toViewJSON: function() {
     var result = Model.prototype.toViewJSON.apply(this, arguments);
-    result.items = this.toJSON.apply(this, arguments);
+    result.items = this.map(function(model){ return model.toViewJSON(); });
     result.size = this.size();
     return result;
   },

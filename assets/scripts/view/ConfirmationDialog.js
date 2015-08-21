@@ -1,4 +1,5 @@
-/* globals $, _ */
+var $ = require('jquery');
+var _ = require('underscore');
 var Plumage = require('PlumageRoot');
 var ModalDialog = require('view/ModalDialog');
 var MessageView = require('view/MessageView');

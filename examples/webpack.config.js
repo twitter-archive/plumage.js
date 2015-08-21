@@ -18,10 +18,11 @@ module.exports = {
 
   module: { loaders: [
     { test: /\.html$/, loader: "raw-loader" },
-    { test: /\.json$/, loader: "json-loader" }
+    { test: /\.json$/, loader: "json-loader" },
+    { test: /\.jsx$/, loader: 'babel-loader' }
   ]},
 
-  plugins: [
+ // plugins: [
     new ProvidePlugin({
       $: "jquery",
       jQuery: "jquery",

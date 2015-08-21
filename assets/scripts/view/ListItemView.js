@@ -7,20 +7,21 @@ var ModelView = require('view/ModelView');
  */
 module.exports = Plumage.view.ListItemView = ModelView.extend(
 /** @lends Plumage.view.ListItemView.prototype */
-{
+  {
 
-  tagName : 'li',
+    tagName : 'li',
 
-  className : 'list-item-view',
+    className : 'list-item-view',
 
-  events: {
-    'click': 'onClick'
-  },
+    events: {
+      'click': 'onClick'
+    },
 
-  /* Event Handlers */
+    /* Event Handlers */
 
-  onClick: function() {
-    this.trigger('select', this, this.model);
+    onClick: function() {
+      this.trigger('select', this, this.model);
+    }
+
   }
-
-});
+);

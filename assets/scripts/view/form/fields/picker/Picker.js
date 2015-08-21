@@ -1,4 +1,3 @@
-/* globals $, _ */
 var Plumage = require('PlumageRoot');
 var Picker = require('view/form/fields/picker/Picker');
 var Model = require('model/Model');
@@ -6,86 +5,85 @@ var ModelView = require('view/ModelView');
 
 module.exports = Plumage.view.form.fields.picker.Picker = ModelView.extend(
 /** @lends Plumage.view.form.fields.picker.Picker.prototype */
-{
+  {
+    modelCls: false, //never bind via setModel
 
+    className: 'dropdown-menu',
 
-  modelCls: false, //never bind via setModel
+    pickerModelAttr: 'value',
 
-  className: 'dropdown-menu',
+    opens: 'right',
 
-  pickerModelAttr: 'value',
+    applyOnChange: false,
 
-  opens: 'right',
+    events: {
+      'mousedown': 'onMouseDown'
+    },
 
-  applyOnChange: false,
+    defaultSubViewOptions: {
+      updateModelOnChange: true
+    },
 
-  events: {
-    'mousedown': 'onMouseDown'
-  },
+    /**
+     * @constructs
+     * @extends Plumage.view.ModelView
+     */
+    initialize: function(options) {
+      this.defaultSubViewOptions = {
+        updateModelOnChange: true,
+        valueAttr: options.pickerModelAttr || this.pickerModelAttr
+      };
+      ModelView.prototype.initialize.apply(this, arguments);
+      this.setModel(new Model({}, {urlRoot: '/'}), null, true);
+    },
 
-  defaultSubViewOptions: {
-    updateModelOnChange: true
-  },
+    onModelChange: function() {
+      ModelView.prototype.onModelChange.apply(this, arguments);
+      if (this.applyOnChange) {
+        this.trigger('apply', this, this.model);
+      }
+    },
 
-  /**
-   * @constructs
-   * @extends Plumage.view.ModelView
-   */
-  initialize: function(options) {
-    this.defaultSubViewOptions = {
-      updateModelOnChange: true,
-      valueAttr: options.pickerModelAttr || this.pickerModelAttr
-    };
-    ModelView.prototype.initialize.apply(this, arguments);
-    this.setModel(new Model({}, {urlRoot: '/'}), null, true);
-  },
+    getValue: function() {
+      return this.model.get(this.pickerModelAttr);
+    },
 
-  onModelChange: function() {
-    ModelView.prototype.onModelChange.apply(this, arguments);
-    if (this.applyOnChange) {
-      this.trigger('apply', this, this.model);
-    }
-  },
+    setValue: function(value) {
+      this.model.set(this.pickerModelAttr, value);
+    },
 
-  getValue: function() {
-    return this.model.get(this.pickerModelAttr);
-  },
+    onRender: function() {
+      ModelView.prototype.onRender.apply(this, arguments);
+      this.$el.addClass('opens' + this.opens);
+    },
 
-  setValue: function(value) {
-    this.model.set(this.pickerModelAttr, value);
-  },
+    getTemplateData: function() {
+      return ModelView.prototype.getTemplateData.apply(this, arguments);
+    },
 
-  onRender: function() {
-    ModelView.prototype.onRender.apply(this, arguments);
-    this.$el.addClass('opens' + this.opens);
-  },
+    update: function() {
+      ModelView.prototype.update.apply(this, arguments);
+    },
 
-  getTemplateData: function() {
-    return ModelView.prototype.getTemplateData.apply(this, arguments);
-  },
+    //
+    // Events
+    //
 
-  update: function() {
-    ModelView.prototype.update.apply(this, arguments);
-  },
-
-  //
-  // Events
-  //
-
-  onMouseDown: function(e) {
-    //do nothing so input doesn't lose focus
-    e.preventDefault();
-    e.stopPropagation();
-  },
-
-  onKeyDown: function(e) {
-    if (e.keyCode === 13) { //on enter
+    onMouseDown: function(e) {
+      //do nothing so input doesn't lose focus
       e.preventDefault();
-      this.close();
-      this.updateValueFromDom();
-    } else if(e.keyCode === 27) {
-      this.close();
-      this.update();
+      e.stopPropagation();
+    },
+
+    onKeyDown: function(e) {
+      if (e.keyCode === 13) { //on enter
+        e.preventDefault();
+        this.close();
+        this.updateValueFromDom();
+      } else if(e.keyCode === 27) {
+        this.close();
+        this.update();
+      }
     }
   }
-});
+);

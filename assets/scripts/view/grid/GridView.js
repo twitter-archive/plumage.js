@@ -234,7 +234,7 @@ module.exports = Plumage.view.grid.GridView = ModelView.extend({
         this.grid.scrollToLastRendered();
       }
       this.grid.resizeCanvas();
-      }
+    }
   },
 
   onHide: function() {
@@ -265,8 +265,8 @@ module.exports = Plumage.view.grid.GridView = ModelView.extend({
     var item = this.grid.getDataItem(cell.row);
     if (item) {
       var id = this.grid.getDataItem(cell.row).id,
-      data = this.grid.getData(),
-      model = data.getItem(data.getIndexForId(id));
+        data = this.grid.getData(),
+        model = data.getItem(data.getIndexForId(id));
       this.trigger('itemSelected',  model);
     }
   },

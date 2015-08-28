@@ -7,6 +7,7 @@ module.exports = {
   collection: {},
   /** @namespace Plumage.components */
   components: {
+    tree: {},
     util: {}
   },
   /** @namespace Plumage.controller */

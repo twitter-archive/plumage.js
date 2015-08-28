@@ -124,6 +124,19 @@ Plumage.collection.Collection = Model.extend(
       return this.urlRoot;
     },
 
+    getIn: function(path) {
+      if (!path || path.length === 0) {
+        return this;
+      }
+      var index = path[0];
+      if (Number.isInteger(index)) {
+        return this.getAt(index).getIn(path.slice(1));
+      }
+      if (path.length > 1) {
+        return this.getRelated(index).getIn(path.slice(1));
+      }
+      return this.get(path[0]);
+    },
 
     /**
      * Overridden from Model. Takes a special attributes 'models' to use as collection data,

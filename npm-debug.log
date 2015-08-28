@@ -1,0 +1,282 @@
+0 info it worked if it ends with ok
+1 verbose cli [ '/Users/mlin/.nvm/v0.10.38/bin/node',
+1 verbose cli   '/Users/mlin/.nvm/v0.10.38/bin/npm',
+1 verbose cli   'install' ]
+2 info using npm@1.4.28
+3 info using node@v0.10.38
+4 verbose readDependencies using package.json deps
+5 verbose install where, deps [ '/Users/mlin/workspace/plumage.js',
+5 verbose install   [ 'backbone',
+5 verbose install     'bootstrap-sass',
+5 verbose install     'cookies-js',
+5 verbose install     'dropzone',
+5 verbose install     'form-data-to-object',
+5 verbose install     'handlebars',
+5 verbose install     'jquery',
+5 verbose install     'jquery.cookie',
+5 verbose install     'jquery.scrollto',
+5 verbose install     'moment',
+5 verbose install     'spin.js',
+5 verbose install     'underscore',
+5 verbose install     'babel-core',
+5 verbose install     'babel-eslint',
+5 verbose install     'babel-loader',
+5 verbose install     'browser-sync',
+5 verbose install     'connect-livereload',
+5 verbose install     'del',
+5 verbose install     'eslint',
+5 verbose install     'eslint-loader',
+5 verbose install     'eslint-plugin-react',
+5 verbose install     'gulp',
+5 verbose install     'gulp-changed',
+5 verbose install     'gulp-csscomb',
+5 verbose install     'gulp-eslint',
+5 verbose install     'gulp-if',
+5 verbose install     'gulp-jshint',
+5 verbose install     'gulp-load-plugins',
+5 verbose install     'gulp-minify-css',
+5 verbose install     'gulp-plumber',
+5 verbose install     'gulp-sass',
+5 verbose install     'gulp-shell',
+5 verbose install     'gulp-size',
+5 verbose install     'gulp-util',
+5 verbose install     'html-loader',
+5 verbose install     'istanbul-instrumenter-loader',
+5 verbose install     'jsdoc',
+5 verbose install     'json-loader',
+5 verbose install     'jsx-loader',
+5 verbose install     'karma',
+5 verbose install     'karma-chrome-launcher',
+5 verbose install     'karma-coverage',
+5 verbose install     'karma-firefox-launcher',
+5 verbose install     'karma-phantomjs-launcher',
+5 verbose install     'karma-qunit',
+5 verbose install     'karma-requirejs',
+5 verbose install     'karma-sourcemap-loader',
+5 verbose install     'karma-verbose-reporter',
+5 verbose install     'karma-webpack',
+5 verbose install     'minimist',
+5 verbose install     'node-libs-browser',
+5 verbose install     'phantomjs',
+5 verbose install     'qunit',
+5 verbose install     'raw-loader',
+5 verbose install     'run-sequence',
+5 verbose install     'send',
+5 verbose install     'sinon',
+5 verbose install     'webpack',
+5 verbose install     'webpack-dev-server' ] ]
+6 info preinstall plumage@0.0.0
+7 verbose readDependencies using package.json deps
+8 verbose already installed skipping cookies-js@^1.2.1 /Users/mlin/workspace/plumage.js
+9 verbose already installed skipping dropzone@^4.0.1 /Users/mlin/workspace/plumage.js
+10 verbose already installed skipping form-data-to-object@^0.2.0 /Users/mlin/workspace/plumage.js
+11 verbose already installed skipping handlebars@^3.0.3 /Users/mlin/workspace/plumage.js
+12 verbose already installed skipping jquery@^1.11.3 /Users/mlin/workspace/plumage.js
+13 verbose already installed skipping jquery.cookie@^1.4.1 /Users/mlin/workspace/plumage.js
+14 verbose already installed skipping jquery.scrollto@^1.4.14 /Users/mlin/workspace/plumage.js
+15 verbose already installed skipping moment@^2.8.4 /Users/mlin/workspace/plumage.js
+16 verbose already installed skipping spin.js@^1.3.2 /Users/mlin/workspace/plumage.js
+17 verbose already installed skipping underscore@^1.7.0 /Users/mlin/workspace/plumage.js
+18 verbose already installed skipping babel-core@^5.8.21 /Users/mlin/workspace/plumage.js
+19 verbose already installed skipping babel-eslint@^4.0.10 /Users/mlin/workspace/plumage.js
+20 verbose already installed skipping babel-loader@^5.3.2 /Users/mlin/workspace/plumage.js
+21 verbose already installed skipping browser-sync@^2.7.13 /Users/mlin/workspace/plumage.js
+22 verbose already installed skipping connect-livereload@~0.2.0 /Users/mlin/workspace/plumage.js
+23 verbose already installed skipping del@^1.2.0 /Users/mlin/workspace/plumage.js
+24 verbose already installed skipping eslint@^1.2.1 /Users/mlin/workspace/plumage.js
+25 verbose already installed skipping eslint-loader@^1.0.0 /Users/mlin/workspace/plumage.js
+26 verbose already installed skipping eslint-plugin-react@^3.2.3 /Users/mlin/workspace/plumage.js
+27 verbose already installed skipping gulp@^3.9.0 /Users/mlin/workspace/plumage.js
+28 verbose already installed skipping gulp-changed@^1.2.1 /Users/mlin/workspace/plumage.js
+29 verbose already installed skipping gulp-csscomb@^3.0.6 /Users/mlin/workspace/plumage.js
+30 verbose already installed skipping gulp-eslint@^1.0.0 /Users/mlin/workspace/plumage.js
+31 verbose already installed skipping gulp-if@^1.2.5 /Users/mlin/workspace/plumage.js
+32 verbose already installed skipping gulp-jshint@^1.11.2 /Users/mlin/workspace/plumage.js
+33 verbose already installed skipping gulp-load-plugins@^1.0.0-rc.1 /Users/mlin/workspace/plumage.js
+34 verbose already installed skipping gulp-minify-css@^1.2.0 /Users/mlin/workspace/plumage.js
+35 verbose already installed skipping gulp-plumber@^1.0.1 /Users/mlin/workspace/plumage.js
+36 verbose already installed skipping gulp-sass@^2.0.3 /Users/mlin/workspace/plumage.js
+37 verbose already installed skipping gulp-shell@^0.4.2 /Users/mlin/workspace/plumage.js
+38 verbose already installed skipping gulp-size@^1.2.3 /Users/mlin/workspace/plumage.js
+39 verbose already installed skipping gulp-util@^3.0.6 /Users/mlin/workspace/plumage.js
+40 verbose already installed skipping html-loader@^0.3.0 /Users/mlin/workspace/plumage.js
+41 verbose already installed skipping istanbul-instrumenter-loader@^0.1.3 /Users/mlin/workspace/plumage.js
+42 verbose already installed skipping jsdoc@^3.3.2 /Users/mlin/workspace/plumage.js
+43 verbose already installed skipping json-loader@^0.5.2 /Users/mlin/workspace/plumage.js
+44 verbose already installed skipping jsx-loader@^0.13.2 /Users/mlin/workspace/plumage.js
+45 verbose already installed skipping karma@0.13.1 /Users/mlin/workspace/plumage.js
+46 verbose already installed skipping karma-chrome-launcher@0.1.12 /Users/mlin/workspace/plumage.js
+47 verbose already installed skipping karma-coverage@0.4.2 /Users/mlin/workspace/plumage.js
+48 verbose already installed skipping karma-firefox-launcher@0.1.6 /Users/mlin/workspace/plumage.js
+49 verbose already installed skipping karma-phantomjs-launcher@0.2.0 /Users/mlin/workspace/plumage.js
+50 verbose already installed skipping karma-qunit@0.1.4 /Users/mlin/workspace/plumage.js
+51 verbose already installed skipping karma-requirejs@0.2.2 /Users/mlin/workspace/plumage.js
+52 verbose already installed skipping karma-sourcemap-loader@0.3.5 /Users/mlin/workspace/plumage.js
+53 verbose already installed skipping karma-verbose-reporter@0.0.2 /Users/mlin/workspace/plumage.js
+54 verbose already installed skipping karma-webpack@1.5.1 /Users/mlin/workspace/plumage.js
+55 verbose already installed skipping minimist@^1.1.1 /Users/mlin/workspace/plumage.js
+56 verbose already installed skipping node-libs-browser@^0.5.2 /Users/mlin/workspace/plumage.js
+57 verbose already installed skipping phantomjs@^1.9.17 /Users/mlin/workspace/plumage.js
+58 verbose already installed skipping qunit@^0.7.6 /Users/mlin/workspace/plumage.js
+59 verbose already installed skipping raw-loader@^0.5.1 /Users/mlin/workspace/plumage.js
+60 verbose already installed skipping run-sequence@^1.1.1 /Users/mlin/workspace/plumage.js
+61 verbose already installed skipping send@~0.2.0 /Users/mlin/workspace/plumage.js
+62 verbose already installed skipping sinon@^1.15.4 /Users/mlin/workspace/plumage.js
+63 verbose already installed skipping webpack@^1.9.11 /Users/mlin/workspace/plumage.js
+64 verbose already installed skipping webpack-dev-server@^1.9.0 /Users/mlin/workspace/plumage.js
+65 verbose already installed skipping backbone@1.1.2 /Users/mlin/workspace/plumage.js
+66 verbose already installed skipping bootstrap-sass@^3.3.5 /Users/mlin/workspace/plumage.js
+67 silly resolved []
+68 info build /Users/mlin/workspace/plumage.js
+69 verbose linkStuff [ false, false, false, '/Users/mlin/workspace' ]
+70 info linkStuff plumage@0.0.0
+71 verbose linkBins plumage@0.0.0
+72 verbose linkMans plumage@0.0.0
+73 verbose rebuildBundles plumage@0.0.0
+74 verbose rebuildBundles [ '.bin',
+74 verbose rebuildBundles   'babel-core',
+74 verbose rebuildBundles   'babel-eslint',
+74 verbose rebuildBundles   'babel-loader',
+74 verbose rebuildBundles   'backbone',
+74 verbose rebuildBundles   'bootstrap-sass',
+74 verbose rebuildBundles   'browser-sync',
+74 verbose rebuildBundles   'connect-livereload',
+74 verbose rebuildBundles   'cookies-js',
+74 verbose rebuildBundles   'del',
+74 verbose rebuildBundles   'dropzone',
+74 verbose rebuildBundles   'eslint',
+74 verbose rebuildBundles   'eslint-loader',
+74 verbose rebuildBundles   'eslint-plugin-react',
+74 verbose rebuildBundles   'form-data-to-object',
+74 verbose rebuildBundles   'gulp',
+74 verbose rebuildBundles   'gulp-changed',
+74 verbose rebuildBundles   'gulp-csscomb',
+74 verbose rebuildBundles   'gulp-eslint',
+74 verbose rebuildBundles   'gulp-if',
+74 verbose rebuildBundles   'gulp-jshint',
+74 verbose rebuildBundles   'gulp-load-plugins',
+74 verbose rebuildBundles   'gulp-minify-css',
+74 verbose rebuildBundles   'gulp-plumber',
+74 verbose rebuildBundles   'gulp-sass',
+74 verbose rebuildBundles   'gulp-shell',
+74 verbose rebuildBundles   'gulp-size',
+74 verbose rebuildBundles   'gulp-util',
+74 verbose rebuildBundles   'handlebars',
+74 verbose rebuildBundles   'html-loader',
+74 verbose rebuildBundles   'istanbul-instrumenter-loader',
+74 verbose rebuildBundles   'jquery',
+74 verbose rebuildBundles   'jquery.cookie',
+74 verbose rebuildBundles   'jquery.scrollto',
+74 verbose rebuildBundles   'jsdoc',
+74 verbose rebuildBundles   'json-loader',
+74 verbose rebuildBundles   'jsx-loader',
+74 verbose rebuildBundles   'karma',
+74 verbose rebuildBundles   'karma-chrome-launcher',
+74 verbose rebuildBundles   'karma-coverage',
+74 verbose rebuildBundles   'karma-firefox-launcher',
+74 verbose rebuildBundles   'karma-phantomjs-launcher',
+74 verbose rebuildBundles   'karma-qunit',
+74 verbose rebuildBundles   'karma-requirejs',
+74 verbose rebuildBundles   'karma-sourcemap-loader',
+74 verbose rebuildBundles   'karma-verbose-reporter',
+74 verbose rebuildBundles   'karma-webpack',
+74 verbose rebuildBundles   'minimist',
+74 verbose rebuildBundles   'moment',
+74 verbose rebuildBundles   'node-libs-browser',
+74 verbose rebuildBundles   'phantomjs',
+74 verbose rebuildBundles   'pure-render-decorator',
+74 verbose rebuildBundles   'qunit',
+74 verbose rebuildBundles   'qunitjs',
+74 verbose rebuildBundles   'raw-loader',
+74 verbose rebuildBundles   'react',
+74 verbose rebuildBundles   'react-dom',
+74 verbose rebuildBundles   'requirejs',
+74 verbose rebuildBundles   'run-sequence',
+74 verbose rebuildBundles   'send',
+74 verbose rebuildBundles   'sinon',
+74 verbose rebuildBundles   'spin.js',
+74 verbose rebuildBundles   'underscore',
+74 verbose rebuildBundles   'webpack',
+74 verbose rebuildBundles   'webpack-dev-server' ]
+75 verbose rebuild bundle /Users/mlin/workspace/plumage.js/node_modules/pure-render-decorator
+76 info build /Users/mlin/workspace/plumage.js/node_modules/pure-render-decorator
+77 info preinstall pure-render-decorator@0.1.0
+78 verbose linkStuff [ false,
+78 verbose linkStuff   false,
+78 verbose linkStuff   false,
+78 verbose linkStuff   '/Users/mlin/workspace/plumage.js/node_modules' ]
+79 info linkStuff pure-render-decorator@0.1.0
+80 verbose linkBins pure-render-decorator@0.1.0
+81 verbose linkMans pure-render-decorator@0.1.0
+82 verbose rebuildBundles pure-render-decorator@0.1.0
+83 verbose rebuildBundles [ 'react-addons-shallow-compare' ]
+84 info install pure-render-decorator@0.1.0
+85 info postinstall pure-render-decorator@0.1.0
+86 verbose rebuild bundle /Users/mlin/workspace/plumage.js/node_modules/qunitjs
+87 info build /Users/mlin/workspace/plumage.js/node_modules/qunitjs
+88 info preinstall qunitjs@1.18.0
+89 verbose linkStuff [ false,
+89 verbose linkStuff   false,
+89 verbose linkStuff   false,
+89 verbose linkStuff   '/Users/mlin/workspace/plumage.js/node_modules' ]
+90 info linkStuff qunitjs@1.18.0
+91 verbose linkBins qunitjs@1.18.0
+92 verbose linkMans qunitjs@1.18.0
+93 verbose rebuildBundles qunitjs@1.18.0
+94 info install qunitjs@1.18.0
+95 info postinstall qunitjs@1.18.0
+96 verbose rebuild bundle /Users/mlin/workspace/plumage.js/node_modules/react
+97 info build /Users/mlin/workspace/plumage.js/node_modules/react
+98 info preinstall react@0.14.0-beta3
+99 verbose linkStuff [ false,
+99 verbose linkStuff   false,
+99 verbose linkStuff   false,
+99 verbose linkStuff   '/Users/mlin/workspace/plumage.js/node_modules' ]
+100 info linkStuff react@0.14.0-beta3
+101 verbose linkBins react@0.14.0-beta3
+102 verbose linkMans react@0.14.0-beta3
+103 verbose rebuildBundles react@0.14.0-beta3
+104 verbose rebuildBundles [ '.bin', 'envify', 'fbjs' ]
+105 info install react@0.14.0-beta3
+106 info postinstall react@0.14.0-beta3
+107 verbose rebuild bundle /Users/mlin/workspace/plumage.js/node_modules/react-dom
+108 info build /Users/mlin/workspace/plumage.js/node_modules/react-dom
+109 info preinstall react-dom@0.14.0-beta3
+110 verbose linkStuff [ false,
+110 verbose linkStuff   false,
+110 verbose linkStuff   false,
+110 verbose linkStuff   '/Users/mlin/workspace/plumage.js/node_modules' ]
+111 info linkStuff react-dom@0.14.0-beta3
+112 verbose linkBins react-dom@0.14.0-beta3
+113 verbose linkMans react-dom@0.14.0-beta3
+114 verbose rebuildBundles react-dom@0.14.0-beta3
+115 verbose rebuildBundles [ 'fbjs', 'react' ]
+116 info install react-dom@0.14.0-beta3
+117 info postinstall react-dom@0.14.0-beta3
+118 verbose rebuild bundle /Users/mlin/workspace/plumage.js/node_modules/requirejs
+119 info build /Users/mlin/workspace/plumage.js/node_modules/requirejs
+120 info preinstall requirejs@2.1.19
+121 verbose linkStuff [ false,
+121 verbose linkStuff   false,
+121 verbose linkStuff   false,
+121 verbose linkStuff   '/Users/mlin/workspace/plumage.js/node_modules' ]
+122 info linkStuff requirejs@2.1.19
+123 verbose linkBins requirejs@2.1.19
+124 verbose link bins [ { 'r.js': './bin/r.js' },
+124 verbose link bins   '/Users/mlin/workspace/plumage.js/node_modules/.bin',
+124 verbose link bins   false ]
+125 verbose linkMans requirejs@2.1.19
+126 verbose rebuildBundles requirejs@2.1.19
+127 info install requirejs@2.1.19
+128 info postinstall requirejs@2.1.19
+129 info install plumage@0.0.0
+130 info postinstall plumage@0.0.0
+131 info prepublish plumage@0.0.0
+132 error peerinvalid The package pure-render-decorator does not satisfy its siblings' peerDependencies requirements!
+133 error System Darwin 14.5.0
+134 error command "/Users/mlin/.nvm/v0.10.38/bin/node" "/Users/mlin/.nvm/v0.10.38/bin/npm" "install"
+135 error cwd /Users/mlin/workspace/plumage.js
+136 error node -v v0.10.38
+137 error npm -v 1.4.28
+138 error code EPEERINVALID
+139 verbose exit [ 1, true ]

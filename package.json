@@ -15,12 +15,14 @@
     "jquery.cookie": "^1.4.1",
     "jquery.scrollto": "^1.4.14",
     "moment": "^2.8.4",
+    "pure-render-decorator": "^0.1.0",
     "spin.js": "^1.3.2",
     "underscore": "^1.7.0"
   },
   "peerDependencies": {
     "react": "^0.14.0-beta3",
-    "react-dom": "^0.14.0-beta3"
+    "react-dom": "^0.14.0-beta3",
+    "immutable": "^3.7.4"
   },
   "devDependencies": {
     "babel-core": "^5.8.21",

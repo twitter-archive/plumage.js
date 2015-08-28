@@ -94,6 +94,7 @@ function(Plumage) {
   Plumage.components.CategorySelect = require('./components/CategorySelect');
   Plumage.components.ButtonGroupSelect = require('./components/ButtonGroupSelect');
   Plumage.components.DropdownSelect = require('./components/DropdownSelect');
+  Plumage.components.tree.Tree = require('./components/tree/Tree');
 
   return Plumage;
 });

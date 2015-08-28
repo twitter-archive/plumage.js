@@ -21,7 +21,7 @@ _.extend(GridData.prototype, Backbone.Events,
     /** The wrapped collection */
     collection: undefined,
 
-    /** Initializtion logic */
+    /** Initialization logic */
     initialize: function(collection, options) {
       _.extend(this, options);
       this.collection = collection;
@@ -57,7 +57,9 @@ _.extend(GridData.prototype, Backbone.Events,
     /** Get the indes of the model with the given id. */
     getIndexForId: function (id) {
       var model = this.collection.getById(id);
-      return this.collection.indexOf(model);
+      if (model) {
+        return this.collection.indexOf(model);
+      }
     },
 
     /**

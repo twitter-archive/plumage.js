@@ -309,6 +309,20 @@ module.exports = Plumage.model.Model = Backbone.Model.extend(
       return this;
     },
 
+    /**
+     * Mimics immutable.js
+     */
+    getIn: function(path) {
+      if (!path || path.length === 0) {
+        return this;
+      }
+      if (path.length > 1) {
+        var relationship = path[0];
+        return this.getRelated(relationship).getIn(path.slice(1));
+      }
+      return this.get(path[0]);
+    },
+
     /** set view state
      * @param {Object} viewState
      */

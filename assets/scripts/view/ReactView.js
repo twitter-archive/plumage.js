@@ -13,18 +13,23 @@ module.exports = Plumage.view.ReactView = ModelView.extend({
     ModelView.prototype.initialize.apply(this, arguments);
   },
 
+  setProps: function(props) {
+    this.props = _.extend({}, this.props, props);
+    this.update();
+  },
+
   onRender: function() {
-    var props = _.extend({}, this.props);
-    if (this.model) {
-      props.model = this.getModelProps(this.model);
-    }
+    var props = _.extend({}, this.props, this.getModelProps(this.model));
 
     this.component = React.createElement(this.componentCls, props);
     ReactDOM.render(this.component, this.el);
   },
 
   getModelProps: function() {
-    return this.model.toViewJSON();
+    if (this.model) {
+      return this.model.toViewJSON();
+    }
+    return {};
   },
 
   updateModel: function(rootModel, parentModel) {

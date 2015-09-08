@@ -5,6 +5,22 @@
   font-size: 14px;
 }
 
+.typeahead {
+  position: relative;
+  li a {
+    padding: 3px 12px;
+  }
+
+  button {
+    height: 34px;
+  }
+
+  .dropdown-menu {
+    min-width: 100%;
+    max-height: 400px;
+  }
+}
+
 .typeahead .no-results,
 .typeahead .loading {
   color: #888;
@@ -14,10 +30,6 @@
   pointer-events: none;
 }
 
-.typeahead .loading {
-  background: transparent url(ajax-loader.gif) no-repeat 50% 50%;
-}
-
 .typeahead li > a:hover {
   background: white;
   color: #333;
@@ -25,6 +37,7 @@
 
 .typeahead li.active > a, .typeahead li.active > a:hover {
   color: #fff;
+  background: #08c;
 }
 
 .dropdown-multiselect {

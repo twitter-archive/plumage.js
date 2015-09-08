@@ -37,7 +37,9 @@ export default class InplaceTextField extends React.Component {
         <span className="glyphicon glyphicon-pencil"></span>
         <span className="value">{this.getValue()}</span>
       </div>
-      <input ref="input" type="text" value={this.state.inputValue}
+      <input ref="input" type="text"
+             name={this.props.name}
+             value={this.state.inputValue}
              className='form-control'
              placeholder={this.props.placeholder}
              onChange={this.onInputChange}

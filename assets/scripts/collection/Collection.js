@@ -431,6 +431,13 @@ Plumage.collection.Collection = Model.extend(
       return this.getRelated('filters').where({key: key});
     },
 
+    getFilterValue: function(key) {
+      var filters = this.getFilters(key);
+      if (filters && filters.length) {
+        return filters[0].get('value');
+      }
+    },
+
     setFilter: function(key, value, comparison) {
       if (comparison === undefined) {
         comparison = 'equals';
@@ -438,7 +445,7 @@ Plumage.collection.Collection = Model.extend(
 
       var filter = this.getFilters(key);
       if (filter) {
-        this.removeFilter(filter);
+        this.removeFilter(filter, {silent: true});
       }
       this.addFilter({key: key, value: value, comparison: comparison});
     },
@@ -448,8 +455,12 @@ Plumage.collection.Collection = Model.extend(
       filters.add(filter);
     },
 
-    removeFilter: function(filter) {
-      this.getRelated('filters').remove(filter);
+    removeFilter: function(filter, options) {
+      this.getRelated('filters').remove(filter, options);
+    },
+
+    removeFiltersForKey: function(key) {
+      this.removeFilter(this.getFilters(key));
     },
 
     //

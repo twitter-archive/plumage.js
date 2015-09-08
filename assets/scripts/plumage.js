@@ -86,7 +86,10 @@ function(Plumage) {
   Plumage.components.Form = require('./components/Form');
   Plumage.components.util.FormUtil = require('./components/util/FormUtil');
   Plumage.components.FormGroup = require('./components/FormGroup');
+  Plumage.components.Checkbox = require('./components/Checkbox');
   Plumage.components.TextField = require('./components/TextField');
+  Plumage.components.SearchField = require('./components/SearchField');
+  Plumage.components.TypeAhead = require('./components/TypeAhead');
   Plumage.components.InplaceTextField = require('./components/InplaceTextField');
   Plumage.components.DateField = require('./components/DateField');
   Plumage.components.DateRangeField = require('./components/DateRangeField');
@@ -94,6 +97,8 @@ function(Plumage) {
   Plumage.components.CategorySelect = require('./components/CategorySelect');
   Plumage.components.ButtonGroupSelect = require('./components/ButtonGroupSelect');
   Plumage.components.DropdownSelect = require('./components/DropdownSelect');
+  Plumage.components.DropdownMultiselect = require('./components/DropdownMultiselect');
+  Plumage.components.FilterBar = require('./components/FilterBar');
   Plumage.components.tree.Tree = require('./components/tree/Tree');
 
   return Plumage;

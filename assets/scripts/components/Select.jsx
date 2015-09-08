@@ -7,19 +7,16 @@ import FieldUtil from './util/FieldUtil';
 export default class Select extends React.Component {
 
   static propTypes = {
+    name: PropTypes.string,
+    className: PropTypes.string,
     placeholder: PropTypes.string,
-    options: PropTypes.array.isRequired,
-    optionValueKey: PropTypes.string,
-    optionLabelKey: PropTypes.string,
-    optionClassNameKey: PropTypes.string
+    placeholderValue: PropTypes.any,
+    options: PropTypes.array
   };
 
   static defaultProps = {
     placeholderValue: '',
-    options: [],
-    optionValueKey: 'value',
-    optionLabelKey: 'label',
-    optionClassNameKey: 'className'
+    options: []
   };
 
   static contextTypes = {
@@ -35,14 +32,18 @@ export default class Select extends React.Component {
   render() {
     var placeholderEl;
     if (this.props.placeholder) {
-      placeholderEl = <option value={this.props.placeholderValue}>{this.props.placeholder}</option>
+      placeholderEl = <option key={'option-' + this.props.placeholderValue} value={this.props.placeholderValue}>{this.props.placeholder}</option>
     }
-    var options = this.getOptions();
+    var options = this.props.options || [];
 
-    return <select name={this.props.name} value={this.props.value} className="form-control" onChange={this.onChange}>
+    return <select ref='input'
+                   name={this.props.name}
+                   value={this.props.value}
+                   className={'form-control ' + (this.props.className || '')}
+                   onChange={this.onChange}>
       {placeholderEl}
       {options.map(option => {
-        return <option value={option.value} key={option.value} className={option.className}>{option.label}</option>
+        return <option value={option.value} key={'option-' + option.value} className={option.className}>{option.label}</option>
       })}
     </select>
   }
@@ -50,17 +51,6 @@ export default class Select extends React.Component {
   hasSelection() {
     var value = this.props.value;
     return value !== null && value !== undefined && value !== this.props.placeholderValue;
-  }
-
-  getOptions() {
-    return (this.props.options || []).map(item => {
-      var result = {
-        label: item[this.props.optionLabelKey],
-        value: item[this.props.optionValueKey],
-        className: item[this.props.optionClassNameKey]
-      };
-      return result;
-    });
   }
 
   //

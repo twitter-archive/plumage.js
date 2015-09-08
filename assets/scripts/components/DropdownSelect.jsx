@@ -20,7 +20,7 @@ export default class DropdownSelect extends CategorySelect {
   constructor(props) {
     super(props);
 
-     this.dropdownId = _.uniqueId('dropdown-');
+    this.dropdownId = _.uniqueId('dropdown-');
 
     this.state = {isExpanded: false};
 
@@ -35,17 +35,17 @@ export default class DropdownSelect extends CategorySelect {
       iconEl = <span className={'glyphicon glyphicon-' + this.props.iconClassName}></span>;
     }
 
-    return <span className={'dropdown-select dropdown' + (this.state.isExpanded ? ' open': '')}>
-      <input type="hidden" name={this.props.name} value={this.props.value}/>
-      <button id={this.dropdownId} className="btn btn-default" data-toggle="dropdown"
-            aria-haspopup="true" aria-expanded={this.state.isExpanded} onBlur={this.onBlur} onClick={this.onExpandClick}>
+    return <span className={'dropdown-select dropdown' + (this.state.isExpanded ? ' open': '') + (this.props.className ? ' ' + this.props.className : '')}>
+      <input ref='input' type='hidden' name={this.props.name} value={this.props.value}/>
+      <button id={this.dropdownId} className='btn btn-default' data-toggle='dropdown'
+            aria-haspopup='true' aria-expanded={this.state.isExpanded} onBlur={this.onBlur} onClick={this.onExpandClick}>
         {iconEl}
-        {this.getActiveLabel() + ' '}<span className="caret"></span>
+        {this.getActiveLabel() + ' '}<span className='caret'></span>
       </button>
       <ul className={'dropdown-menu pull-' + this.props.pull} aria-labelledby={this.dropdownId}>
         {this.props.options.map(option => {
           return <li key={this.props.name + '-' + option.value} className={option.className}>
-            <a href="#" data-value={option.value} onMouseDown={this.disableMouseDown} onClick={this.onItemClick}>{option.label}</a>
+            <a href='#' data-value={option.value} onMouseDown={this.disableMouseDown} onClick={this.onItemClick}>{option.label}</a>
           </li>
         })}
       </ul>

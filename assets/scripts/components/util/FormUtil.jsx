@@ -40,7 +40,10 @@ function doDelete(state, changeData) {
 
 function doUpdateToModel(model, changeData) {
   for (var key in changeData) {
-    if (typeof(changeData[key]) === 'object') {
+
+    if (key === 'filters' && model instanceof Collection) {
+      doUpdateFilters(model, changeData['filters']);
+    } else if (typeof(changeData[key]) === 'object') {
       var nextModel;
       if (model instanceof Collection) {
         nextModel = model.at(Number(key));
@@ -55,6 +58,19 @@ function doUpdateToModel(model, changeData) {
       }
     } else {
       model.set(key, changeData[key]);
+    }
+  }
+}
+
+function doUpdateFilters(model, filters) {
+  if (filters) {
+    for (let key in filters) {
+      let filterValue = filters[key];
+      if (filterValue) {
+        model.setFilter(key, filterValue);
+      } else {
+        model.removeFiltersForKey(key);
+      }
     }
   }
 }
@@ -83,33 +99,31 @@ function doDeleteToModel(model, changeData) {
 export default {
   applyFormChanges: function(state, changeType, changeData) {
     var newState = $.extend(true, {}, state);
-    changeData = formDataToObj.toObj(changeData);
     switch (changeType) {
-      case 'update':
-        doUpdate(newState, changeData);
-        break;
-      case 'delete':
-        doDelete(newState, changeData);
-        break;
-      case 'create':
-        throw "Not implemented";
-        break;
+    case 'update':
+      doUpdate(newState, changeData);
+      break;
+    case 'delete':
+      doDelete(newState, changeData);
+      break;
+    case 'create':
+      throw "Not implemented";
+      break;
     }
     return newState;
   },
 
   applyFormChangesToModel: function(model, changeType, changeData) {
-    changeData = formDataToObj.toObj(changeData);
     switch (changeType) {
-      case 'update':
-        doUpdateToModel(model, changeData);
-        break;
-      case 'delete':
-        doDeleteToModel(model, changeData);
-        break;
-      case 'create':
-        throw "Not implemented";
-        break;
+    case 'update':
+      doUpdateToModel(model, changeData);
+      break;
+    case 'delete':
+      doDeleteToModel(model, changeData);
+      break;
+    case 'create':
+      throw "Not implemented";
+      break;
     }
   },
 }

@@ -23,3 +23,5 @@
 /gh-pages
 .grunt
 Gemfile.lock
+
+npm-debug.log

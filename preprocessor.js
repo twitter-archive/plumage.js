@@ -8,9 +8,10 @@ module.exports = {
     if (!babel.canCompile(filename)) {
       return '';
     }
+
     // Ignore all files within node_modules
     if (filename.indexOf('node_modules') === -1) {
-      return babel.transform(src, {filename: filename}).code;
+      return babel.transform(src, {filename: filename, stage: 1}).code;
     }
     return src;
   }

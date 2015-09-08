@@ -131,10 +131,12 @@ module.exports = Plumage.view.grid.GridView = ModelView.extend({
 
   setFilterView: function(filterView) {
     if (this.filterView) {
-      this.filterView.moreMenu.off('itemClick', this.onMoreMenuItemClick, this);
+      this.filterView.off('download', this.onDownloadClick, this);
     }
     this.filterView = filterView;
-    this.filterView.moreMenu.on('itemClick', this.onMoreMenuItemClick, this);
+    if (this.filterView) {
+      this.filterView.on('download', this.onDownloadClick, this);
+    }
   },
 
   /**
@@ -299,10 +301,8 @@ module.exports = Plumage.view.grid.GridView = ModelView.extend({
     this.model.setSort(sortField, sortDir, false);
   },
 
-  onMoreMenuItemClick: function(menu, value) {
-    if (value === 'download') {
-      this.downloadCSV();
-    }
+  onDownloadClick: function(menu, value) {
+    this.downloadCSV();
   },
 
   /**

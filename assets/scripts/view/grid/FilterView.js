@@ -90,7 +90,7 @@ module.exports = Plumage.view.grid.FilterView = Form.extend({
   },
 
   createFilterListModel: function(listModelCls, listModelParams) {
-    return new listModelCls(null, listModelParams);
+      return new listModelCls(null, listModelParams);
   },
 
   onRender: function() {

@@ -18,7 +18,7 @@ export default class CategorySelect extends Select {
     if (this.props.placeholder) {
       placeholderEl = this.renderOption({value: this.props.placeholderValue, label: this.props.placeholder});
     }
-    var options = this.getOptions();
+    var options = this.props.options;
     return <ul className="nav nav-pills">
       <input ref="input" type="hidden" name={this.props.name} value={this.props.value}/>
       {placeholderEl}
@@ -67,6 +67,7 @@ export default class CategorySelect extends Select {
   //
 
   onClick(e) {
+    e.preventDefault();
     FieldUtil.setFieldValue(this, e.target.getAttribute('data-value'));
   }
 }

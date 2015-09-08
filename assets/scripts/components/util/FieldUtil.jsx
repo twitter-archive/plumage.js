@@ -1,9 +1,19 @@
+import formDataToObj from 'form-data-to-object';
+
 export default {
   setFieldValue: function(field, value, extraState, callback) {
-    if (field.context.onFormChange && field.props.value !== value) {
-      var newValues = {};
-      newValues[field.props.name] = value;
-      field.context.onFormChange('update', newValues);
+    var newValues = {};
+    newValues[field.props.name] = value;
+    var changeData = formDataToObj.toObj(newValues);
+
+    if (field.props.value !== value) {
+      if (field.props.onFormChange) {
+        field.props.onFormChange('update', changeData);
+      }
+
+      if (field.context.onFormChange) {
+        field.context.onFormChange('update', changeData);
+      }
     }
   }
 }

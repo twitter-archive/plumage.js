@@ -149,9 +149,12 @@ form.filter-view {
 .filter-view .filter-field {
   margin: 0 5px;
   float: left;
+  label {
+    font-weight: normal;
+  }
 }
 
-.filter-view .search, .filter-view .more-menu {
+.filter-view .search-field, .filter-view .more-menu {
   float: right;
 }
 
@@ -159,7 +162,7 @@ form.filter-view {
 
 .filter-view {
   .actions, .actions-right {
-    span {
+    a {
       margin: 0 5px;
     }
   }

@@ -33,7 +33,7 @@ class TreeNode extends React.Component {
     if (this.hasChildren()) {
       expandEl = <a className="expand-toggle" onClick={this.onExpandClick}>▼</a>;
     }
-    return <li className={(this.hasChildren() && this.props.data.get('expanded')) ? 'expanded' :''}>
+    return <li className={this.getClassName()}>
       <div data-index-path={this.props.indexPath.join('.')}>
         {expandEl}
         {this.context.renderLabel(this.props)}
@@ -57,6 +57,17 @@ class TreeNode extends React.Component {
 
   hasChildren() {
     return this.props.data && this.props.data.get('children') && this.props.data.get('children').size > 0;
+  }
+
+  getClassName() {
+    let classes = [];
+    if (this.hasChildren() && this.props.data.get('expanded')) {
+      classes.push('expanded');
+    }
+    if (this.props.data.get('active')) {
+      classes.push('active');
+    }
+    return classes.join(' ');
   }
 
   onExpandClick() {

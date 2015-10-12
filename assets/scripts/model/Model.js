@@ -859,8 +859,11 @@ module.exports = Plumage.model.Model = Backbone.Model.extend(
             model.validationError = resp.meta.validationError;
             _.each(model.validationError, function(v,k) {
               var parts = k.split('.');
-              if (parts.length > 1) {
-                var field = parts.pop();
+              if (model.hasRelationship(parts[0])) {
+                var field = 'base';
+                if (parts.length > 1) {
+                  field = parts.pop();
+                }
                 var related = model.getRelated(parts.join('.'));
                 if (related) {
                   related.validationError = related.validationError || {};

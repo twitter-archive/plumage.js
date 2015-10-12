@@ -77,7 +77,8 @@ div.floater-wrapper a.close:hover {
 
   .comment-body {
     overflow: hidden;
-    text-overflow: ellipsis;
+    overflow-wrap: break-word;
+    word-wrap: break-word;
   }
 }
 

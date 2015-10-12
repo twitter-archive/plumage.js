@@ -102,7 +102,7 @@ export default class TypeAhead extends React.Component {
   renderItem(item, i) {
     let itemEl;
     if (this.props.renderItem) {
-      itemEl = this.props.renderItem();
+      itemEl = this.props.renderItem(item, i);
     } else {
       itemEl = <a href="#">{this.getItemLabel(item)}</a>
     }

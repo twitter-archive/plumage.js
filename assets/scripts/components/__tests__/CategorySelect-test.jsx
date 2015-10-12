@@ -7,7 +7,7 @@ describe('CategorySelect', function() {
   var CategorySelect;
   var renderComponent;
 
-  var options;
+  var defaultOptions;
 
   beforeEach(() => {
     React = require('react');
@@ -17,9 +17,10 @@ describe('CategorySelect', function() {
 
     onFormChangeSpy = jest.genMockFunction();
 
-    options = [
+    defaultOptions = [
       {value: 'foo', label: 'Foo', className: 'foo'},
-      {value: 'bar', label: 'Bar', className: 'bar'}
+      {value: 'bar', label: 'Bar', className: 'bar'},
+      {value: 'disabled', label: 'Disabled', className: 'wargarbl', disabled: true}
     ];
 
     renderComponent = function(props) {
@@ -28,12 +29,19 @@ describe('CategorySelect', function() {
         placeholder: 'Placeholder',
         placeholderValue: '',
         className: 'class',
-        options: options,
+        options: defaultOptions,
         onFormChange: onFormChangeSpy
       }, props);
       return TestUtils.renderIntoDocument(<CategorySelect {...props}/>);
     };
+  });
 
+  it('renders option classes', () => {
+    var select = renderComponent();
+    var liEls = TestUtils.scryRenderedDOMComponentsWithTag(select, 'li');
+    expect(liEls[0].className).toEqual('placeholder active');
+    expect(liEls[1].className).toEqual(defaultOptions[0].className);
+    expect(liEls[3].className).toEqual(defaultOptions[2].className + ' disabled');
   });
 
   it('selects on click', () => {

@@ -6,6 +6,7 @@ describe('Checkbox', function() {
 
   var React, TestUtils, onFormChangeSpy;
   var Checkbox;
+  var renderComponent;
 
   var checkbox, input;
 
@@ -13,30 +14,46 @@ describe('Checkbox', function() {
     React = require('react');
     TestUtils = require('react-addons-test-utils');
     Checkbox = require('../Checkbox.jsx');
+    var _ = require('underscore');
 
     onFormChangeSpy = jest.genMockFunction();
-    checkbox = TestUtils.renderIntoDocument(
-      <Checkbox name='name'
-                className='class'
-                label='label'
-                value={1}
-                checkedValue={1}
-                uncheckedValue={2}
-                onFormChange={onFormChangeSpy}/>
-    );
-    input = checkbox.refs.input;
+
+    renderComponent = function(props) {
+      props = _.extend({}, {
+        name: 'name',
+        className: 'class',
+        label: 'label',
+        value: 1,
+        checkedValue: 1,
+        uncheckedValue: 2,
+        onFormChange: onFormChangeSpy
+      }, props);
+      return TestUtils.renderIntoDocument(<Checkbox {...props}/>);
+    };
   });
 
   it('renders for props', () => {
+    let checkbox = renderComponent();
+    let input = checkbox.refs.input;
+
     expect(input.name).toEqual('name');
     expect(input.className).toEqual('class');
     expect(input.checked).toEqual(true);
 
     let label = TestUtils.findRenderedDOMComponentWithTag(checkbox, 'label');
     expect(label.textContent.replace(/ /g, '')).toEqual('label');
+    expect(checkbox.refs.input.disabled).toEqual(false);
+  });
+
+  it('renders disabled', () => {
+    let checkbox = renderComponent({disabled: true});
+    expect(checkbox.refs.input.disabled).toEqual(true);
   });
 
   it('sets the the correct values', () => {
+    let checkbox = renderComponent();
+    let input = checkbox.refs.input;
+
     TestUtils.Simulate.change(input, {target: {checked: false}});
     expect(onFormChangeSpy.mock.calls[0]).toEqual(['update', {name: 2}]);
 

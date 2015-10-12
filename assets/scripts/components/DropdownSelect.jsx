@@ -37,7 +37,7 @@ export default class DropdownSelect extends CategorySelect {
 
     return <span className={'dropdown-select dropdown' + (this.state.isExpanded ? ' open': '') + (this.props.className ? ' ' + this.props.className : '')}>
       <input ref='input' type='hidden' name={this.props.name} value={this.props.value}/>
-      <button id={this.dropdownId} className='btn btn-default' data-toggle='dropdown'
+      <button id={this.dropdownId} className='btn btn-default' data-toggle='dropdown' disabled={this.props.disabled}
             aria-haspopup='true' aria-expanded={this.state.isExpanded} onBlur={this.onBlur} onClick={this.onExpandClick}>
         {iconEl}
         {this.getActiveLabel() + ' '}<span className='caret'></span>

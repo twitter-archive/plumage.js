@@ -11,11 +11,13 @@ export default class Select extends React.Component {
     className: PropTypes.string,
     placeholder: PropTypes.string,
     placeholderValue: PropTypes.any,
+    disabled: PropTypes.bool,
     options: PropTypes.array
   };
 
   static defaultProps = {
     placeholderValue: '',
+    disabled: false,
     options: []
   };
 
@@ -40,7 +42,9 @@ export default class Select extends React.Component {
                    name={this.props.name}
                    value={this.props.value}
                    className={'form-control ' + (this.props.className || '')}
-                   onChange={this.onChange}>
+                   disabled={this.props.disabled}
+                   onChange={this.onChange}
+                >
       {placeholderEl}
       {options.map(option => {
         return <option value={option.value} key={'option-' + option.value} className={option.className}>{option.label}</option>

@@ -1,16 +1,14 @@
 
 {{#if buttonStyle}}
 <button id="{{dropdownId}}" type="button" class="btn btn-default" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-  {{#iconCls}}<span class="glyphicon glyphicon-{{.}}"></span>{{/iconCls}}
-  {{label}}
+  {{#iconCls}}<span class="glyphicon glyphicon-{{.}}"></span>{{/iconCls}} {{label}}
   {{#if showCaret}}<span class="caret"></span>{{/if}}
 </button>
 
 {{else}}
 
 <a id="dLabel" data-target="#" href="#" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">
-  {{#iconCls}}<span class="glyphicon glyphicon-{{.}}"></span>{{/iconCls}}
-  {{label}}
+  {{#iconCls}}<span class="glyphicon glyphicon-{{.}}"></span>{{/iconCls}} {{label}}
   {{#if showCaret}}<span class="caret"></span>{{/if}}
 </a>
 {{/if}}
@@ -18,7 +16,7 @@
 <ul class="dropdown-menu {{dropdownCls}}" aria-labelledby="{{dropdownId}}">
   {{#menuItems}}
   <li>
-    <a data-value="{{value}}">{{#icon}}<span class="glyphicon glyphicon-{{.}}"></span>{{/icon}}{{label}}</a>
+    <a data-value="{{value}}">{{#icon}}<span class="glyphicon glyphicon-{{.}}"></span>{{/icon}} {{label}}</a>
   </li>
   {{/menuItems}}
 </ul>

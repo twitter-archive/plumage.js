@@ -16,7 +16,7 @@ export default class CategorySelect extends Select {
   render() {
     var placeholderEl;
     if (this.props.placeholder) {
-      placeholderEl = this.renderOption({value: this.props.placeholderValue, label: this.props.placeholder});
+      placeholderEl = this.renderOption({value: this.props.placeholderValue, label: this.props.placeholder, className: 'placeholder'});
     }
     var options = this.props.options;
     return <ul className="nav nav-pills">
@@ -41,7 +41,7 @@ export default class CategorySelect extends Select {
       className += ' active';
     }
     if (option.disabled) {
-      className += ' active disabled';
+      className += ' disabled';
     }
     return className
   }

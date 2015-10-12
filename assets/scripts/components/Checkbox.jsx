@@ -11,9 +11,10 @@ export default class Checkbox extends React.Component {
     className: PropTypes.string,
     label: PropTypes.string,
     isChecked: PropTypes.func,
-    checkedValue: React.PropTypes.any,
-    uncheckedValue: React.PropTypes.any,
-    onFormChange: React.PropTypes.func
+    checkedValue: PropTypes.any,
+    uncheckedValue: PropTypes.any,
+    disabled: PropTypes.bool,
+    onFormChange: PropTypes.func
   };
 
   static defaultProps = {
@@ -36,6 +37,7 @@ export default class Checkbox extends React.Component {
                   name={this.props.name}
                   checked={this.isChecked()}
                   className={this.props.className}
+                  disabled={this.props.disabled}
                   onChange={this.onChange}
       />;
     if (this.props.label) {

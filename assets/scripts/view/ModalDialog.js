@@ -50,6 +50,7 @@ module.exports = Plumage.view.ModalDialog = ModelView.extend({
       $('body').append(this.$el);
       this.$('.modal').modal(this.modalOptions);
     }
+
   },
 
   getTemplateData: function() {
@@ -65,12 +66,22 @@ module.exports = Plumage.view.ModalDialog = ModelView.extend({
   show: function() {
     this.render();
     this.$('.modal').modal('show');
+
     ModelView.prototype.onShow.apply(this, arguments);
   },
 
   hide: function() {
     this.$('.modal').modal('hide');
     ModelView.prototype.onHide.apply(this, arguments);
+  },
+
+  update: function() {
+    if (this.contentView) {
+      this.contentView.update();
+    }
+    if (this.showSubmit) {
+      this.$('.modal-footer .submit').prop('disabled', !this.canSubmit(this.model));
+    }
   },
 
   canSubmit: function(model) {

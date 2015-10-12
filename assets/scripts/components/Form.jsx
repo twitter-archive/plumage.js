@@ -12,7 +12,7 @@ export default class Form extends React.Component {
   };
 
   static childContextTypes = {
-    onFormChange: React.PropTypes.func.isRequired
+    onFormChange: React.PropTypes.func
   };
 
   constructor(props) {

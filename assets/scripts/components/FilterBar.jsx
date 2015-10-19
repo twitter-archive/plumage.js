@@ -32,26 +32,6 @@ export default class FilterBar extends React.Component {
     this.onDownloadClick = this.onDownloadClick.bind(this);
   }
 
-  render() {
-    return <Form className="form-inline filter-view" onFormChange={this.props.onFormChange}>
-      <span className='filters'>
-        {this.props.filterFields.map((field, i) => {
-          return <FormGroup key={'form-group' + i} className='filter-field'>{field}</FormGroup>
-        })}
-      </span>
-
-      <span className='actions' onClick={this.onActionClick}>
-        {this.props.actions}
-      </span>
-
-      <DropdownButton className='more-menu' id='app-index-more' bsStyle="default" pullRight={true}
-                      title={<Glyphicon glyph='cog' />}>
-        <MenuItem eventKey='1' onSelect={this.onDownloadClick}><Glyphicon glyph='arrow-down' /> Download</MenuItem>
-      </DropdownButton>
-
-      { this.props.showSearch ? <SearchField name="query" value={this.props.query}/> : ''}
-    </Form>
-  }
 
   onDownloadClick() {
     if (this.props.onAction) {
@@ -66,4 +46,24 @@ export default class FilterBar extends React.Component {
     }
   }
 
+  render() {
+    return (<Form className="form-inline filter-view" onFormChange={this.props.onFormChange}>
+      <span className="filters">
+        {this.props.filterFields.map((field, i) => {
+          return <FormGroup key={'form-group' + i} className="filter-field">{field}</FormGroup>;
+        })}
+      </span>
+
+      <span className="actions" onClick={this.onActionClick}>
+        {this.props.actions}
+      </span>
+
+      <DropdownButton className="more-menu" id="app-index-more" bsStyle="default" pullRight
+                      title={<Glyphicon glyph="cog" />}>
+        <MenuItem eventKey="1" onSelect={this.onDownloadClick}><Glyphicon glyph="arrow-down" /> Download</MenuItem>
+      </DropdownButton>
+
+      { this.props.showSearch ? <SearchField name="query" value={this.props.query}/> : ''}
+    </Form>);
+  }
 }

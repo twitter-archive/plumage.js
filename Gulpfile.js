@@ -52,14 +52,25 @@ gulp.task('clean', del.bind(
   null, ['dist/*'], {dot: true}
 ));
 
-gulp.task('lint', function() {
+gulp.task('lint-js', function() {
   return gulp.src(['Gulpfile.js',
     'assets/scripts/**/*.js',
     'test/example/**/*.js',
     'examples/assets/**/*.js'])
+    .pipe($.jshint())
+    .pipe($.jshint.reporter('jshint-stylish'))
+    .pipe($.jshint.reporter('fail'));
+});
+
+gulp.task('lint-jsx', function() {
+  return gulp.src('assets/scripts/**/*.jsx')
     .pipe($.eslint())
     .pipe($.eslint.format())
-    .pipe($.eslint.failOnError())
+    .pipe($.eslint.failAfterError());
+});
+
+gulp.task('lint', function(cb) {
+  runSequence(['lint-js', 'lint-jsx'], cb);
 });
 
 // 3rd party libraries
@@ -72,7 +83,7 @@ gulp.task('styles', function() {
   src.styles = 'assets/styles/**/*.{css,scss}';
   return gulp.src('assets/styles/plumage.scss')
     .pipe($.plumber())
-    .pipe($.sass()) //sourcemap?
+    .pipe($.sass()) // sourcemap?
     .on('error', console.error.bind(console))
     //.pipe($.autoprefixer({browsers: AUTOPREFIXER_BROWSERS}))
     .pipe($.csscomb())

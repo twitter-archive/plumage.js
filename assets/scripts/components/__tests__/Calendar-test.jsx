@@ -3,10 +3,11 @@ jest.dontMock('moment');
 
 
 describe('Calendar', function() {
-
-  var React, TestUtils, moment;
-  var Calendar;
-  var calendar;
+  let React;
+  let TestUtils;
+  let moment;
+  let Calendar;
+  let calendar;
 
   beforeEach(function() {
     React = require('react');
@@ -14,8 +15,8 @@ describe('Calendar', function() {
     moment = require('moment');
     Calendar = require('../Calendar.jsx');
 
-    calendar= TestUtils.renderIntoDocument(
-      <Calendar year="2014" month="0" value={moment([2014,0,3]).valueOf()}/>
+    calendar = TestUtils.renderIntoDocument(
+      <Calendar year="2014" month="0" value={moment([2014, 0, 3]).valueOf()}/>
     );
   });
 
@@ -31,27 +32,27 @@ describe('Calendar', function() {
   it('sets initial state from props', function() {
     expect(calendar.state.year).toEqual(2014);
     expect(calendar.state.month).toEqual(0);
-    expect(calendar.state.value).toEqual(moment([2014,0,3]).valueOf());
+    expect(calendar.state.value).toEqual(moment([2014, 0, 3]).valueOf());
   });
 
   it('renders', function() {
-    var title = TestUtils.findRenderedDOMComponentWithClass(calendar, 'calendar-title');
+    let title = TestUtils.findRenderedDOMComponentWithClass(calendar, 'calendar-title');
     expect(title.textContent).toEqual('Jan 2014');
 
-    var days = TestUtils.scryRenderedDOMComponentsWithClass(calendar, 'day');
-    expect(days.length).toEqual(7*6);
+    let days = TestUtils.scryRenderedDOMComponentsWithClass(calendar, 'day');
+    expect(days.length).toEqual(7 * 6);
     expect(days[0].textContent).toEqual('29');
-    expect(days[days.length-1].textContent).toEqual('8');
+    expect(days[days.length - 1].textContent).toEqual('8');
 
-    var tds = TestUtils.scryRenderedDOMComponentsWithTag(calendar, 'td');
+    let tds = TestUtils.scryRenderedDOMComponentsWithTag(calendar, 'td');
     expect(tds[4].className).toNotContain('selected');
     expect(tds[5].className).toContain('selected');
   });
 
   it('can change month', function() {
-    var title = TestUtils.findRenderedDOMComponentWithClass(calendar, 'calendar-title');
-    var prev = TestUtils.findRenderedDOMComponentWithClass(calendar, 'prev');
-    var next = TestUtils.findRenderedDOMComponentWithClass(calendar, 'next');
+    let title = TestUtils.findRenderedDOMComponentWithClass(calendar, 'calendar-title');
+    let prev = TestUtils.findRenderedDOMComponentWithClass(calendar, 'prev');
+    let next = TestUtils.findRenderedDOMComponentWithClass(calendar, 'next');
 
     TestUtils.Simulate.click(prev);
     expect(title.textContent).toEqual('Dec 2013');
@@ -66,14 +67,13 @@ describe('Calendar', function() {
   //
 
   describe('getFirstDateTuple', function() {
-    it('returns first date on month page', function(){
+    it('returns first date on month page', function() {
       expect(calendar.getFirstDateTuple(0, 2014)).toEqual([2013, 11, 29]);
       expect(calendar.getFirstDateTuple(5, 2014)).toEqual([2014, 4, 25]);
     });
   });
 
   describe('getClassesForDate', function() {
-
     it('returns "off" when date is not in the current month', function() {
       expect(calendar.getClassesForDate([2013, 11, 29])).toContain('off');
       expect(calendar.getClassesForDate([2013, 0, 15])).toNotContain('off');
@@ -83,6 +83,6 @@ describe('Calendar', function() {
     it('returns "selected" for selected date', function() {
       expect(calendar.getClassesForDate([2014, 0, 3])).toContain('selected');
       expect(calendar.getClassesForDate([2013, 0, 4])).toNotContain('selected');
-    })
+    });
   });
 });

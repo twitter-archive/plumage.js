@@ -1,13 +1,13 @@
-
 import React, {PropTypes} from 'react';
-import _ from 'underscore';
 
-import TextField from './TextField'
+import TextField from './TextField';
 
 export default class SearchField extends React.Component {
 
   static propTypes = {
     name: PropTypes.string,
+    value: PropTypes.string,
+    className: PropTypes.string,
     placeholder: PropTypes.string,
     onCommit: PropTypes.func
   };
@@ -22,22 +22,22 @@ export default class SearchField extends React.Component {
     this.onSearchClick = this.onSearchClick.bind(this);
   }
 
-  render() {
-    return <div className={'search-field' + (this.props.className || '')}>
-      <TextField className='search-query' {...this.props}/>
-      <button onClick={this.onClick}>
-        <span className="glyphicon glyphicon-search"></span>
-      </button>
-    </div>
-  }
-
   //
   // Events
   //
 
-  onSearchClick(e) {
+  onSearchClick() {
     if (this.props.onCommit) {
       this.props.onCommit(this, this.props.value);
     }
+  }
+
+  render() {
+    return (<div className={'search-field' + (this.props.className || '')}>
+      <TextField className="search-query" {...this.props}/>
+      <button onClick={this.onClick}>
+        <span className="glyphicon glyphicon-search"></span>
+      </button>
+    </div>);
   }
 }

@@ -1,12 +1,15 @@
-/*eslint-env jest */
+/* eslint-env jest */
 jest.dontMock('../FormUtil.jsx');
 jest.dontMock('model/Model');
 jest.dontMock('collection/Collection');
 
 describe('FormUtil', function() {
+  let FormUtil;
+  let Model;
+  let Collection;
+  let state;
+  let model;
 
-  var FormUtil, Model, Collection;
-  var state, model;
   beforeEach(() => {
     FormUtil = require('../FormUtil.jsx');
     Model = require('model/Model');
@@ -24,7 +27,7 @@ describe('FormUtil', function() {
       ]
     };
 
-    var ModelCls = Model.extend({
+    let ModelCls = Model.extend({
       relationships: {
         address: {
           modelCls: Model
@@ -40,7 +43,7 @@ describe('FormUtil', function() {
   });
 
   describe('update', function() {
-    var result;
+    let result;
     beforeEach(function() {
       result = FormUtil.applyFormChanges(state, 'update', {
         name: 'bar',
@@ -66,7 +69,7 @@ describe('FormUtil', function() {
   });
 
   describe('delete', function() {
-    var result;
+    let result;
     beforeEach(function() {
       result = FormUtil.applyFormChanges(state, 'delete', {
         name: true,
@@ -98,7 +101,7 @@ describe('FormUtil', function() {
   });
 
   describe('update model', function() {
-    beforeEach(function () {
+    beforeEach(function() {
       FormUtil.applyFormChangesToModel(model, 'update', {
         name: 'bar',
         address: {city: 'SF'},
@@ -110,16 +113,15 @@ describe('FormUtil', function() {
       });
     });
 
-    it('updates attributes', function () {
+    it('updates attributes', function() {
       expect(model.get('name')).toEqual('bar');
       expect(model.getRelated('address').get('city')).toEqual('SF');
       expect(model.getRelated('apps').at(1).get('name')).toEqual('qqq');
     });
-
   });
 
   describe('delete model', function() {
-    beforeEach(function () {
+    beforeEach(function() {
       FormUtil.applyFormChangesToModel(model, 'delete', {
         name: true,
         address: {
@@ -137,11 +139,9 @@ describe('FormUtil', function() {
     });
 
     it('deletes indexes from array', function() {
-      var apps = model.getRelated('apps');
+      let apps = model.getRelated('apps');
       expect(apps.size()).toEqual(2);
       expect(apps.at(1).get('name')).toEqual('app3');
     });
-
   });
-
 });

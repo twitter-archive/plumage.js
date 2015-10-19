@@ -1,18 +1,17 @@
+var $ = require('jquery');
 var _ = require('underscore');
-var Handlebars = require('handlebars');
 var Cookies = require('cookies-js');
 
 var Plumage = require('PlumageRoot');
 var View = require('view/View');
 var ModelView = require('view/ModelView');
-var template = require('view/templates/TabView.html');
 
 module.exports = Plumage.view.TabView = ModelView.extend(
 /** @lends Plumage.view.TabView.prototype */
   {
     className: 'tab-view tab-theme',
 
-    template: Handlebars.compile(template),
+    template: require('view/templates/TabView.html'),
 
     viewStateAttr: 'tab',
 

@@ -1,25 +1,25 @@
+import _ from 'underscore';
+
 jest.dontMock('../Checkbox');
 jest.dontMock('../util/FieldUtil');
 jest.dontMock('form-data-to-object');
 
 describe('Checkbox', function() {
-
-  var React, TestUtils, onFormChangeSpy;
-  var Checkbox;
-  var renderComponent;
-
-  var checkbox, input;
+  let React;
+  let TestUtils;
+  let onFormChangeSpy;
+  let Checkbox;
+  let renderComponent;
 
   beforeEach(() => {
     React = require('react');
     TestUtils = require('react-addons-test-utils');
     Checkbox = require('../Checkbox.jsx');
-    var _ = require('underscore');
 
     onFormChangeSpy = jest.genMockFunction();
 
     renderComponent = function(props) {
-      props = _.extend({}, {
+      let theProps = _.extend({}, {
         name: 'name',
         className: 'class',
         label: 'label',
@@ -28,7 +28,7 @@ describe('Checkbox', function() {
         uncheckedValue: 2,
         onFormChange: onFormChangeSpy
       }, props);
-      return TestUtils.renderIntoDocument(<Checkbox {...props}/>);
+      return TestUtils.renderIntoDocument(<Checkbox {...theProps}/>);
     };
   });
 
@@ -57,11 +57,11 @@ describe('Checkbox', function() {
     TestUtils.Simulate.change(input, {target: {checked: false}});
     expect(onFormChangeSpy.mock.calls[0]).toEqual(['update', {name: 2}]);
 
-    //don't trigger if value the same
+    // don't trigger if value the same
     TestUtils.Simulate.change(input, {target: {checked: true}});
     expect(onFormChangeSpy.mock.calls.length).toEqual(1);
 
-    //unchecked input
+    // unchecked input
     checkbox = TestUtils.renderIntoDocument(<Checkbox value={2} {...checkbox.props}/>);
     TestUtils.Simulate.change(input, {target: {checked: false}});
     expect(onFormChangeSpy.mock.calls[1]).toEqual(['update', {name: 2}]);

@@ -2,18 +2,19 @@ jest.dontMock('../CategorySelect');
 jest.dontMock('../util/FieldUtil');
 
 describe('CategorySelect', function() {
+  let React;
+  let TestUtils;
+  let onFormChangeSpy;
+  let CategorySelect;
+  let renderComponent;
 
-  var React, TestUtils, onFormChangeSpy;
-  var CategorySelect;
-  var renderComponent;
-
-  var defaultOptions;
+  let defaultOptions;
 
   beforeEach(() => {
     React = require('react');
     TestUtils = require('react-addons-test-utils');
     CategorySelect = require('../CategorySelect.jsx');
-    var _ = require('underscore');
+    let _ = require('underscore');
 
     onFormChangeSpy = jest.genMockFunction();
 
@@ -24,7 +25,7 @@ describe('CategorySelect', function() {
     ];
 
     renderComponent = function(props) {
-      props = _.extend({}, {
+      let theProps = _.extend({}, {
         name: 'name',
         placeholder: 'Placeholder',
         placeholderValue: '',
@@ -32,21 +33,21 @@ describe('CategorySelect', function() {
         options: defaultOptions,
         onFormChange: onFormChangeSpy
       }, props);
-      return TestUtils.renderIntoDocument(<CategorySelect {...props}/>);
+      return TestUtils.renderIntoDocument(<CategorySelect {...theProps}/>);
     };
   });
 
   it('renders option classes', () => {
-    var select = renderComponent();
-    var liEls = TestUtils.scryRenderedDOMComponentsWithTag(select, 'li');
+    let select = renderComponent();
+    let liEls = TestUtils.scryRenderedDOMComponentsWithTag(select, 'li');
     expect(liEls[0].className).toEqual('placeholder active');
     expect(liEls[1].className).toEqual(defaultOptions[0].className);
     expect(liEls[3].className).toEqual(defaultOptions[2].className + ' disabled');
   });
 
   it('selects on click', () => {
-    var select = renderComponent();
-    var aEls = TestUtils.scryRenderedDOMComponentsWithTag(select, 'a');
+    let select = renderComponent();
+    let aEls = TestUtils.scryRenderedDOMComponentsWithTag(select, 'a');
     TestUtils.Simulate.click(aEls[1]);
 
     expect(onFormChangeSpy.mock.calls[0]).toEqual(['update', {name: 'foo'}]);

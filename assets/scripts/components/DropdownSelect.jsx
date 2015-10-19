@@ -29,47 +29,13 @@ export default class DropdownSelect extends CategorySelect {
     this.onItemClick = this.onItemClick.bind(this);
   }
 
-  render() {
-    var iconEl;
-    if (this.props.iconClassName) {
-      iconEl = <span className={'glyphicon glyphicon-' + this.props.iconClassName}></span>;
-    }
-
-    return <span className={'dropdown-select dropdown' + (this.state.isExpanded ? ' open': '') + (this.props.className ? ' ' + this.props.className : '')}>
-      <input ref='input' type='hidden' name={this.props.name} value={this.props.value}/>
-      <button id={this.dropdownId} className='btn btn-default' data-toggle='dropdown' disabled={this.props.disabled}
-            aria-haspopup='true' aria-expanded={this.state.isExpanded} onBlur={this.onBlur} onClick={this.onExpandClick}>
-        {iconEl}
-        {this.getActiveLabel() + ' '}<span className='caret'></span>
-      </button>
-      <ul className={'dropdown-menu pull-' + this.props.pull} aria-labelledby={this.dropdownId}>
-        {this.props.options.map(option => {
-          return <li key={this.props.name + '-' + option.value} className={option.className}>
-            <a href='#' data-value={option.value} onMouseDown={this.disableMouseDown} onClick={this.onItemClick}>{option.label}</a>
-          </li>
-        })}
-      </ul>
-    </span>
-  }
-
-  getActiveLabel() {
-    if (this.props.options) {
-      for(let option of this.props.options) {
-        if (option.value === this.props.value) {
-          return option.label;
-        }
-      }
-    }
-    return this.props.placeholder;
-  }
-
   //
   // Events
   //
 
-
-  onExpandClick(e) {
-    this.setState({isExpanded: !this.state.isExpanded});
+  onExpandClick() {
+    let newValue = !this.state.isExpanded;
+    this.setState({isExpanded: newValue});
   }
 
   onBlur() {
@@ -83,9 +49,43 @@ export default class DropdownSelect extends CategorySelect {
     FieldUtil.setFieldValue(this, e.target.getAttribute('data-value'));
   }
 
-  disableMouseDown(e) {
-    //do nothing so input doesn't lose focus
+  onDisableMouseDown(e) {
+    // do nothing so input doesn't lose focus
     e.preventDefault();
     e.stopPropagation();
+  }
+
+  getActiveLabel() {
+    if (this.props.options) {
+      for (let option of this.props.options) {
+        if (option.value === this.props.value) {
+          return option.label;
+        }
+      }
+    }
+    return this.props.placeholder;
+  }
+
+  render() {
+    let iconEl;
+    if (this.props.iconClassName) {
+      iconEl = <span className={'glyphicon glyphicon-' + this.props.iconClassName}></span>;
+    }
+
+    return (<span className={'dropdown-select dropdown' + (this.state.isExpanded ? ' open' : '') + (this.props.className ? ' ' + this.props.className : '')}>
+      <input ref="input" type="hidden" name={this.props.name} value={this.props.value}/>
+      <button id={this.dropdownId} className="btn btn-default" data-toggle="dropdown" disabled={this.props.disabled}
+              aria-haspopup="true" aria-expanded={this.state.isExpanded} onBlur={this.onBlur} onClick={this.onExpandClick}>
+        {iconEl}
+        {this.getActiveLabel() + ' '}<span className="caret"></span>
+      </button>
+      <ul className={'dropdown-menu pull-' + this.props.pull} aria-labelledby={this.dropdownId}>
+        {this.props.options.map(option => {
+          return (<li key={this.props.name + '-' + option.value} className={option.className}>
+            <a href="#" data-value={option.value} onMouseDown={this.onDisableMouseDown} onClick={this.onItemClick}>{option.label}</a>
+          </li>);
+        })}
+      </ul>
+    </span>);
   }
 }

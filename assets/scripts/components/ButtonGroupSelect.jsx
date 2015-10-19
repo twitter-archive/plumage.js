@@ -1,30 +1,37 @@
-
 import React, {PropTypes} from 'react';
-import _ from 'underscore';
 
-import FieldUtil from './util/FieldUtil';
 import CategorySelect from './CategorySelect';
 
 export default class ButtonGroupSelect extends CategorySelect {
 
+  static propTypes = {
+    placeholder: PropTypes.string,
+    placeholderValue: PropTypes.any
+  };
+
+  renderOption(option) {
+    return (<a data-value={option.value}
+               key={option.value}
+               className={'btn btn-default ' + this.getOptionClassName(option)}
+               onClick={this.onClick}>
+      {option.label}
+    </a>);
+  }
+
   render() {
-    var placeholderEl;
+    let placeholderEl;
     if (this.props.placeholder) {
       placeholderEl = this.renderOption({value: this.props.placeholderValue, label: this.props.placeholder});
     }
-    var options = this.getOptions(this);
+    let options = this.getOptions(this);
 
-    return <div className="btn-group">
+    return (<div className="btn-group">
       {placeholderEl}
       {options.map(option => {
         return this.renderOption(option);
       })}
-    </div>
+    </div>);
   }
 
-  renderOption(option) {
-    return <a data-value={option.value} key={option.value} className={'btn btn-default ' + this.getOptionClassName(option)} onClick={this.onClick}>
-      {option.label}
-    </a>
-  }
+
 }

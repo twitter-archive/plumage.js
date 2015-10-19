@@ -2,7 +2,6 @@
   "env": {
     "node": true,
     "es6": true,
-    "common-js": true,
     "jest": true
   }
 }

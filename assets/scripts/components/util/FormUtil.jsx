@@ -1,11 +1,13 @@
-import formDataToObj from 'form-data-to-object';
 import $ from 'jquery';
 
 import Collection from 'collection/Collection';
 
+//
+// Functions for modifying Models and Collections, based on Form changes.
+//
 
 function doUpdate(state, changeData) {
-  for (var key in changeData) {
+  for (let key in changeData) {
     if (typeof(changeData[key]) === 'object') {
       if (state[key] === undefined) {
         state[key] = {};
@@ -18,33 +20,44 @@ function doUpdate(state, changeData) {
 }
 
 function doDelete(state, changeData) {
-  for (var key in changeData) {
+  for (let key in changeData) {
     if (state[key] === undefined) {
       continue;
     }
     if (typeof(changeData[key]) === 'object') {
       doDelete(state[key], changeData[key]);
     } else if (changeData[key]) {
-
       if (Array.isArray(state)) {
-        state.splice(key, 1)
+        state.splice(key, 1);
       } else {
-
         delete state[key];
       }
-    } else {
-      console.log('nothing to do with: ' + key)
+    }
+  }
+}
+
+function doUpdateFilters(model, filters) {
+  if (filters) {
+    for (let key in filters) {
+      if (!filters.hasOwnProperty(key)) {
+        continue;
+      }
+      let filterValue = filters[key];
+      if (filterValue) {
+        model.setFilter(key, filterValue);
+      } else {
+        model.removeFiltersForKey(key);
+      }
     }
   }
 }
 
 function doUpdateToModel(model, changeData) {
-  for (var key in changeData) {
-
+  for (let key in changeData) {
     if (key === 'filters' && model instanceof Collection) {
-      doUpdateFilters(model, changeData['filters']);
+      doUpdateFilters(model, changeData.filters);
     } else if (typeof(changeData[key]) === 'object') {
-      var nextModel;
+      let nextModel;
       if (model instanceof Collection) {
         nextModel = model.at(Number(key));
         doUpdateToModel(nextModel, changeData[key]);
@@ -62,21 +75,8 @@ function doUpdateToModel(model, changeData) {
   }
 }
 
-function doUpdateFilters(model, filters) {
-  if (filters) {
-    for (let key in filters) {
-      let filterValue = filters[key];
-      if (filterValue) {
-        model.setFilter(key, filterValue);
-      } else {
-        model.removeFiltersForKey(key);
-      }
-    }
-  }
-}
-
 function doDeleteToModel(model, changeData) {
-  for (var key in changeData) {
+  for (let key in changeData) {
     if (typeof(changeData[key]) === 'object') {
       if (model.getRelated(key) === undefined) {
         continue;
@@ -89,16 +89,13 @@ function doDeleteToModel(model, changeData) {
       } else {
         model.set(key, undefined);
       }
-    } else {
-      console.log('nothing to do with: ' + key)
     }
   }
 }
 
-
 export default {
   applyFormChanges: function(state, changeType, changeData) {
-    var newState = $.extend(true, {}, state);
+    let newState = $.extend(true, {}, state);
     switch (changeType) {
     case 'update':
       doUpdate(newState, changeData);
@@ -107,7 +104,8 @@ export default {
       doDelete(newState, changeData);
       break;
     case 'create':
-      throw "Not implemented";
+      throw new Error('Not implemented');
+    default:
       break;
     }
     return newState;
@@ -122,8 +120,9 @@ export default {
       doDeleteToModel(model, changeData);
       break;
     case 'create':
-      throw "Not implemented";
+      throw new Error('Not implemented');
+    default:
       break;
     }
-  },
-}
+  }
+};

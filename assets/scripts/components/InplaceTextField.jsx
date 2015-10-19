@@ -1,13 +1,17 @@
-
 import React, {PropTypes} from 'react';
-import _ from 'underscore';
 
 import FieldUtil from './util/FieldUtil';
-import TextField from './TextField';
 
 export default class InplaceTextField extends React.Component {
 
-  static propTypes = TextField.propTypes;
+  static propTypes = {
+    name: PropTypes.string,
+    value: PropTypes.string,
+    placeholder: PropTypes.string,
+    onCommit: PropTypes.func,
+    onCancel: PropTypes.func,
+    onFormChange: React.PropTypes.func
+  };
 
   static contextTypes = {
     onFormChange: React.PropTypes.func.isRequired
@@ -31,28 +35,47 @@ export default class InplaceTextField extends React.Component {
     this.setState({inputValue: props.value});
   }
 
-  render() {
-    return <div className={'inplace-field' + (this.state.editing ? ' editing' : '')}>
-      <div className={'field-value' + (!this.props.value ? ' no-value': '')} onClick={this.onClick}>
-        <span className="glyphicon glyphicon-pencil"></span>
-        <span className="value">{this.getValue()}</span>
-      </div>
-      <input ref="input" type="text"
-             name={this.props.name}
-             value={this.state.inputValue}
-             className='form-control'
-             placeholder={this.props.placeholder}
-             onChange={this.onInputChange}
-             onBlur={this.onBlur}
-             onKeyDown={this.onKeyDown}/>
-    </div>
+  //
+  // Events
+  //
+
+  onClick() {
+    this.setState({editing: true}, () => {
+      this.refs.input.focus();
+    });
   }
 
+  onInputChange(e) {
+    this.setState({inputValue: e.target.value});
+  }
+
+  onBlur() {
+    this.commit();
+  }
+
+  onKeyDown(e) {
+    switch (e.key) {
+    case 'Enter':
+      e.preventDefault();
+      this.commit();
+      break;
+    case 'Escape':
+      e.preventDefault();
+      this.cancel();
+      break;
+    default:
+      break;
+    }
+  }
+
+  //
+  // Helpers
+  //
 
   getValue() {
-    var value = this.props.value;
+    let value = this.props.value;
     if (!value) {
-      return this.props.placeholder
+      return this.props.placeholder;
     }
     return value;
   }
@@ -66,35 +89,21 @@ export default class InplaceTextField extends React.Component {
     this.setState({editing: false, inputValue: this.props.value});
   }
 
-  //
-  // Events
-  //
 
-  onClick() {
-    this.setState({editing: true}, () => {
-      this.refs.input.focus();
-    });
-
-  }
-
-  onInputChange(e) {
-    this.setState({inputValue: e.target.value});
-  }
-
-  onBlur(e) {
-    this.commit();
-  }
-
-  onKeyDown(e) {
-    switch (e.key) {
-      case "Enter":
-        e.preventDefault();
-        this.commit();
-        break;
-      case "Escape":
-        e.preventDefault();
-        this.cancel();
-        break;
-    }
+  render() {
+    return (<div className={'inplace-field' + (this.state.editing ? ' editing' : '')}>
+      <div className={'field-value' + (!this.props.value ? ' no-value' : '')} onClick={this.onClick}>
+        <span className="glyphicon glyphicon-pencil"></span>
+        <span className="value">{this.getValue()}</span>
+      </div>
+      <input ref="input" type="text"
+             name={this.props.name}
+             value={this.state.inputValue}
+             className="form-control"
+             placeholder={this.props.placeholder}
+             onChange={this.onInputChange}
+             onBlur={this.onBlur}
+             onKeyDown={this.onKeyDown}/>
+    </div>);
   }
 }

@@ -1,3 +1,5 @@
+import $ from 'jquery';
+import _ from 'underscore';
 import React, {PropTypes} from 'react';
 
 import FieldUtil from './util/FieldUtil';
@@ -14,14 +16,14 @@ export default class DropdownMultiselect extends React.Component {
     allLabel: PropTypes.string
   };
 
+  static contextTypes = {
+    onFormChange: React.PropTypes.func.isRequired
+  };
+
   static defaultProps = {
     showSelectAll: false,
     showSelectOnly: false,
     allLabel: 'All'
-  };
-
-  static contextTypes = {
-    onFormChange: React.PropTypes.func.isRequired
   };
 
   constructor(props) {
@@ -45,44 +47,40 @@ export default class DropdownMultiselect extends React.Component {
     });
   }
 
-  render() {
-    let items = this.state.items;
-    let allSelected = this.props.value && (items.length === this.props.value.length);
-    let selectAllEl, selectOnlyEl;
-    if (this.props.showSelectAll) {
-      selectAllEl = <li className={'select-all' + (allSelected ? ' active' : '')} onClick={this.onSelectAllClick}>
-        <a className="item"><input type="checkbox" checked={allSelected}/>Select All</a>
-      </li>
-    }
-    if (this.props.showSelectOnly) {
-      selectOnlyEl = <a href="#" className="only-link">only</a>
-    }
+  //
+  // Events
+  //
 
-    return <div className={'dropdown-multiselect dropdown' + (this.state.isExpanded ? ' open': '')}>
-      <select name={this.props.name} style={{display: 'none'}} multiple={true} value={this.props.value}>
-        {items.map((item) => <option key={'option-' + item.value} value={item.value}>{item.label}</option>)}
-      </select>
 
-      <button id={this.dropdownId} className="btn btn-default dropdown-toggle"
-              aria-haspopup="true" aria-expanded={this.state.isExpanded} onBlur={this.onBlur} onClick={this.onExpandClick}>
-        {this.getTitle()} <span className="caret"></span>
-      </button>
-      <ul className={'dropdown-menu' + (this.props.showSelectOnly ? ' show-select-only' : '')}
-          aria-labelledby={this.dropdownId}
-          onMouseDown={this.disableMouseDown}>
-        {selectAllEl}
-        {items.map((item) => {
-          let isSelected = this.isItemSelected(item);
-          return <li key={'batch-state-' + item.value}
-                     className={'' + item.value + (isSelected ? ' active' : '')}
-                     data-value={item.value}
-                     onClick={this.onItemClick}>
-            {selectOnlyEl}
-            <a className="item" ><input type="checkbox" checked={isSelected} readOnly={true}/>{item.label}</a>
-          </li>
-        })}
-      </ul>
-    </div>
+  onExpandClick() {
+    this.setState({isExpanded: !this.state.isExpanded});
+  }
+
+  onBlur() {
+    this.setState({isExpanded: false});
+  }
+
+  onItemClick(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    let value = $(e.target).closest('li').data('value');
+    if ($(e.target).hasClass('only-link')) {
+      FieldUtil.setFieldValue(this, [value]);
+    } else {
+      this.toggleValue(value);
+    }
+  }
+
+  onSelectAllClick(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    this.toggleSelectAll();
+  }
+
+  onDisableMouseDown(e) {
+    // do nothing so input doesn't lose focus
+    e.preventDefault();
+    e.stopPropagation();
   }
 
   getItemsFromProps(props) {
@@ -101,7 +99,7 @@ export default class DropdownMultiselect extends React.Component {
       return this.props.allLabel;
     }
 
-    var labels = [];
+    let labels = [];
     for (let item of this.state.items) {
       if (this.isItemSelected(item)) {
         labels.push(item.label);
@@ -132,7 +130,7 @@ export default class DropdownMultiselect extends React.Component {
   }
 
   toggleValue(value) {
-    var result = [];
+    let result = [];
     for (let item of this.state.items) {
       let active = this.props.value.indexOf(item.value) !== -1;
       if (item.value === value ? !active : active) {
@@ -142,39 +140,44 @@ export default class DropdownMultiselect extends React.Component {
     FieldUtil.setFieldValue(this, result);
   }
 
-  //
-  // Events
-  //
-
-
-  onExpandClick(e) {
-    this.setState({isExpanded: !this.state.isExpanded});
-  }
-
-  onBlur() {
-    this.setState({isExpanded: false});
-  }
-
-  onItemClick(e) {
-    e.preventDefault();
-    e.stopPropagation();
-    let value = $(e.target).closest('li').data('value');
-    if ($(e.target).hasClass('only-link')) {
-      FieldUtil.setFieldValue(this, [value]);
-    } else {
-      this.toggleValue(value);
+  render() {
+    let items = this.state.items;
+    let allSelected = this.props.value && (items.length === this.props.value.length);
+    let selectAllEl;
+    let selectOnlyEl;
+    if (this.props.showSelectAll) {
+      selectAllEl = (<li className={'select-all' + (allSelected ? ' active' : '')} onClick={this.onSelectAllClick}>
+        <a className="item"><input type="checkbox" checked={allSelected}/>Select All</a>
+      </li>);
     }
-  }
+    if (this.props.showSelectOnly) {
+      selectOnlyEl = <a href="#" className="only-link">only</a>;
+    }
 
-  onSelectAllClick (e) {
-    e.preventDefault();
-    e.stopPropagation();
-    this.toggleSelectAll();
-  }
+    return (<div className={'dropdown-multiselect dropdown' + (this.state.isExpanded ? ' open' : '')}>
+      <select name={this.props.name} style={{display: 'none'}} multiple value={this.props.value}>
+        {items.map((item) => <option key={'option-' + item.value} value={item.value}>{item.label}</option>)}
+      </select>
 
-  disableMouseDown(e) {
-    //do nothing so input doesn't lose focus
-    e.preventDefault();
-    e.stopPropagation();
+      <button id={this.dropdownId} className="btn btn-default dropdown-toggle"
+              aria-haspopup="true" aria-expanded={this.state.isExpanded} onBlur={this.onBlur} onClick={this.onExpandClick}>
+        {this.getTitle()} <span className="caret"></span>
+      </button>
+      <ul className={'dropdown-menu' + (this.props.showSelectOnly ? ' show-select-only' : '')}
+          aria-labelledby={this.dropdownId}
+          onMouseDown={this.onDisableMouseDown}>
+        {selectAllEl}
+        {items.map((item) => {
+          let isSelected = this.isItemSelected(item);
+          return (<li key={'batch-state-' + item.value}
+                      className={'' + item.value + (isSelected ? ' active' : '')}
+                      data-value={item.value}
+                      onClick={this.onItemClick}>
+            {selectOnlyEl}
+            <a className="item" ><input type="checkbox" checked={isSelected} readOnly/>{item.label}</a>
+          </li>);
+        })}
+      </ul>
+    </div>);
   }
 }

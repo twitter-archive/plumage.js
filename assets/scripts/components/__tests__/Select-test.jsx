@@ -1,18 +1,21 @@
+import _ from 'underscore';
+
 jest.dontMock('../Select');
 jest.dontMock('../util/FieldUtil');
 jest.dontMock('form-data-to-object');
 
 describe('Select', function() {
-
-  var React, TestUtils, onFormChangeSpy;
-  var Select;
-  var renderComponent, defaultOptions;
+  let React;
+  let TestUtils;
+  let onFormChangeSpy;
+  let Select;
+  let renderComponent;
+  let defaultOptions;
 
   beforeEach(() => {
     React = require('react');
     TestUtils = require('react-addons-test-utils');
     Select = require('../Select.jsx');
-    var _ = require('underscore');
 
     onFormChangeSpy = jest.genMockFunction();
 
@@ -22,7 +25,7 @@ describe('Select', function() {
     ];
 
     renderComponent = function(props) {
-      props = _.extend({}, {
+      let theProps = _.extend({}, {
         name: 'name',
         placeholder: 'Placeholder',
         placeholderValue: '',
@@ -30,7 +33,7 @@ describe('Select', function() {
         options: defaultOptions,
         onFormChange: onFormChangeSpy
       }, props);
-      return TestUtils.renderIntoDocument(<Select {...props}/>);
+      return TestUtils.renderIntoDocument(<Select {...theProps}/>);
     };
   });
 

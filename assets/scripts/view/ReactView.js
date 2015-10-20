@@ -33,10 +33,5 @@ module.exports = Plumage.view.ReactView = ModelView.extend({
       return this.model.toViewJSON();
     }
     return {};
-  },
-
-  updateModel: function(rootModel, parentModel) {
-    var model = this.getModelFromRoot(this.relationship, rootModel, parentModel);
-    return true;
   }
 });

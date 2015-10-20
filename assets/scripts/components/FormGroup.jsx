@@ -4,7 +4,7 @@ export default class FormGroup extends React.Component {
   static propTypes = {
     className: PropTypes.string,
     label: PropTypes.string,
-    children: PropTypes.array
+    children: PropTypes.node
   };
 
   render() {

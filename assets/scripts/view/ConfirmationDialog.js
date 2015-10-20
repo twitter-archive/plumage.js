@@ -29,7 +29,7 @@ module.exports = Plumage.view.ConfirmationDialog = ModalDialog.extend({
     name: 'message',
     selector: '.message',
     updateOnMessage: false,
-    replaceEl: true,
+    replaceEl: true
   }],
 
   initialize: function(options) {

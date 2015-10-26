@@ -6,9 +6,19 @@ require('es6-promise').polyfill();
 
 jest.dontMock('../TypeAhead');
 
-function getItems(value) {
+function getResults(value) {
+  return [
+    {label: value + '1', value: value + '1'},
+    {label: value + '2', value: value + '2'}
+  ];
+}
+
+function getResultsAsync(value) {
   return new Promise((resolve) => {
-    resolve([value + '1', value + '2']);
+    resolve([
+      {label: value + '1', value: value + '1'},
+      {label: value + '2', value: value + '2'}
+    ]);
   });
 }
 
@@ -16,23 +26,25 @@ describe('TypeAhead', function() {
   let React;
   let TestUtils;
   let TypeAhead;
+  let TypeAheadResults;
   let renderComponent;
 
-  let getItemsSpy;
+  let getResultsSpy;
 
   beforeEach(() => {
     React = require('react');
     TestUtils = require('react-addons-test-utils');
     TypeAhead = require('../TypeAhead.jsx');
+    TypeAheadResults = require('../TypeAheadResults.jsx');
 
-    getItemsSpy = jest.genMockFunction().mockImplementation(getItems);
+    getResultsSpy = jest.genMockFunction().mockImplementation(getResultsAsync);
 
     renderComponent = (props) => {
       let theProps = _.extend({}, {
         name: 'name',
         value: 'foo',
         debounceSearch: false,
-        getItems: getItemsSpy
+        getResults: getResultsSpy
       }, props);
       return TestUtils.renderIntoDocument(
         <TypeAhead {...theProps}/>
@@ -81,23 +93,11 @@ describe('TypeAhead', function() {
         // open
         expect(TestUtils.scryRenderedDOMComponentsWithClass(typeAhead, 'open').length).toEqual(1);
         expect(input.value).toEqual('bar');
-        expect(getItemsSpy.mock.calls[0]).toEqual(['bar']);
+        expect(getResultsSpy.mock.calls[0]).toEqual(['bar']);
 
-        let liEls = TestUtils.scryRenderedDOMComponentsWithTag(typeAhead, 'li');
-        expect(liEls.length).toEqual(2);
-        expect(liEls[0].textContent).toEqual('bar1');
-      });
-    });
-
-    it('renders item data', () => {
-      runs(() => {
-        let liEls = TestUtils.scryRenderedDOMComponentsWithTag(typeAhead, 'li');
-        expect(liEls[0].getAttribute('data-value')).toEqual('bar1');
-        expect(liEls[0].getAttribute('data-index')).toEqual('0');
-        expect(liEls[1].getAttribute('data-index')).toEqual('1');
-
-        expect(liEls[0].className).toEqual('active');
-        expect(liEls[1].className).toEqual('');
+        let resultsSection = TestUtils.findRenderedComponentWithType(typeAhead, TypeAheadResults);
+        expect(resultsSection.props.results.length).toEqual(2);
+        expect(resultsSection.props.results[0].value).toEqual('bar1');
       });
     });
 
@@ -105,11 +105,11 @@ describe('TypeAhead', function() {
       runs(function() {
         expect(typeAhead.state.selectedIndex).toEqual(0);
 
-        TestUtils.Simulate.keyDown(input, {key: 'ArrowUp'});
-        expect(typeAhead.state.selectedIndex).toEqual(0);
+        TestUtils.Simulate.keyDown(input, {key: 'ArrowUp'}); // wraps around
+        expect(typeAhead.state.selectedIndex).toEqual(1);
 
         TestUtils.Simulate.keyDown(input, {key: 'ArrowDown'});
-        expect(typeAhead.state.selectedIndex).toEqual(1);
+        expect(typeAhead.state.selectedIndex).toEqual(0);
 
         TestUtils.Simulate.keyDown(input, {key: 'ArrowDown'});
         expect(typeAhead.state.selectedIndex).toEqual(1);
@@ -133,6 +133,42 @@ describe('TypeAhead', function() {
         TestUtils.Simulate.keyDown(input, {key: 'Escape'});
         expect(typeAhead.state.inputValue).toEqual(typeAhead.props.value);
       });
+    });
+  });
+
+  describe('getResultAt', function() {
+    it('gets result without sections', function() {
+      let typeAhead = renderComponent({getResults: getResults});
+
+      typeAhead.updateSearch('value');
+      let result = typeAhead.getResultAt(0);
+      expect(result.value).toEqual('value1');
+    });
+  });
+
+  describe('result sections', function() {
+    it('renders multiple result sections', function() {
+      let typeAhead = renderComponent({
+        resultSections: [{key: 'foo', title: 'Foos'}, {key: 'bar', title: 'Bars'}],
+        getResults: function() {
+          return {
+            foo: [{value: 'foo1', label: 'foo1'}],
+            bar: [{value: 'bar1', label: 'bar1'}]
+          };
+        }
+      });
+      typeAhead.updateSearch('query');
+
+      let resultsSections = TestUtils.scryRenderedComponentsWithType(typeAhead, TypeAheadResults);
+
+      expect(resultsSections.length).toEqual(2);
+      expect(resultsSections[0].props.title).toEqual('Foos');
+      expect(resultsSections[0].props.startIndex).toEqual(0);
+      expect(resultsSections[0].props.results[0].value).toEqual('foo1');
+
+      expect(resultsSections[1].props.title).toEqual('Bars');
+      expect(resultsSections[1].props.startIndex).toEqual(1);
+      expect(resultsSections[1].props.results[0].value).toEqual('bar1');
     });
   });
 });

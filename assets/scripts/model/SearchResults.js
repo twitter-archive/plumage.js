@@ -10,6 +10,8 @@ module.exports = Plumage.model.SearchResults = Model.extend(
 
     urlRoot: '/search',
 
+    viewAttrs: ['limit'],
+
     relationships: {
       'results': {
         modelCls: DataCollection,

@@ -1,9 +1,8 @@
-import $ from 'jquery';
-
 import React, {PropTypes} from 'react';
 import _ from 'underscore';
 
 import FieldUtil from './util/FieldUtil';
+import TypeAheadResults from './TypeAheadResults';
 
 export default class TypeAhead extends React.Component {
 
@@ -12,12 +11,13 @@ export default class TypeAhead extends React.Component {
     placeholder: PropTypes.string,
     showClearButton: PropTypes.bool,
     value: PropTypes.string,
-    getItems: PropTypes.func.isRequired,
-
-    renderItem: PropTypes.func,
-    getItemValue: PropTypes.func,
-    getItemLabel: PropTypes.func,
-    debounceSearch: PropTypes.bool
+    getResults: PropTypes.func.isRequired,
+    resultSections: PropTypes.array,
+    renderResults: PropTypes.func,
+    debounceSearch: PropTypes.bool,
+    onQueryChange: PropTypes.func,
+    onMoreClick: PropTypes.func,
+    allowEmptyQuery: PropTypes.bool
   };
 
   static contextTypes = {
@@ -26,7 +26,8 @@ export default class TypeAhead extends React.Component {
 
   static defaultProps = {
     showClearButton: true,
-    debounceSearch: true
+    debounceSearch: true,
+    allowEmptyQuery: false
   };
 
   constructor(props) {
@@ -36,17 +37,19 @@ export default class TypeAhead extends React.Component {
       inputValue: props.value,
       expanded: false,
       selectedIndex: 0,
-      items: [],
+      results: [],
       isLoading: false
     };
 
     this.onChange = this.onChange.bind(this);
     this.onKeyDown = this.onKeyDown.bind(this);
-    this.onItemClick = this.onItemClick.bind(this);
-    this.onItemMouseDown = this.onItemMouseDown.bind(this);
-    this.onItemMouseOver = this.onItemMouseOver.bind(this);
+    this.onInputClick = this.onInputClick.bind(this);
+    this.onResultClick = this.onResultClick.bind(this);
+    this.onResultMouseDown = this.onResultMouseDown.bind(this);
+    this.onResultMouseOver = this.onResultMouseOver.bind(this);
     this.onClearClick = this.onClearClick.bind(this);
     this.onBlur = this.onBlur.bind(this);
+    this.onMoreClick = this.onMoreClick.bind(this);
 
     if (this.props.debounceSearch) {
       this.updateSearch = _.debounce(this.updateSearch, 200);
@@ -65,13 +68,16 @@ export default class TypeAhead extends React.Component {
     let value = e.target.value;
     this.setState({inputValue: value, expanded: true, isLoading: true});
     this.updateSearch(value);
+    if (this.props.onQueryChange) {
+      this.props.onQueryChange(value);
+    }
   }
 
   onKeyDown(e) {
     switch (e.key) {
     case 'Enter':
       e.preventDefault();
-      this.commit(this.getItemValue(this.state.items[this.state.selectedIndex]));
+      this.commit(this.getResultValue(this.getResultAt(this.state.selectedIndex)));
       break;
     case 'Escape':
       e.preventDefault();
@@ -79,31 +85,50 @@ export default class TypeAhead extends React.Component {
       break;
     case 'ArrowUp':
       e.preventDefault();
-      this.setState({selectedIndex: Math.max(this.state.selectedIndex - 1, 0)});
+      this.setState({
+        expanded: true,
+        selectedIndex: (this.state.selectedIndex - 1 + this.state.results.length) % this.state.results.length
+      });
       break;
     case 'ArrowDown':
       e.preventDefault();
-      this.setState({selectedIndex: Math.min(this.state.selectedIndex + 1, this.state.items.length - 1)});
+      this.setState({
+        expanded: true,
+        selectedIndex: (this.state.selectedIndex + 1) % this.state.results.length
+      });
       break;
     default:
       break;
     }
   }
 
-  onItemClick(e) {
-    e.preventDefault();
-    let value = $(e.target).closest('li').attr('data-value');
-    this.commit(value);
+  onInputClick() {
+    if ((this.props.allowEmptyQuery || this.state.inputValue) && !this.state.expanded) {
+      this.setState({expanded: true, isLoading: true});
+      this.updateSearch(this.state.inputValue);
+    }
   }
 
-  onItemMouseDown(e) {
+  onResultClick(e) {
+    e.preventDefault();
+    let li = this.getClosestLi(e.target);
+    if (li) {
+      let value = li.getAttribute('data-value');
+      this.commit(value);
+    }
+  }
+
+  onResultMouseDown(e) {
     // prevent focus loss
     e.preventDefault();
   }
 
-  onItemMouseOver(e) {
-    let index = Number($(e.target).closest('li').attr('data-index'));
-    this.setState({selectedIndex: index});
+  onResultMouseOver(e) {
+    let li = this.getClosestLi(e.target);
+    if (li) {
+      let index = li.getAttribute('data-index');
+      this.setState({selectedIndex: index === null ? index : Number(index)});
+    }
   }
 
   onClearClick(e) {
@@ -116,22 +141,50 @@ export default class TypeAhead extends React.Component {
     this.setState({expanded: false});
   }
 
+  onMoreClick(url) {
+    this.setState({expanded: false});
+    if (this.props.onMoreClick) {
+      this.props.onMoreClick(url);
+    }
+  }
+
   //
   // Helpers
   //
 
-  getItemValue(item) {
-    if (this.props.getItemValue) {
-      return this.props.getItemValue(item);
+  getResultValue(result) {
+    if (typeof(result) === 'object') {
+      return result.value;
     }
-    return item;
+    return result;
   }
 
-  getItemLabel(item) {
-    if (this.props.getItemLabel) {
-      return this.props.getItemLabel(item);
+  getClosestLi(el) {
+    if (!el) {
+      return undefined;
     }
-    return item;
+    if (el.tagName === 'LI') {
+      return el;
+    }
+    return this.getClosestLi(el.parentElement);
+  }
+
+  getResultAt(index) {
+    if (this.props.resultSections) {
+      let indexRemaining = index;
+      for (let i = 0; i < this.props.resultSections.length; i++) {
+        let section = this.props.resultSections[i];
+        let results = this.state.results[section.key] || [];
+        if (indexRemaining < results.length) {
+          return results[indexRemaining];
+        }
+        indexRemaining -= results.length;
+      }
+    } else {
+      return this.state.results[index];
+    }
+
+    return this.state.results[index];
   }
 
   commit(value) {
@@ -148,37 +201,41 @@ export default class TypeAhead extends React.Component {
   }
 
   updateSearch(value) {
-    let promise = this.props.getItems(value);
-    promise.then((items) => {
-      if (this.state.inputValue === value) {
-        this.setState({isLoading: false, items: items, selectedIndex: 0});
-      }
-    });
-  }
-
-  renderItems() {
-    if (this.state.isLoading) {
-      return <li className="loading">Loading...</li>;
-    }
-    if (this.state.items.length) {
-      return this.state.items.map((item, i) => {
-        return this.renderItem(item, i);
+    let promise = this.props.getResults(value);
+    if (promise.then) {
+      promise.then((results) => {
+        // check if this search is still valid
+        if (this.state.inputValue === value) {
+          this.setState({isLoading: false, results: results, selectedIndex: 0});
+        }
       });
+    } else {
+      this.setState({isLoading: false, results: promise, selectedIndex: 0});
     }
-    return <li className="no-results">No Results</li>;
   }
 
-  renderItem(item, i) {
-    let itemEl;
-    if (this.props.renderItem) {
-      itemEl = this.props.renderItem(item, i);
-    } else {
-      itemEl = <a href="#">{this.getItemLabel(item)}</a>;
+  renderResults() {
+    let resultSections = this.props.resultSections;
+    let resultsBySection = this.state.results || {};
+    if (!resultSections) {
+      resultSections = [{key: '!default'}];
+      resultsBySection = {
+        '!default': this.state.results
+      };
     }
-    return (<li key={'typeahead-item-' + i} data-value={this.getItemValue(item)} data-index={i}
-                className={i === this.state.selectedIndex ? 'active' : ''}>
-      {itemEl}
-    </li>);
+
+    let startIndex = 0;
+    return resultSections.map((resultSection) => {
+      let results = resultsBySection[resultSection.key] || [];
+
+      let el = (<TypeAheadResults results={results}
+                                  selectedIndex={this.state.selectedIndex}
+                                  startIndex={startIndex}
+                                  onMoreClick={this.onMoreClick}
+                                  {...resultSection} />);
+      startIndex += results.length;
+      return el;
+    });
   }
 
   render() {
@@ -192,6 +249,7 @@ export default class TypeAhead extends React.Component {
                value={this.state.inputValue}
                onChange={this.onChange}
                onKeyDown={this.onKeyDown}
+               onClick={this.onInputClick}
                onBlur={this.onBlur}
           />
         <span className="input-group-btn">
@@ -201,12 +259,13 @@ export default class TypeAhead extends React.Component {
         </span>
       </div>
 
-      <ul className="dropdown-menu"
-          onClick={this.onItemClick}
-          onMouseDown={this.onItemMouseDown}
-          onMouseOver={this.onItemMouseOver}>
 
-        {this.renderItems()}
+      <ul className="dropdown-menu pull-left"
+          onClick={this.onResultClick}
+          onMouseDown={this.onResultMouseDown}
+          onMouseOver={this.onResultMouseOver}>
+        {this.state.isLoading ? <li className="loading"></li> : undefined}
+        {this.renderResults()}
       </ul>
     </div>);
   }

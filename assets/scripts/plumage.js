@@ -1,5 +1,3 @@
-
-
 define([
   './PlumageRoot',
   './App',
@@ -83,6 +81,7 @@ define([
   './view/TabView'
 ],
 function(Plumage) {
+  Plumage.components.NavBar = require('./components/NavBar');
   Plumage.components.Form = require('./components/Form');
   Plumage.components.util.FormUtil = require('./components/util/FormUtil');
   Plumage.components.FormGroup = require('./components/FormGroup');
@@ -91,6 +90,7 @@ function(Plumage) {
   Plumage.components.TextField = require('./components/TextField');
   Plumage.components.SearchField = require('./components/SearchField');
   Plumage.components.TypeAhead = require('./components/TypeAhead');
+  Plumage.components.TypeAheadResults = require('./components/TypeAheadResults');
   Plumage.components.InplaceTextField = require('./components/InplaceTextField');
   Plumage.components.DateField = require('./components/DateField');
   Plumage.components.DateRangeField = require('./components/DateRangeField');

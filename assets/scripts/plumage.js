@@ -101,6 +101,7 @@ function(Plumage) {
   Plumage.components.DropdownMultiselect = require('./components/DropdownMultiselect');
   Plumage.components.FilterBar = require('./components/FilterBar');
   Plumage.components.tree.Tree = require('./components/tree/Tree');
+  Plumage.components.LoadingError = require('./components/LoadingError');
 
   return Plumage;
 });

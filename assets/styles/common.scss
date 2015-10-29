@@ -81,7 +81,6 @@ h2.title .light {
 
 .load-error {
   font-size: 20px;
-  line-height: 40px;
   color: #888;
 }
 
@@ -100,13 +99,7 @@ h2.title .light {
   text-align:center;
   letter-spacing: -2px;
 
-  background: #cc2a2d; /* Old browsers */
-  background: -moz-linear-gradient(top, #cc2a2d 0%, #8f0222 74%, #6d0019 100%); /* FF3.6+ */
-  background: -webkit-gradient(linear, left top, left bottom, color-stop(0%,#cc2a2d), color-stop(74%,#8f0222), color-stop(100%,#6d0019)); /* Chrome,Safari4+ */
-  background: -webkit-linear-gradient(top, #cc2a2d 0%,#8f0222 74%,#6d0019 100%); /* Chrome10+,Safari5.1+ */
-  background: -o-linear-gradient(top, #cc2a2d 0%,#8f0222 74%,#6d0019 100%); /* Opera 11.10+ */
-  background: -ms-linear-gradient(top, #cc2a2d 0%,#8f0222 74%,#6d0019 100%); /* IE10+ */
-  background: linear-gradient(to bottom, #cc2a2d 0%,#8f0222 74%,#6d0019 100%); /* W3C */
+  background: #cc2a2d;
 }
 
 .load-error .error-text {
@@ -114,8 +107,14 @@ h2.title .light {
   margin: 20px 0;
 }
 
-.load-error.with-message .error-text {
-  margin: 0;
+.load-error.with-message {
+  .error-text {
+    margin: 0;
+    padding-top: 17px;
+    .error-message {
+      font-size: 14px;
+    }
+  }
 }
 
 .no-data {

@@ -42,7 +42,7 @@ export default class NavBar extends React.Component {
   renderNavItems() {
     if (this.props.navItems) {
       return (<ul className="nav navbar-nav main-nav" >
-        {this.props.navItems.map((item) => <li className={this.getMenuItemClassName(item)}><a href={item.url} onClick={this.onLinkClick}>{item.label}</a></li>)}
+        {this.props.navItems.map((item, i) => <li key={'nav-item-' + i} className={this.getMenuItemClassName(item)}><a href={item.url} onClick={this.onLinkClick}>{item.label}</a></li>)}
       </ul>);
     }
     return undefined;

@@ -405,24 +405,7 @@ module.exports = Plumage.model.Model = Backbone.Model.extend(
      * @param {String} key Relationship key
      */
     getRelated: function(key) {
-      var keyParts = key.split('.'),
-        keyPart = keyParts[0],
-        related;
-
-      if (this.related && this.related[keyPart]) {
-        related = this.related[keyPart];
-      } else if (this.collection && this.collection.hasRelationship(keyPart) && this.collection.getRelated(keyPart)) {
-        related = this.collection.getRelated(keyPart);
-      } else {
-        if (!this.hasRelationship(keyPart)) {
-          throw 'unknown relationship - ' + keyPart;
-        }
-      }
-
-      if (related && keyParts.length > 1) {
-        return related.getRelated(keyParts.slice(1).join('.'));
-      }
-      return related;
+      return ModelUtil.getRelatedModel(this, key);
     },
 
     setRelated: function(key, model) {
@@ -507,7 +490,7 @@ module.exports = Plumage.model.Model = Backbone.Model.extend(
     updateRelatedModel: function(relationship, model, data) {
       if (model instanceof Plumage.collection.Collection) {
         if ($.isArray(data)) {
-          data = {models: data};
+          data = {items: data};
         }
       }
       model.set(data, {silent: true}); //silent to prevent double render with subsequent load event.
@@ -879,13 +862,18 @@ module.exports = Plumage.model.Model = Backbone.Model.extend(
             resp.meta.message,
             resp.meta.message_class
           );
+          if (typeof theApp !== 'undefined' && resp.meta && resp.meta.message) {
+            theApp.dispatch.trigger('message', resp.meta.message, resp.meta.message_class);
+          }
 
           _.each(seenRelated, function(related) {
             related.trigger('invalid', related, related.validationError);
           });
-
         } else {
           model.latestLoadParams = undefined;
+          if (model.get('meta')) {
+            model.get('meta').validationError = undefined;
+          }
           model.onLoad(options);
           if (typeof theApp !== 'undefined' && resp.meta && resp.meta.message) {
             theApp.dispatch.trigger('message', resp.meta.message, resp.meta.message_class);

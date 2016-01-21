@@ -25,7 +25,7 @@ export default class CategorySelect extends Select {
 
   onClick(e) {
     e.preventDefault();
-    FieldUtil.setFieldValue(this, e.target.getAttribute('data-value'));
+    this.changeValue(e.target.getAttribute('data-value'));
   }
 
   //
@@ -72,12 +72,15 @@ export default class CategorySelect extends Select {
       placeholderEl = this.renderOption({value: this.props.placeholderValue, label: this.props.placeholder, className: 'placeholder'});
     }
     let options = this.props.options;
-    return (<ul className="nav nav-pills">
-      <input ref="input" type="hidden" name={this.props.name} value={this.props.value}/>
-      {placeholderEl}
-      {options.map(option => {
-        return this.renderOption(option);
-      })}
-    </ul>);
+    return (
+      <div className="category-select">
+        <ul className="nav nav-pills">
+        <input ref="input" type="hidden" name={this.props.name} value={this.props.value}/>
+        {placeholderEl}
+        {options.map(option => {
+          return this.renderOption(option);
+        })}
+      </ul>
+    </div>);
   }
 }

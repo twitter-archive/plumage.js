@@ -38,7 +38,7 @@ test('Can set attributes and models', function() {
 
   collection.set({
     href: '/foo',
-    models: ExampleData.POSTS
+    items: ExampleData.POSTS
   });
 
   equal(collection.get('href'), '/foo', 'should set attributes');

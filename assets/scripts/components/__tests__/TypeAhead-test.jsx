@@ -1,5 +1,4 @@
 /* global runs, waitsFor, spyOn */
-import _ from 'underscore';
 
 jest.dontMock('es6-promise');
 require('es6-promise').polyfill();
@@ -40,7 +39,7 @@ describe('TypeAhead', function() {
     getResultsSpy = jest.genMockFunction().mockImplementation(getResultsAsync);
 
     renderComponent = (props) => {
-      let theProps = _.extend({}, {
+      let theProps = Object.assign({}, {
         name: 'name',
         value: 'foo',
         debounceSearch: false,
@@ -133,16 +132,6 @@ describe('TypeAhead', function() {
         TestUtils.Simulate.keyDown(input, {key: 'Escape'});
         expect(typeAhead.state.inputValue).toEqual(typeAhead.props.value);
       });
-    });
-  });
-
-  describe('getResultAt', function() {
-    it('gets result without sections', function() {
-      let typeAhead = renderComponent({getResults: getResults});
-
-      typeAhead.updateSearch('value');
-      let result = typeAhead.getResultAt(0);
-      expect(result.value).toEqual('value1');
     });
   });
 

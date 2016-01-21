@@ -70,86 +70,13 @@ div.floater-wrapper a.close:hover {
 
 /* commments */
 
-.comments .comment {
-  padding: 6px 10px 7px;
-  border-top: 1px solid #FFFFDF;
-  border-bottom: 1px solid #E1E19A;
-
-  .comment-body {
-    overflow: hidden;
-    overflow-wrap: break-word;
-    word-wrap: break-word;
-  }
-}
-
-.comment {
-  border-bottom: 0;
-}
-
-.comment span {
-  padding-top: 2px;
-  display: inline-block;
-}
-
-.comment img.avatar {
-  float: left;
-  margin-right: 6px;
-  width: 20px;
-  height: 20px;
-}
-
-.comments li.comment-form {
-  padding: 10px;
-  clear: right;
-}
-
 input.comment_submit_button {
   width: 87px;
 }
 
-div.comment-wrapper .item-author-header {
-  overflow: hidden;
-}
-
-.item-author-header {
-  font-size: 13px;
-  min-height: 0;
-  color: #111;
-  margin: 0;
-}
-
-.comment .timestamp {
-  color: #666;
-  font-size: 10px;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  font-weight: normal;
-  white-space: nowrap;
-}
 
 .comment-wrapper.hidden {
   display: none;
-}
-
-/** normal */
-.comments {
-
-  .comments-wrap {
-    margin-top: 5px;
-    width: 100%;
-  }
-  .comment {
-    background: #FFFFDF;
-    border-top: 1px solid #eee;
-  }
-
-  .hidden {
-    display: none;
-  }
-
-  .comments-toggle {
-    font-size: 14px;
-  }
 }
 
 /** Form */

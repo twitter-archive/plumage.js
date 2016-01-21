@@ -29,8 +29,9 @@ _.extend(RequestManager.prototype,
       var xhr = model.load(options);
       if (xhr) {
         this.requests.push({xhr: xhr, url: model.url()});
+        return xhr;
       }
-      return xhr;
+
     },
 
     /** cancel all uncompleted requests. */

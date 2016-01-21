@@ -139,7 +139,7 @@ Plumage.collection.Collection = Model.extend(
     },
 
     /**
-     * Overridden from Model. Takes a special attributes 'models' to use as collection data,
+     * Overridden from Model. Takes a special attributes 'items' to use as collection data,
      * so that attributes and models can be set from the same data.
      */
     set: function(key, val, options) {
@@ -159,13 +159,13 @@ Plumage.collection.Collection = Model.extend(
       options = options || {};
       attrs = _.clone(attrs);
 
-      if (attrs.models) {
+      if (attrs.items) {
         if (this.processInMemory) {
-          this.resetInMemory(attrs.models);
+          this.resetInMemory(attrs.items);
         } else {
-          this.reset(attrs.models);
+          this.reset(attrs.items);
         }
-        delete attrs.models;
+        delete attrs.items;
       }
       return Model.prototype.set.apply(this, [attrs, options]);
     },
@@ -364,7 +364,7 @@ Plumage.collection.Collection = Model.extend(
 
     toViewJSON: function() {
       var result = Model.prototype.toViewJSON.apply(this, arguments);
-      result.items = this.map(function(model){ return model.toViewJSON(); });
+      result.items = this.map(function(model) { return model.toViewJSON(); });
       result.size = this.size();
       return result;
     },

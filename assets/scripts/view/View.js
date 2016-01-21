@@ -177,17 +177,17 @@ module.exports = Plumage.view.View = Backbone.View.extend(
      * Not used by default. Add to events if necessary.
      */
     onLinkClick: function(e) {
-      //allow command click to open in new tab
+      // allow command click to open in new tab
       if (e.metaKey) {
         return;
       }
 
       var a = $(e.target).closest('a');
-      if (!a.hasClass('outlink')) {
+      if (!a.hasClass('outlink') && a.attr('href') && a.attr('href')[0] !== '#' && a[0].host === window.location.host) {
         e.preventDefault();
         e.stopPropagation();
         var url = a.prop('pathname') + a.prop('search');
-        window.router.navigateWithQueryParams(url, {trigger:true});
+        window.router.navigateWithQueryParams(url, {trigger: true});
       }
     },
 

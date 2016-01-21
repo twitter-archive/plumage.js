@@ -111,7 +111,7 @@ gulp.task('build:watch', function(cb) {
   });
 });
 
-gulp.task('test', ['lint'], function (done) {
+gulp.task('test', ['lint'], function(done) {
   var server = new karma.Server({
     configFile: __dirname + '/karma.conf.js',
     singleRun: true,

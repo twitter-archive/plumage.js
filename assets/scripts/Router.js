@@ -1,7 +1,7 @@
 var _ = require('underscore');
 var Backbone = require('backbone');
 var Plumage = require('PlumageRoot');
-var History = require('History');
+var History = require('PlumageHistory');
 var ModelUtil = require('util/ModelUtil');
 
 module.exports = Plumage.Router = Backbone.Router.extend(

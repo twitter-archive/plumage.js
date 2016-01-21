@@ -1,7 +1,6 @@
 import React, {PropTypes} from 'react';
 
-import DropdownButton from 'react-bootstrap/DropdownButton';
-import MenuItem from 'react-bootstrap/MenuItem';
+import {DropdownButton, MenuItem} from 'react-bootstrap';
 
 export default class NavBar extends React.Component {
 
@@ -42,7 +41,11 @@ export default class NavBar extends React.Component {
   renderNavItems() {
     if (this.props.navItems) {
       return (<ul className="nav navbar-nav main-nav" >
-        {this.props.navItems.map((item, i) => <li key={'nav-item-' + i} className={this.getMenuItemClassName(item)}><a href={item.url} onClick={this.onLinkClick}>{item.label}</a></li>)}
+        {this.props.navItems.map((item) => {
+          return (<li key={item.label} className={this.getMenuItemClassName(item)}>
+            <a href={item.url} onClick={this.onLinkClick}>{item.label}</a>
+          </li>);
+        })}
       </ul>);
     }
     return undefined;
@@ -52,8 +55,8 @@ export default class NavBar extends React.Component {
     if (this.props.extraLinks) {
       return (<div className="extra-links">
         <DropdownButton bsStyle="link" title="help" id="nav-extra-links">
-          {this.props.extraLinks.map((link) => {
-            return <MenuItem href={link.url} target="_">{link.label}</MenuItem>;
+          {this.props.extraLinks.map((link, i) => {
+            return <MenuItem key={'extra-link-' + i} href={link.url} target="_">{link.label}</MenuItem>;
           })}
         </DropdownButton>
       </div>);

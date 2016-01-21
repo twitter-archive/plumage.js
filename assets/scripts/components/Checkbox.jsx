@@ -8,7 +8,7 @@ export default class Checkbox extends React.Component {
     name: PropTypes.string,
     value: PropTypes.any,
     className: PropTypes.string,
-    label: PropTypes.string,
+    label: PropTypes.node,
     isChecked: PropTypes.func,
     checkedValue: PropTypes.any,
     uncheckedValue: PropTypes.any,

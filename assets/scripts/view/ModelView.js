@@ -170,9 +170,7 @@ module.exports = Plumage.view.ModelView = ContainerView.extend(
         }
       }
 
-
-
-      //recurse
+      // recurse
       this.eachSubView(function(subView) {
         subView.callOrRecurse('setModel', [rootModel, this.model]);
       }.bind(this));
@@ -304,7 +302,7 @@ module.exports = Plumage.view.ModelView = ContainerView.extend(
     onLinkClick: function(e) {
       var a = $(e.target).closest('a');
       if (!a.hasClass('outlink')) {
-        if (a.attr('href')[0] === '?') {
+        if (a.attr('href')[0] === '?' && !a.attr('href').match(/^\?actions=/)) {
           e.preventDefault();
           e.stopPropagation();
           var params = ModelUtil.parseQueryString(a.attr('href').slice(1));

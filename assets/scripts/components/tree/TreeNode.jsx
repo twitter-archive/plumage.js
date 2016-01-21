@@ -10,7 +10,8 @@ class TreeNode extends React.Component {
 
   static contextTypes = {
     renderLabel: PropTypes.func.isRequired,
-    onToggleExpand: PropTypes.func.isRequired
+    onToggleExpand: PropTypes.func.isRequired,
+    onClick: PropTypes.func
   };
 
   static defaultProps = {
@@ -20,6 +21,7 @@ class TreeNode extends React.Component {
   constructor(props) {
     super(props);
     this.onExpandClick = this.onExpandClick.bind(this);
+    this.onClick = this.onClick.bind(this);
   }
 
   shouldComponentUpdate(nextProps) {
@@ -31,6 +33,10 @@ class TreeNode extends React.Component {
 
   onExpandClick() {
     this.context.onToggleExpand(this.props.indexPath, !this.props.data.get('expanded'));
+  }
+
+  onClick() {
+    this.context.onClick(this, this.props.indexPath);
   }
 
   getClassName() {
@@ -68,7 +74,7 @@ class TreeNode extends React.Component {
       expandEl = <a className="expand-toggle" onClick={this.onExpandClick}>▼</a>;
     }
     return (<li className={this.getClassName()}>
-      <div data-index-path={this.props.indexPath.join('.')}>
+      <div data-index-path={this.props.indexPath.join('.')} onClick={this.onClick}>
         {expandEl}
         {this.context.renderLabel(this.props)}
       </div>

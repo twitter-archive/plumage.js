@@ -173,9 +173,11 @@ h2.title .light {
 
   margin-top: -20px;
   opacity: 0;
+  pointer-events: none;
 
   @include transition(opacity 1s, margin-top 1s);
   &.show {
+    pointer-events: auto;
     opacity: 1.0;
     margin-top: 0;
     @include transition(margin-top .1s, opacity 0.1s);

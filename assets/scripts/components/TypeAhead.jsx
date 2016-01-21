@@ -1,5 +1,6 @@
 import React, {PropTypes} from 'react';
 import _ from 'underscore';
+import $ from 'jquery';
 
 import FieldUtil from './util/FieldUtil';
 import TypeAheadResults from './TypeAheadResults';
@@ -17,6 +18,7 @@ export default class TypeAhead extends React.Component {
     debounceSearch: PropTypes.bool,
     onQueryChange: PropTypes.func,
     onMoreClick: PropTypes.func,
+    onChange: PropTypes.func,
     allowEmptyQuery: PropTypes.bool
   };
 
@@ -36,6 +38,7 @@ export default class TypeAhead extends React.Component {
     this.state = {
       inputValue: props.value,
       expanded: false,
+      selectedSection: 0,
       selectedIndex: 0,
       results: [],
       isLoading: false
@@ -74,10 +77,12 @@ export default class TypeAhead extends React.Component {
   }
 
   onKeyDown(e) {
+    let maxIndex = this.getMaxSelectedIndex();
+
     switch (e.key) {
     case 'Enter':
       e.preventDefault();
-      this.commit(this.getResultValue(this.getResultAt(this.state.selectedIndex)));
+      this.onEnter();
       break;
     case 'Escape':
       e.preventDefault();
@@ -87,14 +92,14 @@ export default class TypeAhead extends React.Component {
       e.preventDefault();
       this.setState({
         expanded: true,
-        selectedIndex: (this.state.selectedIndex - 1 + this.state.results.length) % this.state.results.length
+        selectedIndex: (this.state.selectedIndex - 1 + maxIndex) % maxIndex
       });
       break;
     case 'ArrowDown':
       e.preventDefault();
       this.setState({
         expanded: true,
-        selectedIndex: (this.state.selectedIndex + 1) % this.state.results.length
+        selectedIndex: (this.state.selectedIndex + 1) % maxIndex
       });
       break;
     default:
@@ -148,6 +153,25 @@ export default class TypeAhead extends React.Component {
     }
   }
 
+  onEnter() {
+    if (this.props.resultSections) {
+      let indexRemaining = this.state.selectedIndex;
+      for (let i = 0; i < this.props.resultSections.length; i++) {
+        let section = this.props.resultSections[i];
+        let results = this.state.results[section.key] || [];
+        if (indexRemaining < results.length) {
+          this.commitResult(results[indexRemaining]);
+          return;
+        }
+        if (section.moreLabel && indexRemaining === results.length) {
+          this.onMoreClick(section.moreUrl);
+        }
+        indexRemaining -= results.length + (section.moreLabel ? 1 : 0);
+      }
+    }
+    this.commitResult(this.state.results[this.state.selectedIndex]);
+  }
+
   //
   // Helpers
   //
@@ -159,6 +183,12 @@ export default class TypeAhead extends React.Component {
     return result;
   }
 
+  getMaxSelectedIndex() {
+    let sections = this.props.resultSections || [];
+    return [this.state.results.length].concat(sections.map((section) => section.moreLabel ? 1 : 0)).reduce((x, y) => x + y, 0);
+  }
+
+
   getClosestLi(el) {
     if (!el) {
       return undefined;
@@ -167,24 +197,6 @@ export default class TypeAhead extends React.Component {
       return el;
     }
     return this.getClosestLi(el.parentElement);
-  }
-
-  getResultAt(index) {
-    if (this.props.resultSections) {
-      let indexRemaining = index;
-      for (let i = 0; i < this.props.resultSections.length; i++) {
-        let section = this.props.resultSections[i];
-        let results = this.state.results[section.key] || [];
-        if (indexRemaining < results.length) {
-          return results[indexRemaining];
-        }
-        indexRemaining -= results.length;
-      }
-    } else {
-      return this.state.results[index];
-    }
-
-    return this.state.results[index];
   }
 
   commit(value) {
@@ -196,22 +208,27 @@ export default class TypeAhead extends React.Component {
     }
   }
 
+  commitResult(result) {
+    if (result) {
+      this.commit(this.getResultValue(result));
+    }
+  }
+
   cancel() {
     this.setState({inputValue: this.props.value, expanded: false, selectedIndex: 0});
   }
 
   updateSearch(value) {
-    let promise = this.props.getResults(value);
-    if (promise.then) {
-      promise.then((results) => {
-        // check if this search is still valid
-        if (this.state.inputValue === value) {
-          this.setState({isLoading: false, results: results, selectedIndex: 0});
-        }
-      });
-    } else {
-      this.setState({isLoading: false, results: promise, selectedIndex: 0});
+    if (value !== this.state.inputValue) {
+      return;
     }
+    let resultsPromise = this.props.getResults(value);
+    $.when(resultsPromise).then((results) => {
+      // check if this search is still valid
+      if (this.state.inputValue === value) {
+        this.setState({isLoading: false, results: results, selectedIndex: 0});
+      }
+    });
   }
 
   renderResults() {
@@ -232,8 +249,8 @@ export default class TypeAhead extends React.Component {
                                   selectedIndex={this.state.selectedIndex}
                                   startIndex={startIndex}
                                   onMoreClick={this.onMoreClick}
-                                  {...resultSection} />);
-      startIndex += results.length;
+        {...resultSection} />);
+      startIndex += results.length + (resultSection.moreLabel ? 1 : 0);
       return el;
     });
   }

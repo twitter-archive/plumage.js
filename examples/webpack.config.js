@@ -1,8 +1,7 @@
-var webpack = require("webpack");
-var ProvidePlugin = require("webpack/lib/ProvidePlugin");
+var ProvidePlugin = require('webpack/lib/ProvidePlugin');
 
 module.exports = {
-  context: __dirname + "/assets",
+  context: __dirname + '/assets',
   entry: {
     countries: 'countries/application',
     kitchen_sink: 'kitchen_sink/application',
@@ -10,26 +9,25 @@ module.exports = {
   },
 
   output: {
-    path: __dirname + "/../build/docs/examples",
-    filename: "[name].js"
+    path: __dirname + '/../build/docs/examples',
+    filename: '[name].js'
   },
 
   devtool: 'source-map',
 
   module: { loaders: [
-    { test: /\.html$/, loader: "raw-loader" },
-    { test: /\.json$/, loader: "json-loader" },
+    { test: /\.html$/, loader: 'raw-loader' },
+    { test: /\.json$/, loader: 'json-loader' },
     { test: /\.jsx$/, loader: 'babel-loader' }
   ]},
 
- // plugins: [
+  plugins: [
     new ProvidePlugin({
-      $: "jquery",
-      jQuery: "jquery",
-      "window.jQuery": "jquery",
-      "_": "underscore"
-    }),
-    new webpack.optimize.CommonsChunkPlugin("vendor", "vendor.bundle.js")
+      $: 'jquery',
+      jQuery: 'jquery',
+      'window.jQuery': 'jquery',
+      '_': 'underscore'
+    })
   ],
 
   resolve: {

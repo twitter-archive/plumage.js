@@ -81,11 +81,13 @@ define([
   './view/TabView'
 ],
 function(Plumage) {
+  Plumage.components.ModelProvider = require('./components/ModelProvider');
   Plumage.components.NavBar = require('./components/NavBar');
   Plumage.components.Form = require('./components/Form');
   Plumage.components.util.FormUtil = require('./components/util/FormUtil');
   Plumage.components.FormGroup = require('./components/FormGroup');
   Plumage.components.Checkbox = require('./components/Checkbox');
+  Plumage.components.DurationField = require('./components/DurationField');
   Plumage.components.TextArea = require('./components/TextArea');
   Plumage.components.TextField = require('./components/TextField');
   Plumage.components.SearchField = require('./components/SearchField');

@@ -39,13 +39,6 @@ module.exports = Plumage.view.form.Form = ModelView.extend({
     return this.actionLabel ? this.actionLabel : 'Submit';
   },
 
-  setMessage: function(message, messageCls) {
-    var messageView = this.getSubView('message');
-    if (messageView) {
-      messageView.setMessage(message, messageCls);
-    }
-  },
-
   //
   // actions
   //
@@ -91,16 +84,7 @@ module.exports = Plumage.view.form.Form = ModelView.extend({
   onSaveSuccess: function(model, resp, xhr) {
     if (resp.meta.success) {
       this.trigger('save', this, model);
-    } else {
-      if (resp.meta.message) {
-        this.setMessage(resp.meta.message, resp.meta.message_class);
-      }
-    }
-  },
-
-  onModelInvalid: function(model, validationError, message, messageCls) {
-    if (message) {
-      this.setMessage(message, messageCls);
     }
   }
+
 });

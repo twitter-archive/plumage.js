@@ -32,6 +32,7 @@ export default class Calendar extends React.Component {
       month: this.props.month !== undefined ? Number(this.props.month) : moment(this.props.value).month(),
       year: this.props.year !== undefined ? Number(this.props.year) : moment(this.props.value).year()
     };
+    this.moment = this.props.utc ? moment.utc : moment;
 
     this.onNextMonthClick = this.onNextMonthClick.bind(this);
     this.onPrevMonthClick = this.onPrevMonthClick.bind(this);
@@ -39,6 +40,7 @@ export default class Calendar extends React.Component {
   }
 
   componentWillReceiveProps(props) {
+    this.moment = props.utc ? moment.utc : moment;
     this.setState( {
       value: props.value,
       month: props.month !== undefined ? Number(props.month) : moment(props.value).month(),
@@ -51,12 +53,12 @@ export default class Calendar extends React.Component {
   //
 
   onNextMonthClick() {
-    let m = moment([this.state.year, this.state.month]).add(1, 'month');
+    let m = this.moment([this.state.year, this.state.month]).add(1, 'month');
     this.setState({month: m.month(), year: m.year()});
   }
 
   onPrevMonthClick() {
-    let m = moment([this.state.year, this.state.month]).subtract(1, 'month');
+    let m = this.moment([this.state.year, this.state.month]).subtract(1, 'month');
     this.setState({month: m.month(), year: m.year()});
   }
 
@@ -64,7 +66,7 @@ export default class Calendar extends React.Component {
     let td = e.target.parentNode;
     if (!td.classList.contains('disabled')) {
       let date = this.getDateFromDayEl(e.target);
-      let m = this.utc ? moment.utc(date) : moment(date);
+      let m = this.moment(date);
       this.setState({value: m.valueOf()}, function() {
         if (this.props.onSelect) {
           this.props.onSelect(this.state.value);
@@ -116,7 +118,7 @@ export default class Calendar extends React.Component {
           date: curDate,
           className: this.getClassesForDate(curDate, i, j).join(' ')
         });
-        let m = moment(curDate).add(1, 'day');
+        let m = this.moment(curDate).add(1, 'day');
         curDate = [m.year(), m.month(), m.date()];
       }
       calendar.push(week);
@@ -128,8 +130,8 @@ export default class Calendar extends React.Component {
    * Helper: Get first day on calendar page for month, year
    */
   getFirstDateTuple(month, year) {
-    let firstDay = moment([year, month, 1]);
-    let monthAgo = moment(firstDay).subtract(1, 'month');
+    let firstDay = this.moment([year, month, 1]);
+    let monthAgo = this.moment(firstDay).subtract(1, 'month');
 
     let daysInLastMonth = monthAgo.daysInMonth();
     let dayOfWeek = firstDay.day();
@@ -168,8 +170,8 @@ export default class Calendar extends React.Component {
   getShadowClass(date, row, col) {
     if (!this.isDateTupleInMonth(date)) {
       if (row < 2) {
-        let nextWeek = this.toDateTuple(moment(date).add(7, 'day'));
-        let tomorrow = this.toDateTuple(moment(date).add(1, 'day'));
+        let nextWeek = this.toDateTuple(this.moment(date).add(7, 'day'));
+        let tomorrow = this.toDateTuple(this.moment(date).add(1, 'day'));
         if (this.isDateTupleInMonth(nextWeek)) {
           if (col < 6 && this.isDateTupleInMonth(tomorrow)) {
             return 'shadow-bottom-right';
@@ -177,8 +179,8 @@ export default class Calendar extends React.Component {
           return 'shadow-bottom';
         }
       } else {
-        let lastWeek = this.toDateTuple(moment(date).subtract(7, 'day'));
-        let yesterday = this.toDateTuple(moment(date).subtract(1, 'day'));
+        let lastWeek = this.toDateTuple(this.moment(date).subtract(7, 'day'));
+        let yesterday = this.toDateTuple(this.moment(date).subtract(1, 'day'));
         if (this.isDateTupleInMonth(lastWeek)) {
           if (col > 0 && this.isDateTupleInMonth(yesterday)) {
             return 'shadow-top-left';
@@ -195,7 +197,19 @@ export default class Calendar extends React.Component {
   }
 
   isDateTupleInRange(date, minDate, maxDate) {
-    return (!minDate || moment(date) >= moment(minDate)) && (!maxDate || moment(date) <= moment(maxDate));
+    if (minDate) {
+      const minDateMoment = this.moment(minDate).startOf('day');
+      if (this.moment(date) < minDateMoment) {
+        return false;
+      }
+    }
+    if (maxDate) {
+      const maxDateMoment = this.moment(maxDate).endOf('day');
+      if (this.moment(date) > maxDateMoment) {
+        return false;
+      }
+    }
+    return true;
   }
 
   isDateInSelectedRange(date) {
@@ -226,9 +240,9 @@ export default class Calendar extends React.Component {
     }
     let m = date;
     if (typeof(m) === 'number') {
-      m = this.props.utc ? moment.utc(m) : moment(m);
+      m = this.moment(m);
     } else {
-      m = moment(m);
+      m = this.moment(m);
     }
     return [m.year(), m.month(), m.date()];
   }

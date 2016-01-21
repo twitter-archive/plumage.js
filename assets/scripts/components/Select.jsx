@@ -10,8 +10,10 @@ export default class Select extends React.Component {
     className: PropTypes.string,
     placeholder: PropTypes.string,
     placeholderValue: PropTypes.any,
+    size: PropTypes.number,
     disabled: PropTypes.bool,
-    options: PropTypes.array
+    options: PropTypes.array,
+    onChange: PropTypes.func
   };
 
   static contextTypes = {
@@ -30,12 +32,24 @@ export default class Select extends React.Component {
     this.onChange = this.onChange.bind(this);
   }
 
+  getOptions() {
+    return this.props.options || [];
+  }
+
   //
   // Events
   //
 
   onChange(e) {
-    FieldUtil.setFieldValue(this, e.target.value);
+    this.changeValue(e.target.value);
+  }
+
+  changeValue(value) {
+    const finalValue = this.processDomValue(value);
+    if (this.props.onChange) {
+      this.props.onChange(finalValue);
+    }
+    FieldUtil.setFieldValue(this, finalValue);
   }
 
   //
@@ -47,18 +61,23 @@ export default class Select extends React.Component {
     return value !== null && value !== undefined && value !== this.props.placeholderValue;
   }
 
+  processDomValue(value) {
+    return value;
+  }
+
   render() {
     let placeholderEl;
     if (this.props.placeholder) {
       placeholderEl = <option key={'option-' + this.props.placeholderValue} value={this.props.placeholderValue}>{this.props.placeholder}</option>;
     }
-    let options = this.props.options || [];
+    let options = this.getOptions();
 
     return (<select ref="input"
                    name={this.props.name}
                    value={this.props.value}
                    className={'form-control ' + (this.props.className || '')}
                    disabled={this.props.disabled}
+                   size={this.props.size}
                    onChange={this.onChange}
       >
       {placeholderEl}

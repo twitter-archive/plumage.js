@@ -8,6 +8,7 @@ export default class Tree extends React.Component {
   static propTypes = {
     className: PropTypes.string,
     onToggleExpand: PropTypes.func.isRequired,
+    onNodeClick: PropTypes.func,
     renderLabel: PropTypes.func.isRequired,
     rootNodes: PropTypes.instanceOf(Immutable.List),
     emptyMessage: PropTypes.string
@@ -15,7 +16,8 @@ export default class Tree extends React.Component {
 
   static childContextTypes = {
     renderLabel: PropTypes.func.isRequired,
-    onToggleExpand: PropTypes.func.isRequired
+    onToggleExpand: PropTypes.func.isRequired,
+    onClick: PropTypes.func
   };
 
   static defaultProps = {
@@ -29,7 +31,8 @@ export default class Tree extends React.Component {
   getChildContext() {
     return {
       renderLabel: this.props.renderLabel,
-      onToggleExpand: this.props.onToggleExpand
+      onToggleExpand: this.props.onToggleExpand,
+      onClick: this.props.onNodeClick
     };
   }
 
@@ -43,7 +46,13 @@ export default class Tree extends React.Component {
       {emptyEl}
       <ul>
         {this.props.rootNodes.map((node, i) => {
-          return <TreeNode key={'tree-node-' + i} indexPath={[i]}data={node}/>;
+          return (
+            <TreeNode key={'tree-node-' + i}
+                           indexPath={[i]}
+                           data={node}
+                           onClick={this.props.onNodeClick}
+            />
+          );
         })}
       </ul>
     </div>);

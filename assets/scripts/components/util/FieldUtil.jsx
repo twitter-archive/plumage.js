@@ -7,6 +7,10 @@ export default {
     let changeData = formDataToObj.toObj(newValues);
 
     if (field.props.value !== value) {
+      if (field.props.onChange) {
+        field.props.onChange(value);
+      }
+
       if (field.props.onFormChange) {
         field.props.onFormChange('update', changeData);
       }

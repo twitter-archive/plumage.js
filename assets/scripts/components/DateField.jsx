@@ -2,6 +2,7 @@ import React, {PropTypes} from 'react';
 import moment from 'moment';
 
 import Calendar from './Calendar';
+import HourSelect from './HourSelect';
 import FieldUtil from './util/FieldUtil';
 
 export default class DateField extends React.Component {
@@ -14,7 +15,12 @@ export default class DateField extends React.Component {
     calendarProps: PropTypes.object,
     minValue: PropTypes.number,
     maxValue: PropTypes.number,
-    utc: PropTypes.boolean
+    utc: PropTypes.bool,
+    showHourSelect: PropTypes.bool
+  };
+
+  static contextTypes = {
+    onFormChange: React.PropTypes.func
   };
 
   static defaultProps = {
@@ -22,8 +28,11 @@ export default class DateField extends React.Component {
     utc: false
   };
 
+
   constructor(props) {
     super(props);
+    this.moment = this.props.utc ? moment.utc : moment;
+
     this.state = {
       value: this.props.value,
       valueText: this.formatDateValue(this.props.value),
@@ -31,17 +40,20 @@ export default class DateField extends React.Component {
       showCalendar: false
     };
 
+
     this.onKeyDown = this.onKeyDown.bind(this);
     this.onTextChange = this.onTextChange.bind(this);
     this.onButtonClick = this.onButtonClick.bind(this);
     this.onInputClick = this.onInputClick.bind(this);
     this.onFocus = this.onFocus.bind(this);
     this.onBlur = this.onBlur.bind(this);
+    this.onHourChange = this.onHourChange.bind(this);
 
     this.onDaySelect = this.onDaySelect.bind(this);
   }
 
   componentWillReceiveProps(props) {
+    this.moment = props.utc ? moment.utc : moment;
     this.setState({value: props.value});
   }
 
@@ -108,15 +120,27 @@ export default class DateField extends React.Component {
     e.stopPropagation();
   }
 
+  onHourChange(value) {
+    FieldUtil.setFieldValue(this, value);
+  }
+
   /**
    * Update value and value text. Close the calendar.
    * @param value new timestamp value
    * @param cb Callback passed into setState
    */
   setValue(value) {
-    FieldUtil.setFieldValue(this, value, {
+    let finalValue = value;
+    if (this.props.showHourSelect) {
+      const oldM = this.moment(this.props.value);
+      const m = this.moment(value);
+      m.hour(oldM.hour()).minute(oldM.minute()).second(oldM.second()).millisecond(oldM.millisecond());
+      finalValue = m.valueOf();
+    }
+    FieldUtil.setFieldValue(this, finalValue);
+    this.setState({
       showCalendar: false,
-      valueText: this.formatDateValue(value),
+      valueText: this.formatDateValue(finalValue),
       textChanged: false
     });
   }
@@ -152,15 +176,31 @@ export default class DateField extends React.Component {
   //
 
   formatDateValue(value) {
-    return moment(value).format(this.props.dateFormat);
+    return this.moment(value).format(this.props.dateFormat);
   }
 
   parseDateTextToMoment(text) {
-    let result = moment(text, this.props.dateFormat);
+    let result = this.moment(text, this.props.dateFormat);
     if (!result.isValid()) {
-      result = moment(text);
+      result = this.moment(text);
     }
     return result;
+  }
+
+  renderHourSelect() {
+    if (!this.props.showHourSelect) {
+      return undefined;
+    }
+    return (
+      <HourSelect
+        className="input-group-btn"
+        value={this.props.value}
+        minValue={this.props.minValue}
+        maxValue={this.props.maxValue}
+        utc={this.props.utc}
+        onChange={this.onHourChange}
+      />
+    );
   }
 
   render() {
@@ -181,12 +221,14 @@ export default class DateField extends React.Component {
                onFocus={this.onFocus}
                onBlur={this.onBlur}
           />
+        {this.renderHourSelect()}
       </div>
       <div className="picker dropdown-menu" onMouseDown={this.onDisableMouseDown}>
         <Calendar value={this.getCalendarValue()}
                   onSelect={this.onDaySelect}
                   minValue={this.props.minValue}
                   maxValue={this.props.maxValue}
+                  utc={this.props.utc}
           {...this.props.calendarProps}/>
       </div>
     </span>);

@@ -1,5 +1,3 @@
-import _ from 'underscore';
-
 jest.dontMock('../TextField');
 jest.dontMock('../util/FieldUtil');
 jest.dontMock('form-data-to-object');
@@ -18,7 +16,7 @@ describe('TextField', function() {
 
     onFormChangeSpy = jest.genMockFunction();
     renderComponent = function(props) {
-      let theProps = _.extend({}, {
+      let theProps = Object.assign({}, {
         name: 'name',
         value: 'val',
         className: 'class',

@@ -1,5 +1,3 @@
-import _ from 'underscore';
-
 jest.dontMock('../Checkbox');
 jest.dontMock('../util/FieldUtil');
 jest.dontMock('form-data-to-object');
@@ -19,7 +17,7 @@ describe('Checkbox', function() {
     onFormChangeSpy = jest.genMockFunction();
 
     renderComponent = function(props) {
-      let theProps = _.extend({}, {
+      let theProps = Object.assign({}, {
         name: 'name',
         className: 'class',
         label: 'label',

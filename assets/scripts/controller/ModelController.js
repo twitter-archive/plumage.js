@@ -121,7 +121,7 @@ module.exports = Plumage.controller.ModelController = BaseController.extend(
      */
     showDetailModel: function(model) {
 
-      var view = this.getDetailView();
+      var view = this.getDetailView(model);
 
       var result;
       if (this.getCurrentView() !== view || model !== this.detailModel) {
@@ -132,7 +132,7 @@ module.exports = Plumage.controller.ModelController = BaseController.extend(
         this.detailModel = model;
         this.detailModel.on('error', this.onModelError, this);
         view.setModel(model);
-        result = this.loadModel(model).done(function () {
+        result = this.loadModel(model).done(function() {
           // call setModel again, so subviews can get newly loaded related models
           if (model.related) {
             view.setModel(model);
@@ -174,7 +174,7 @@ module.exports = Plumage.controller.ModelController = BaseController.extend(
     },
 
     /** Get and lazy create the detail view */
-    getDetailView: function() {
+    getDetailView: function(model) {
       if (!this.detailView) {
         this.detailView = this.createDetailView();
       }

@@ -23,7 +23,7 @@ export default class ButtonGroupSelect extends CategorySelect {
     if (this.props.placeholder) {
       placeholderEl = this.renderOption({value: this.props.placeholderValue, label: this.props.placeholder});
     }
-    let options = this.getOptions(this);
+    let options = this.props.options;
 
     return (<div className="btn-group">
       {placeholderEl}

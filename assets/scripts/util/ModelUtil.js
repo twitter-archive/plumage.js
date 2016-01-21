@@ -2,6 +2,28 @@
 var Plumage = require('PlumageRoot');
 module.exports = Plumage.util.ModelUtil = {
 
+
+  getRelatedModel: function(rootModel, key) {
+    var keyParts = key.split('.'),
+      keyPart = keyParts[0],
+      related;
+
+    if (rootModel.related && rootModel.related[keyPart]) {
+      related = rootModel.related[keyPart];
+    } else if (rootModel.collection && rootModel.collection.hasRelationship(keyPart) && rootModel.collection.getRelated(keyPart)) {
+      related = rootModel.collection.getRelated(keyPart);
+    } else {
+      if (!rootModel.hasRelationship(keyPart)) {
+        throw new Error('unknown relationship - ' + keyPart);
+      }
+    }
+
+    if (related && keyParts.length > 1) {
+      return related.getRelated(keyParts.slice(1).join('.'));
+    }
+    return related;
+  },
+
   /**
    * Merge options arguments with class values, including deeper prototypes if specified
    * @param {string} name Name of option to merge

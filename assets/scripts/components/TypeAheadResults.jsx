@@ -1,7 +1,7 @@
 import _ from 'underscore';
 import React, {PropTypes} from 'react';
 
-export default class TypeAhead extends React.Component {
+export default class TypeAheadResults extends React.Component {
 
   static propTypes = {
     title: PropTypes.string,
@@ -57,9 +57,20 @@ export default class TypeAhead extends React.Component {
       i === selectedIndex ? 'active' : undefined
     ]);
 
-    return (<li key={'typeahead-result-' + i} data-value={this.getResultValue(result)} data-index={i}
+    return (<li key={'typeahead-result-' + i}
+                data-label={this.getResultLabel(result)}
+                data-value={this.getResultValue(result)} data-index={i}
                 className={classes.join(' ')}>
       {el}
+    </li>);
+  }
+
+  renderMore() {
+    if (!this.props.moreLabel) {
+      return undefined;
+    }
+    return (<li className={'more' + (this.props.selectedIndex - this.props.startIndex === this.props.results.length ? ' active' : '')}>
+      <a href={this.props.moreUrl} onClick={this.onMoreClick}>{this.props.moreLabel}</a>
     </li>);
   }
 
@@ -75,9 +86,7 @@ export default class TypeAhead extends React.Component {
         lis.push(this.renderResult(result, i + this.props.startIndex, this.props.selectedIndex));
       });
 
-      if (this.props.title) {
-        lis.push(<li className="more"><a href={this.props.moreUrl} onClick={this.onMoreClick}>{this.props.moreLabel}</a></li>);
-      }
+      lis.push(this.renderMore());
     } else {
       lis.push(<li className="no-results-label">No Results</li>);
     }

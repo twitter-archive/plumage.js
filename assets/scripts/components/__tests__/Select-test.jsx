@@ -1,5 +1,3 @@
-import _ from 'underscore';
-
 jest.dontMock('../Select');
 jest.dontMock('../util/FieldUtil');
 jest.dontMock('form-data-to-object');
@@ -25,7 +23,7 @@ describe('Select', function() {
     ];
 
     renderComponent = function(props) {
-      let theProps = _.extend({}, {
+      let theProps = Object.assign({}, {
         name: 'name',
         placeholder: 'Placeholder',
         placeholderValue: '',

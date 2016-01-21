@@ -4,9 +4,7 @@ import Form from './Form';
 import FormGroup from './FormGroup';
 import SearchField from './SearchField';
 
-import DropdownButton from 'react-bootstrap/DropdownButton';
-import MenuItem from 'react-bootstrap/MenuItem';
-import Glyphicon from 'react-bootstrap/Glyphicon';
+import {DropdownButton, MenuItem, Glyphicon} from 'react-bootstrap';
 
 export default class FilterBar extends React.Component {
 

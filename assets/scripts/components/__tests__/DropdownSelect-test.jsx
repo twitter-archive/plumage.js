@@ -1,5 +1,3 @@
-import _ from 'underscore';
-
 jest.dontMock('../DropdownSelect');
 jest.dontMock('../util/FieldUtil');
 
@@ -25,7 +23,7 @@ describe('DropdownSelect', function() {
     ];
 
     renderComponent = function(props) {
-      let theProps = _.extend({}, {
+      let theProps = Object.assign({}, {
         name: 'name',
         placeholder: 'Placeholder',
         placeholderValue: '',

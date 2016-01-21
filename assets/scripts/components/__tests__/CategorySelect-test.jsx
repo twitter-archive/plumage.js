@@ -14,7 +14,6 @@ describe('CategorySelect', function() {
     React = require('react');
     TestUtils = require('react-addons-test-utils');
     CategorySelect = require('../CategorySelect.jsx');
-    let _ = require('underscore');
 
     onFormChangeSpy = jest.genMockFunction();
 
@@ -25,7 +24,7 @@ describe('CategorySelect', function() {
     ];
 
     renderComponent = function(props) {
-      let theProps = _.extend({}, {
+      let theProps = Object.assign({}, {
         name: 'name',
         placeholder: 'Placeholder',
         placeholderValue: '',

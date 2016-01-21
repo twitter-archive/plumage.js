@@ -1,168 +1,81 @@
-import React, {PropTypes} from 'react';
+import {PropTypes} from 'react';
+
+import classNames from 'classnames';
 import moment from 'moment';
 
-import FieldUtil from './util/FieldUtil';
+import DropdownSelect from './DropdownSelect';
 
-export default class HourSelect extends React.Component {
+export default class HourSelect extends DropdownSelect {
 
   static propTypes = {
     name: PropTypes.string,
+    // timestamp
     value: PropTypes.number,
-    placeholder: PropTypes.string,
-    dateFormat: PropTypes.string,
-    calendarProps: PropTypes.object,
+    hourFormat: PropTypes.string,
     minValue: PropTypes.number,
     maxValue: PropTypes.number,
-    utc: PropTypes.boolean
+    utc: PropTypes.bool
   };
 
   static defaultProps = {
-    dateFormat: 'MMM D, YYYY',
+    hourFormat: 'ha',
     utc: false
   };
 
   constructor(props) {
     super(props);
-    this.state = {
-      value: this.props.value,
-      valueText: this.formatDateValue(this.props.value),
-      textChanged: false,
-      showCalendar: false
-    };
-
-    this.onKeyDown = this.onKeyDown.bind(this);
-    this.onTextChange = this.onTextChange.bind(this);
-    this.onButtonClick = this.onButtonClick.bind(this);
-    this.onInputClick = this.onInputClick.bind(this);
-    this.onFocus = this.onFocus.bind(this);
-    this.onBlur = this.onBlur.bind(this);
-
-    this.onDaySelect = this.onDaySelect.bind(this);
+    this.moment = this.props.utc ? moment.utc : moment;
   }
 
   componentWillReceiveProps(props) {
-    this.setState({value: props.value});
+    this.moment = props.utc ? moment.utc : moment;
   }
 
-  //
-  // Events
-  //
-
-  onTextChange(e) {
-    this.setState({valueText: e.target.value, textChanged: true});
+  getClassNames() {
+    return Object.assign(super.getClassNames(), {'hour-select': true});
   }
 
-  onKeyDown(e) {
-    switch (e.key) {
-    case 'Enter':
-      e.preventDefault();
-      this.commitText();
-      break;
-    case 'Escape':
-      e.preventDefault();
-      this.setValue(this.state.value);
-      break;
-    case 'ArrowDown':
-      e.preventDefault();
-      this.setState({showCalendar: true});
-      break;
-    case 'ArrowUp':
-      e.preventDefault();
-      this.setState({showCalendar: false});
-      break;
-    default:
-      break;
-    }
+  getSelectedHour() {
+    const m = this.moment(this.props.value);
+    return m.hour();
   }
 
-  onButtonClick(e) {
-    e.preventDefault();
-    e.stopPropagation();
-    this.setState({showCalendar: !this.state.showCalendar}, function() {
-      if (this.state.showCalendar) {
-        this.refs.input.focus();
-      }
+  getOptions() {
+    return Array.from(new Array(24).keys()).map((hour) => {
+      return {
+        value: this.getValueForHour(hour),
+        label: moment({hour: hour}).format(this.props.hourFormat),
+        className: classNames(this.getClassesForHour(hour))
+      };
     });
   }
 
-  onInputClick() {
-    this.setState({showCalendar: true});
+  getClassesForHour(hour) {
+    return {
+      disabled: !this.isHourInMinMax(hour),
+      selected: hour === this.getSelectedHour()
+    };
   }
 
-  onFocus() {
-    this.setState({showCalendar: true});
-  }
-
-  onBlur() {
-    this.commitText();
-  }
-
-  onDaySelect(value) {
-    this.setValue(value);
-  }
-
-  ononDisableMouseDown(e) {
-    // do nothing so input doesn't lose focus
-    e.preventDefault();
-    e.stopPropagation();
-  }
-
-  /**
-   * Update value and value text. Close the calendar.
-   * @param value new timestamp value
-   * @param cb Callback passed into setState
-   */
-  setValue(value) {
-    FieldUtil.setFieldValue(this, value, {
-      showCalendar: false,
-      valueText: this.formatDateValue(value),
-      textChanged: false
-    });
-  }
-
-  getCalendarValue() {
-    if (this.state.textChanged) {
-      let result = this.parseDateTextToMoment(this.state.valueText);
-      if (result.isValid()) {
-        return result.valueOf();
-      }
-    }
-    return this.state.value;
-  }
-
-  getValue() {
-    return this.state.value;
-  }
-
-  //
-  // Helpers
-  //
-
-  /**
-   * update value from valueText if its valid. Close the calendar.
-   */
-  commitText() {
-    let newValue = this.parseDateTextToMoment(this.state.valueText);
-    if (newValue.isValid()) {
-      this.setValue(newValue.valueOf());
+  getValueForHour(hour) {
+    const {value} = this.props;
+    let m;
+    if (value !== undefined) {
+      m = this.moment(value);
     } else {
-      this.setValue(this.state.value);
+      m = this.moment().startOf('day');
     }
+    return m.hour(hour).valueOf();
   }
 
-  formatDateValue(value) {
-    return moment(value).format(this.props.dateFormat);
+  isHourInMinMax(hour) {
+    const {minValue, maxValue} = this.props;
+    const hourValue = this.getValueForHour(hour);
+
+    return (!minValue || hourValue >= minValue) && (!maxValue || hourValue <= maxValue);
   }
 
-  parseDateTextToMoment(text) {
-    let result = moment(text, this.props.dateFormat);
-    if (!result.isValid()) {
-      result = moment(text);
-    }
-    return result;
-  }
-
-  render() {
-    return <div></div>;
+  processDomValue(value) {
+    return Number(value);
   }
 }

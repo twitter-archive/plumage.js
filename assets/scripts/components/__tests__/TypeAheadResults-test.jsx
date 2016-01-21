@@ -1,6 +1,4 @@
 /* global runs, waitsFor, spyOn */
-import _ from 'underscore';
-
 jest.dontMock('../TypeAheadResults');
 
 describe('TypeAheadResults', function() {
@@ -15,7 +13,7 @@ describe('TypeAheadResults', function() {
     TypeAheadResults = require('../TypeAheadResults.jsx');
 
     renderComponent = (props) => {
-      let theProps = _.extend({}, {
+      let theProps = Object.assign({}, {
         results: [
           {label: 'bar1', value: 'bar1'},
           {label: 'bar2', value: 'bar2'}
@@ -40,6 +38,14 @@ describe('TypeAheadResults', function() {
     expect(liEls[1].className).toEqual('');
   });
 
+  it('renders more link', () => {
+    let typeAheadResults = renderComponent({moreLabel: 'more', moreUrl: '/more'});
+
+    let moreEl = TestUtils.findRenderedDOMComponentWithClass(typeAheadResults, 'more');
+
+    expect(moreEl.textContent).toEqual('more');
+  });
+
   it('renders title and more link', () => {
     let typeAheadResults = renderComponent({title: 'title', moreLabel: 'more', moreUrl: '/more'});
 
@@ -49,6 +55,14 @@ describe('TypeAheadResults', function() {
     let moreEl = TestUtils.findRenderedDOMComponentWithClass(typeAheadResults, 'more');
 
     expect(moreEl.textContent).toEqual('more');
+  });
+
+  it('can select more link', () => {
+    let typeAheadResults = renderComponent({moreLabel: 'more', moreUrl: '/more', selectedIndex: 2});
+
+    let moreEl = TestUtils.findRenderedDOMComponentWithClass(typeAheadResults, 'more');
+
+    expect(moreEl.className).toEqual('more active');
   });
 
   it('accounts for startIndex for rendering active', () => {

@@ -7,7 +7,7 @@ module.exports = Plumage.view.form.fields.CategorySelect = Select.extend({
 
   className: 'category-select field',
 
-  template: require('view/form/fields/templates/CategorySelect.html'),
+    template: require('view/form/fields/templates/CategorySelect.html'),
 
   listValueAttr: 'name',
   listLabelAttr: 'label',

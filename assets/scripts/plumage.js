@@ -81,6 +81,7 @@ define([
   './view/TabView'
 ],
 function(Plumage) {
+  Plumage.components.connectModel = require('./components/connectModel');
   Plumage.components.ModelProvider = require('./components/ModelProvider');
   Plumage.components.NavBar = require('./components/NavBar');
   Plumage.components.Form = require('./components/Form');

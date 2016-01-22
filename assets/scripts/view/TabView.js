@@ -107,7 +107,7 @@ module.exports = Plumage.view.TabView = ModelView.extend(
         activeTab = this.subViews[0].tabId;
       }
       var cssId = activeTab +'-tab';
-      var tab = this.$('a[data-tab=#'+ cssId + ']');
+      var tab = this.$('a[data-tab="#'+ cssId + '"]');
 
       this.$('.tabs li').removeClass('active');
       tab.parent('li').addClass('active');

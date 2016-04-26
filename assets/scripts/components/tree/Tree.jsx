@@ -9,6 +9,8 @@ export default class Tree extends React.Component {
     className: PropTypes.string,
     onToggleExpand: PropTypes.func.isRequired,
     onNodeClick: PropTypes.func,
+    onNodeEnter: PropTypes.func,
+    onNodeLeave: PropTypes.func,
     renderLabel: PropTypes.func.isRequired,
     rootNodes: PropTypes.instanceOf(Immutable.List),
     emptyMessage: PropTypes.string
@@ -17,7 +19,9 @@ export default class Tree extends React.Component {
   static childContextTypes = {
     renderLabel: PropTypes.func.isRequired,
     onToggleExpand: PropTypes.func.isRequired,
-    onClick: PropTypes.func
+    onClick: PropTypes.func,
+    onEnter: PropTypes.func,
+    onLeave: PropTypes.func
   };
 
   static defaultProps = {
@@ -32,7 +36,9 @@ export default class Tree extends React.Component {
     return {
       renderLabel: this.props.renderLabel,
       onToggleExpand: this.props.onToggleExpand,
-      onClick: this.props.onNodeClick
+      onClick: this.props.onNodeClick,
+      onEnter: this.props.onNodeEnter,
+      onLeave: this.props.onNodeLeave
     };
   }
 
@@ -50,6 +56,8 @@ export default class Tree extends React.Component {
             <TreeNode key={'tree-node-' + i}
                            indexPath={[i]}
                            data={node}
+                           onEnter={this.props.onNodeEnter}
+                           onLeave={this.props.onNodeLeave}
                            onClick={this.props.onNodeClick}
             />
           );

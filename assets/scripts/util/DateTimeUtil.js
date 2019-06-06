@@ -57,7 +57,12 @@ module.exports = Plumage.util.DateTimeUtil = {
   },
 
   formatDateFromNow: function(timestamp) {
-    return moment(Number(timestamp)).fromNow();
+    const timestampNum = Number(timestamp)
+    if(timestampNum === 0){
+      return "loading..."
+    } else {
+      return moment(timestampNum).fromNow();
+    }
   },
 
   formatDuration: function(millis) {
